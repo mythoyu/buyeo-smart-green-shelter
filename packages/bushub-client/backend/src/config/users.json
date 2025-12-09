@@ -2,13 +2,13 @@
   "users": [
     {
       "username": "admin",
-      "password": "sinwoo*it*2025A",
+      "password": "youjobsA1!S",
       "role": "superuser",
       "companyId": null,
       "description": "내부 관리자 계정",
       "apiKey": {
         "name": "admin",
-        "key": "admin_universal_key_2025",
+        "key": "admin_universal_key",
         "type": "universal",
         "permissions": ["read:devices", "read:status", "write:commands", "admin:settings", "admin:users"],
         "status": "active",
@@ -17,13 +17,13 @@
     },
     {
       "username": "admin_gov",
-      "password": "sinwoo*it*2025A",
+      "password": "youjobsA1!",
       "role": "user",
       "companyId": null,
       "description": "시스템 관리자 계정",
       "apiKey": {
         "name": "admin_gov",
-        "key": "admin_gov_internal_key_2025",
+        "key": "admin_gov_internal_key",
         "type": "internal",
         "permissions": ["read:devices", "read:status", "write:commands", "admin:settings", "admin:users"],
         "status": "active",
@@ -32,13 +32,13 @@
     },
     {
       "username": "test",
-      "password": "sinwoo*it*2025A",
+      "password": "youjobsA1!",
       "role": "engineer",
       "companyId": null,
       "description": "테스트용 내부 사용자 계정",
       "apiKey": {
         "name": "test",
-        "key": "test_internal_key_2025",
+        "key": "test_internal_key",
         "type": "internal",
         "permissions": ["read:devices", "read:status", "write:commands", "admin:settings"],
         "status": "active",
@@ -46,38 +46,38 @@
       }
     },
     {
-      "username": "sinwoo",
-      "password": "sinwoo*it*2025A",
+      "username": "youjobs",
+      "password": "youjobsA1!",
       "role": "ex-user",
-      "companyId": "sinwoo",
-      "description": "sinwoo 외부 사용자",
+      "companyId": "youjobs",
+      "description": "youjobs 외부 사용자",
       "apiKey": {
-        "name": "sinwoo",
-        "key": "sinwoo_external_key_2025",
+        "name": "youjobs",
+        "key": "youjobs_external_key",
         "type": "external",
         "permissions": ["read:devices", "read:status"],
         "status": "active",
-        "description": "신우 외부 사용자 API 키"
+        "description": "youjobs 외부 사용자 API 키"
       }
     },
     {
-      "username": "nzero",
-      "password": "nzero*it*2024A",
+      "username": "external",
+      "password": "youjobsA1!",
       "role": "ex-user",
-      "companyId": "nzero",
-      "description": "nzero 외부 사용자",
+      "companyId": "external",
+      "description": "external 외부 사용자",
       "apiKey": {
-        "name": "nzero",
-        "key": "nzero_external_key_2025",
+        "name": "external",
+        "key": "external_external_key",
         "type": "external",
         "permissions": ["read:devices", "read:status"],
         "status": "active",
-        "description": "nzero 외부 사용자 API 키"
+        "description": "external 외부 사용자 API 키"
       }
     }
   ],
   "settings": {
-    "defaultPassword": "sinwoo*it*2025A",
+    "defaultPassword": "youjobsA1!",
     "passwordPolicy": {
       "minLength": 8,
       "requireUppercase": true,
@@ -86,8 +86,7 @@
       "requireSpecialChars": true
     },
     "apiKeyPolicy": {
-      "keyLength": 32,
-      "expirationDays": 365
+      "keyLength": 32
     }
   }
 }
