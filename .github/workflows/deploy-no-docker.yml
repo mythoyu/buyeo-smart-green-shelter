@@ -1,0 +1,224 @@
+name: Deploy USB Package
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  create-usb-package:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.17.0"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.13.1
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (for mirrored base images)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build backend and frontend Docker images (version tags)
+        run: |
+          echo "🐳 Building Docker images for offline USB..."
+          # Build backend image
+          docker build \
+            -f packages/bushub-client/backend/Dockerfile \
+            -t bushub-backend:${{ github.ref_name }} \
+            .
+
+          # Build frontend image
+          docker build \
+            -f packages/bushub-client/frontend/Dockerfile \
+            -t bushub-frontend:${{ github.ref_name }} \
+            .
+
+      - name: Save Docker Images
+        run: |
+          echo "📦 Docker 이미지 저장 중..."
+          mkdir -p docker-images
+
+          # 공개 레지스트리에서 pull
+          docker pull mongo:6.0.15
+          docker pull nginx:1.28.0
+
+          # 간단한 이름으로 저장 (docker-compose.integrated.yml과 일치)
+          docker save -o docker-images/mongo-6.0.15.tar mongo:6.0.15
+          docker save -o docker-images/nginx-1.28.0.tar nginx:1.28.0
+
+          # 프로젝트 이미지 저장 (오프라인용)
+          docker save -o docker-images/bushub-backend.${{ github.ref_name }}.tar bushub-backend:${{ github.ref_name }}
+          docker save -o docker-images/bushub-frontend.${{ github.ref_name }}.tar bushub-frontend:${{ github.ref_name }}
+
+          echo "✅ Docker 이미지 저장 완료"
+          ls -la docker-images/
+
+      - name: Build Network Control API bundle (offline)
+        run: |
+          echo "📦 Building Network Control API bundle for offline install..."
+          pushd packages/bushub-client/network-control-api
+
+          # npm을 사용하여 심볼릭 링크 문제 해결
+          echo "🔧 npm을 사용하여 의존성 설치 (심볼릭 링크 없음)..."
+          npm install --production
+          npm run build
+
+          # 번들 생성: dist + node_modules + package.json
+          mkdir -p ../../../nca-bundle
+          tar -czf ../../../nca-bundle/nca-bundle.tar.gz \
+            dist node_modules package.json
+          popd
+
+      - name: Create USB Package (minimal offline contents)
+        run: |
+          echo "Creating USB package with tag: ${{ github.ref_name }}"
+
+          # 루트: usb-installer.sh
+          mkdir -p usb-package
+          cp packages/bushub-client/usb-installer.sh usb-package/
+          chmod +x usb-package/usb-installer.sh
+
+          # 런타임 파일: packages/bushub-client 아래 최소 구성만 배치
+          mkdir -p usb-package/packages/bushub-client
+          cp packages/bushub-client/docker-compose.integrated.yml usb-package/packages/bushub-client/
+          cp packages/bushub-client/deploy-hybrid.sh usb-package/packages/bushub-client/
+          chmod +x usb-package/packages/bushub-client/deploy-hybrid.sh
+
+          # nginx 설정
+          mkdir -p usb-package/packages/bushub-client/nginx
+          cp packages/bushub-client/nginx/nginx.conf usb-package/packages/bushub-client/nginx/
+          cp packages/bushub-client/nginx/mime.types usb-package/packages/bushub-client/nginx/
+
+          # systemd 서비스 파일
+          mkdir -p usb-package/packages/bushub-client/scripts
+          cp packages/bushub-client/scripts/bushub-network-control-api.service usb-package/packages/bushub-client/scripts/
+
+          # 운영 유틸 스크립트(tools) - USB_ROOT/tools 로 배치
+          mkdir -p usb-package/tools
+          if [ -d packages/bushub-client/tools ]; then
+            cp -r packages/bushub-client/tools/* usb-package/tools/
+            chmod 755 usb-package/tools
+            find usb-package/tools -type f -name "*.sh" -exec chmod +x {} \;
+          fi
+
+          # Docker 이미지들
+          cp -r docker-images usb-package/packages/bushub-client/
+
+          # Network Control API 번들
+          mkdir -p usb-package/packages/bushub-client/network-control-api
+          cp nca-bundle/nca-bundle.tar.gz usb-package/packages/bushub-client/network-control-api/
+
+          # 압축 파일 생성
+          echo "🗜️ Creating compressed package..."
+          tar -czf bushub-smartcity-${{ github.ref_name }}.tar.gz -C usb-package .
+
+          # 파일 검증
+          if [ ! -f "bushub-smartcity-${{ github.ref_name }}.tar.gz" ]; then
+            echo "Error: USB package file not created"
+            exit 1
+          fi
+
+          echo "USB package created successfully:"
+          ls -la bushub-smartcity-${{ github.ref_name }}.tar.gz
+
+          # 압축 파일 내용 검증
+          echo "📋 Package contents:"
+          tar -tzf bushub-smartcity-${{ github.ref_name }}.tar.gz | head -20
+
+          echo "USB package validation passed"
+
+      - name: Create GitHub Release and upload USB package
+        uses: softprops/action-gh-release@v1
+        with:
+          files: bushub-smartcity-${{ github.ref_name }}.tar.gz
+          tag_name: ${{ github.ref_name }}
+          name: USB Package ${{ github.ref_name }}
+          body: |
+            ## SmartCity Application Package ${{ github.ref_name }}
+
+            ### 사용법
+            1. 파일 다운로드: `bushub-smartcity-${{ github.ref_name }}.tar.gz`
+            2. USB에 복사 후 리눅스 PC에서 압축 해제: `tar -xzf bushub-smartcity-${{ github.ref_name }}.tar.gz`
+            3. 설치 실행: `sudo ./usb-installer.sh`
+               - 비밀번호 입력 시: `jecs` (JECS-N100B 제품 기본 비밀번호)
+            4. 웹 접속: http://localhost
+
+            ### 설치 과정
+            1. **USB 패키지 준비**:
+               ```bash
+               # USB에 파일 복사 후 리눅스 PC에서
+               tar -xzf bushub-smartcity-${{ github.ref_name }}.tar.gz
+               sudo ./usb-installer.sh
+               # 비밀번호 입력 시: jecs (JECS-N100B 기본 비밀번호)
+               ```
+
+            2. **자동 설치 과정** (`usb-installer.sh`가 처리):
+               - **의존성 확인**: Docker, Docker Compose, Node.js 설치 여부 확인
+               - **의존성 설치** (필요시, 인터넷 연결 필요):
+                 - Docker 설치
+                 - Docker Compose 설치  
+                 - Node.js 설치
+               - **애플리케이션 설치** (오프라인):
+                 - Docker 이미지 로드
+                 - Network Control API 설치
+                 - 서비스 시작
+
+            3. **완료**:
+               ```bash
+               # 웹 접속
+               http://localhost
+               ```
+
+            ### 포함된 구성요소
+            - **애플리케이션 이미지**: backend:${{ github.ref_name }}, frontend:${{ github.ref_name }}, mongo:6.0.15, nginx:1.28.0
+            - **Network Control API**: 완전한 오프라인 번들 (dist + node_modules)
+            - **설치 스크립트**: usb-installer.sh, deploy-hybrid.sh
+            - **설정 파일**: docker-compose.integrated.yml, nginx.conf, mime.types, systemd service
+
+            ### 시스템 요구사항
+            - **하드웨어**: JECS-N100B 제품 (기본 비밀번호: `jecs`)
+            - **OS**: Linux (Ubuntu 20.04+)
+            - **메모리**: 2GB RAM 이상
+            - **저장공간**: 5GB 디스크 공간
+            - **네트워크**: **초기 설치 시 인터넷 연결 필요** (Docker, Node.js 설치용)
+            - **동작**: 설치 후 **애플리케이션 레벨에서는 오프라인 동작**
+
+            ### 장점
+            - **애플리케이션 오프라인**: 설치 후 인터넷 연결 없이 동작
+            - **버전 고정**: 특정 태그의 안정된 버전
+            - **빠른 배포**: 애플리케이션 다운로드 시간 없음
+            - **일관성**: 개발환경과 동일한 구조
+            - **USB 배포**: 네트워크 없는 환경에서도 배포 가능
+            - **스마트 설치**: 의존성 자동 감지 및 설치
+
+            ### 보안
+            - Private Repository: 허가된 사용자만 접근
+            - 애플리케이션 오프라인: 외부 API 호출 없음
+            - 버전 고정: 예측 가능한 설치 환경
+            - USB 배포: 네트워크 노출 최소화
+          draft: false
+          prerelease: false

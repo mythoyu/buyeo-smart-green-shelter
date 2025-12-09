@@ -1,0 +1,761 @@
+import { Eye, EyeOff, User, AlertCircle, Info, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { useLogin } from '../../api/queries/auth';
+import { useApiKey } from '../../contexts/ApiKeyContext';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  validatePassword,
+  getPasswordStrengthColor,
+  getPasswordStrengthText,
+  getValidationStatusColor,
+  getValidationIcon,
+} from '../../utils/passwordValidation';
+import VersionInfo from '../common/VersionInfo';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Alert,
+  AlertDescription,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui';
+
+interface LoginPageProps {
+  onLoginSuccess: () => void;
+}
+
+// 테스트 계정 데이터
+const testAccounts = {
+  users: [
+    {
+      username: 'admin',
+      password: 'sinwoo*it*2025A',
+      role: 'superuser',
+      description: '시스템 관리자 계정',
+    },
+    {
+      username: 'testuser',
+      password: 'sinwoo*it*2025A',
+      role: 'user',
+      description: '테스트용 내부 사용자 계정',
+    },
+  ],
+  externalUsers: [
+    {
+      username: 'sinwoo',
+      password: 'sinwoo_password_2025',
+      role: 'ex-user',
+      description: 'sinwoo 외부 사용자',
+    },
+    {
+      username: 'nzero',
+      password: 'nzero_password_2025',
+      role: 'ex-user',
+      description: 'nzero 외부 사용자',
+    },
+  ],
+};
+
+export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+  const [id, setId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const { setIsLoggedIn, setUser } = useAuth();
+  const { setApiKey } = useApiKey();
+  const [showMore, setShowMore] = useState(false);
+
+  // React Query mutation 최적화
+  const loginMutation = useLogin({
+    onSuccess: (response: any) => {
+      console.log('🔍 로그인 응답 전체:', response);
+      console.log('🔍 사용자 데이터:', response?.data?.user);
+
+      if (response && response.success && response.data) {
+        // 로그인 성공 처리
+        setIsLoggedIn(true);
+
+        setUser({
+          id: response.data.user.id,
+          name: response.data.user.username,
+          role: response.data.user.role,
+        });
+
+        const apiKey = response.data.token || '';
+        console.log('설정할 API 키:', apiKey);
+        console.log('설정할 사용자 role:', response.data.user.role);
+        setApiKey(apiKey);
+
+        toast.success('로그인에 성공했습니다.');
+        onLoginSuccess();
+      }
+    },
+    onError: (error: any) => {
+      console.error('로그인 오류:', error);
+      toast.error(error.message || '로그인 중 오류가 발생했습니다.');
+    },
+  });
+
+  // React Query 내장 상태 사용
+  const { isPending, error, reset } = loginMutation;
+
+  // 로그인 페이지 로드 시 환경 정보 로깅
+  useEffect(() => {
+    console.log('🔐 LoginPage Mount Debug:', {
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      location: window.location.href,
+    });
+  }, []);
+
+  // 에러 발생 시 아이디 필드에 포커스
+  useEffect(() => {
+    if (error) {
+      document.getElementById('id')?.focus();
+    }
+  }, [error]);
+
+  // ESC 키로 Tooltip 닫기
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && passwordFocused) {
+        setPasswordFocused(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [passwordFocused]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    reset(); // 이전 에러 상태 초기화
+
+    // 기본 검증
+    if (!id) {
+      toast.error('아이디를 입력하세요.');
+      return;
+    }
+
+    if (!password) {
+      toast.error('비밀번호를 입력하세요.');
+      return;
+    }
+
+    // 비밀번호 검증
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+      toast.error(validation.errors[0]);
+      return;
+    }
+
+    // React Query mutation 실행
+    loginMutation.mutate({
+      username: id,
+      password,
+    });
+  };
+
+  const passwordValidation = password ? validatePassword(password) : null;
+
+  return (
+    <div className='min-h-screen login-page flex'>
+      {/* 왼쪽 배경 이미지 섹션 */}
+      <div className='hidden lg:block flex-1 relative overflow-hidden background-animation'>
+        {/* 움직이는 도형들 */}
+        <div className='floating-shapes'>
+          <div className='shape'></div>
+          <div className='shape'></div>
+          <div className='shape'></div>
+          <div className='shape'></div>
+        </div>
+
+        {/* 배경 SVG 애니메이션 */}
+        <div className='absolute inset-0 opacity-20'>
+          <svg width='100%' height='100%' viewBox='0 0 800 500' fill='none' xmlns='http://www.w3.org/2000/svg'>
+            {/* 배경 그라데이션 */}
+            <defs>
+              <radialGradient id='bgGradient' cx='50%' cy='50%' r='50%'>
+                <stop offset='0%' stopColor='rgba(59, 130, 246, 0.1)' />
+                <stop offset='100%' stopColor='rgba(59, 130, 246, 0.05)' />
+              </radialGradient>
+            </defs>
+            <rect width='100%' height='100%' fill='url(#bgGradient)' />
+
+            {/* 버스 아이콘들 */}
+            <g fill='rgba(59, 130, 246, 0.1)'>
+              {/* 버스 1 - 애니메이션 적용 */}
+              <g className='bus-animation'>
+                <rect x='50' y='100' width='80' height='40' rx='8' fill='rgba(59, 130, 246, 0.15)' />
+                <rect x='60' y='110' width='60' height='20' rx='4' fill='rgba(255, 255, 255, 0.3)' />
+                <circle cx='70' cy='140' r='6' fill='rgba(59, 130, 246, 0.2)' />
+                <circle cx='110' cy='140' r='6' fill='rgba(59, 130, 246, 0.2)' />
+              </g>
+
+              {/* 버스 2 - 지연된 애니메이션 */}
+              <g className='bus-animation' style={{ animationDelay: '2s' }}>
+                <rect x='200' y='200' width='80' height='40' rx='8' fill='rgba(59, 130, 246, 0.15)' />
+                <rect x='210' y='210' width='60' height='20' rx='4' fill='rgba(255, 255, 255, 0.3)' />
+                <circle cx='220' cy='240' r='6' fill='rgba(59, 130, 246, 0.2)' />
+                <circle cx='260' cy='240' r='6' fill='rgba(59, 130, 246, 0.2)' />
+              </g>
+
+              {/* 버스 3 - 더 지연된 애니메이션 */}
+              <g className='bus-animation' style={{ animationDelay: '4s' }}>
+                <rect x='350' y='150' width='80' height='40' rx='8' fill='rgba(59, 130, 246, 0.15)' />
+                <rect x='360' y='160' width='60' height='20' rx='4' fill='rgba(255, 255, 255, 0.3)' />
+                <circle cx='370' cy='190' r='6' fill='rgba(59, 130, 246, 0.2)' />
+                <circle cx='410' cy='190' r='6' fill='rgba(59, 130, 246, 0.2)' />
+              </g>
+
+              {/* 환승센터 건물 - 호버 효과 */}
+              <g className='building-hover'>
+                <rect x='300' y='300' width='120' height='80' rx='12' fill='rgba(59, 130, 246, 0.2)' />
+                <rect x='310' y='310' width='100' height='60' rx='8' fill='rgba(255, 255, 255, 0.4)' />
+                <rect x='320' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
+                <rect x='350' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
+                <rect x='380' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
+                <rect x='410' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
+              </g>
+
+              {/* 도로 */}
+              <rect x='0' y='400' width='800' height='40' fill='rgba(59, 130, 246, 0.1)' />
+              <rect x='0' y='410' width='800' height='20' fill='rgba(255, 255, 255, 0.2)' />
+
+              {/* 신호등 */}
+              <rect x='150' y='350' width='12' height='30' rx='6' fill='rgba(59, 130, 246, 0.3)' />
+              <circle cx='156' cy='360' r='4' fill='rgba(255, 255, 255, 0.8)' />
+              <circle cx='156' cy='370' r='4' fill='rgba(255, 255, 255, 0.4)' />
+              <circle cx='156' cy='380' r='4' fill='rgba(255, 255, 255, 0.4)' />
+            </g>
+          </svg>
+        </div>
+
+        {/* 텍스트 오버레이 */}
+        <div className='absolute inset-0 flex items-center justify-center z-20 text-white'>
+          <div className='text-center fade-in-up w-full max-w-lg px-12'>
+            {/* 전문적인 버스환승센터 로고 */}
+            <div className='mb-8 bus-icon-pulse flex justify-center'>
+              <svg
+                width='80'
+                height='80'
+                viewBox='0 0 80 80'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+                className='logo-svg logo-glow'
+              >
+                {/* 버스 본체 */}
+                <rect
+                  x='10'
+                  y='25'
+                  width='60'
+                  height='35'
+                  rx='8'
+                  fill='rgba(255, 255, 255, 0.9)'
+                  stroke='rgba(59, 130, 246, 0.8)'
+                  strokeWidth='2'
+                />
+                {/* 버스 창문들 */}
+                <rect
+                  x='15'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(59, 130, 246, 0.6)'
+                  className='window-shine'
+                />
+                <rect
+                  x='25'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(59, 130, 246, 0.6)'
+                  className='window-shine'
+                />
+                <rect
+                  x='35'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(59, 130, 246, 0.6)'
+                  className='window-shine'
+                />
+                <rect
+                  x='45'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(59, 130, 246, 0.6)'
+                  className='window-shine'
+                />
+                <rect
+                  x='55'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(59, 130, 246, 0.6)'
+                  className='window-shine'
+                />
+                {/* 버스 바퀴 */}
+                <circle
+                  cx='20'
+                  cy='65'
+                  r='6'
+                  fill='rgba(59, 130, 246, 0.8)'
+                  stroke='rgba(255, 255, 255, 0.9)'
+                  strokeWidth='2'
+                  className='wheel-rotate'
+                />
+                <circle
+                  cx='60'
+                  cy='65'
+                  r='6'
+                  fill='rgba(59, 130, 246, 0.8)'
+                  stroke='rgba(255, 255, 255, 0.9)'
+                  strokeWidth='2'
+                  className='wheel-rotate'
+                />
+                {/* 환승센터 건물 실루엣 */}
+                <rect x='25' y='15' width='30' height='15' rx='3' fill='rgba(255, 255, 255, 0.7)' />
+                <rect x='30' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
+                <rect x='37' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
+                <rect x='44' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
+                {/* 도로 */}
+                <rect x='5' y='70' width='70' height='8' fill='rgba(255, 255, 255, 0.3)' />
+                <rect x='5' y='73' width='70' height='2' fill='rgba(59, 130, 246, 0.5)' />
+              </svg>
+            </div>
+
+            {/* 메인 타이틀 */}
+            <div className='mb-8'>
+              <h1 className='text-4xl font-bold mb-3 text-white drop-shadow-lg gradient-text'>
+                버스환승센터 클라이언트(S-BMS)
+              </h1>
+              <div className='w-24 h-1 bg-blue-300 mx-auto rounded-full mb-4 animate-pulse'></div>
+              <p className='text-xl text-blue-100 font-medium'>관리 시스템</p>
+            </div>
+
+            {/* 기능 카드들 */}
+            <div className='grid grid-cols-1 gap-4 w-full'>
+              {/* 디바이스 관리 */}
+              <div className='function-card bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all duration-300 group hover:scale-105 hover:shadow-xl'>
+                <div className='flex items-center space-x-3'>
+                  <div className='w-10 h-10 bg-green-400/30 rounded-lg flex items-center justify-center group-hover:bg-green-400/50 transition-all group-hover:scale-110'>
+                    <svg className='w-5 h-5 text-green-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
+                      />
+                    </svg>
+                  </div>
+                  <div className='flex-1'>
+                    <h3 className='text-white font-semibold text-sm group-hover:text-green-200 transition-colors'>
+                      디바이스 관리
+                    </h3>
+                    <p className='text-blue-200 text-xs group-hover:text-blue-100 transition-colors'>
+                      조명, 냉난방기, 센서 등 통합 제어
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 로그 분석 */}
+              <div className='function-card bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all duration-300 group hover:scale-105 hover:shadow-xl'>
+                <div className='flex items-center space-x-3'>
+                  <div className='w-10 h-10 bg-purple-400/30 rounded-lg flex items-center justify-center group-hover:bg-purple-400/50 transition-all group-hover:scale-110'>
+                    <svg className='w-5 h-5 text-purple-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                      />
+                    </svg>
+                  </div>
+                  <div className='flex-1'>
+                    <h3 className='text-white font-semibold text-sm group-hover:text-purple-200 transition-colors'>
+                      로그 분석
+                    </h3>
+                    <p className='text-blue-200 text-xs group-hover:text-blue-100 transition-colors'>
+                      오류 로그 및 시스템 상태 모니터링
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 시스템 설정 */}
+              <div className='function-card bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all duration-300 group hover:scale-105 hover:shadow-xl'>
+                <div className='flex items-center space-x-3'>
+                  <div className='w-10 h-10 bg-orange-400/30 rounded-lg flex items-center justify-center group-hover:bg-orange-400/50 transition-all group-hover:scale-110'>
+                    <svg className='w-5 h-5 text-orange-200' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
+                      />
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+                      />
+                    </svg>
+                  </div>
+                  <div className='flex-1'>
+                    <h3 className='text-white font-semibold text-sm group-hover:text-orange-200 transition-colors'>
+                      시스템 설정
+                    </h3>
+                    <p className='text-blue-200 text-xs group-hover:text-blue-100 transition-colors'>
+                      환경 설정 및 시스템 구성
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 오른쪽 로그인 폼 섹션 */}
+      <div className='w-full flex items-center justify-center px-4 sm:px-8 bg-white lg:flex-1'>
+        <div className='w-full max-w-md fade-in-up'>
+          {/* 모바일용 헤더 */}
+          <div className='lg:hidden text-center m-6'>
+            <div className='flex items-center justify-center gap-2 bus-icon-pulse'>
+              <svg
+                width='32'
+                height='32'
+                viewBox='0 0 80 80'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+                className='logo-svg logo-glow w-8 h-8'
+              >
+                {/* 버스 본체 */}
+                <rect
+                  x='10'
+                  y='25'
+                  width='60'
+                  height='35'
+                  rx='8'
+                  fill='rgba(59, 130, 246, 0.9)'
+                  stroke='rgba(59, 130, 246, 1)'
+                  strokeWidth='2'
+                />
+                {/* 버스 창문들 */}
+                <rect
+                  x='15'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(255, 255, 255, 0.8)'
+                  className='window-shine'
+                />
+                <rect
+                  x='25'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(255, 255, 255, 0.8)'
+                  className='window-shine'
+                />
+                <rect
+                  x='35'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(255, 255, 255, 0.8)'
+                  className='window-shine'
+                />
+                <rect
+                  x='45'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(255, 255, 255, 0.8)'
+                  className='window-shine'
+                />
+                <rect
+                  x='55'
+                  y='30'
+                  width='8'
+                  height='12'
+                  rx='2'
+                  fill='rgba(255, 255, 255, 0.8)'
+                  className='window-shine'
+                />
+                {/* 버스 바퀴 */}
+                <circle
+                  cx='20'
+                  cy='65'
+                  r='6'
+                  fill='rgba(59, 130, 246, 0.8)'
+                  stroke='rgba(255, 255, 255, 0.9)'
+                  strokeWidth='2'
+                  className='wheel-rotate'
+                />
+                <circle
+                  cx='60'
+                  cy='65'
+                  r='6'
+                  fill='rgba(59, 130, 246, 0.8)'
+                  stroke='rgba(255, 255, 255, 0.9)'
+                  strokeWidth='2'
+                  className='wheel-rotate'
+                />
+                {/* 환승센터 건물 실루엣 */}
+                <rect x='25' y='15' width='30' height='15' rx='3' fill='rgba(255, 255, 255, 0.9)' />
+                <rect x='30' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
+                <rect x='37' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
+                <rect x='44' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
+                {/* 도로 */}
+                <rect x='5' y='70' width='70' height='8' fill='rgba(59, 130, 246, 0.3)' />
+                <rect x='5' y='73' width='70' height='2' fill='rgba(255, 255, 255, 0.5)' />
+              </svg>
+              <span className='text-2xl font-bold text-gray-900'>S-BMS 클라이언트</span>
+            </div>
+          </div>
+
+          {/* 로그인 카드 */}
+          <Card className='w-full max-w-lg'>
+            <CardHeader className='text-center'>
+              <CardTitle className='text-2xl'>관리자 로그인</CardTitle>
+              <p className='text-muted-foreground'>시스템에 접속하세요</p>
+              {/* 버전 정보 표시 */}
+              <div className='mt-2 flex justify-center'>
+                <VersionInfo />
+              </div>
+            </CardHeader>
+            <CardContent className='space-y-6 px-8'>
+              <form onSubmit={handleLogin} className='space-y-6'>
+                <div className='space-y-2'>
+                  <Label htmlFor='id'>아이디</Label>
+                  <div className='relative'>
+                    <Input
+                      id='id'
+                      type='text'
+                      autoComplete='username'
+                      placeholder='아이디를 입력하세요'
+                      value={id}
+                      onChange={e => setId(e.target.value)}
+                      disabled={isPending}
+                      className='pr-10'
+                    />
+                    <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
+                      <User className='h-4 w-4 text-muted-foreground' />
+                    </div>
+                  </div>
+                </div>
+
+                <div className='space-y-2'>
+                  <Label htmlFor='password'>비밀번호</Label>
+                  <div className='relative'>
+                    <TooltipProvider>
+                      <Tooltip open={passwordFocused && !!password && !!passwordValidation}>
+                        <TooltipTrigger asChild>
+                          <Input
+                            id='password'
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete='current-password'
+                            placeholder='비밀번호를 입력하세요'
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            onFocus={() => setPasswordFocused(true)}
+                            onBlur={() => setPasswordFocused(false)}
+                            disabled={isPending}
+                            className='pr-10'
+                          />
+                        </TooltipTrigger>
+                        {password && passwordValidation && (
+                          <TooltipContent
+                            side='top'
+                            className='bg-white border border-gray-200 shadow-lg w-72 sm:w-80 p-4 max-w-[calc(100vw-2rem)]'
+                            sideOffset={10}
+                            align='center'
+                            avoidCollisions={true}
+                            collisionPadding={16}
+                            onPointerDownOutside={() => setPasswordFocused(false)}
+                          >
+                            <div className='space-y-3 text-gray-800'>
+                              {/* 비밀번호 강도 표시 */}
+                              <div className='flex items-center justify-between'>
+                                <span className='text-sm font-semibold text-gray-700'>비밀번호 강도:</span>
+                                <Badge
+                                  variant='secondary'
+                                  className={getPasswordStrengthColor(passwordValidation.strength)}
+                                >
+                                  {getPasswordStrengthText(passwordValidation.strength)}
+                                </Badge>
+                              </div>
+
+                              {/* 상세 검증 결과 */}
+                              <div className='space-y-2'>
+                                <div
+                                  className={`flex items-center text-sm ${getValidationStatusColor(
+                                    passwordValidation.details.length.valid
+                                  )}`}
+                                >
+                                  <span className='mr-2 flex-shrink-0'>
+                                    {getValidationIcon(passwordValidation.details.length.valid)}
+                                  </span>
+                                  <span className='leading-relaxed'>{passwordValidation.details.length.message}</span>
+                                </div>
+                                <div
+                                  className={`flex items-center text-sm ${getValidationStatusColor(
+                                    passwordValidation.details.characterTypes.valid
+                                  )}`}
+                                >
+                                  <span className='mr-2 flex-shrink-0'>
+                                    {getValidationIcon(passwordValidation.details.characterTypes.valid)}
+                                  </span>
+                                  <span className='leading-relaxed'>
+                                    {passwordValidation.details.characterTypes.message}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`flex items-center text-sm ${getValidationStatusColor(
+                                    passwordValidation.details.sequential.valid
+                                  )}`}
+                                >
+                                  <span className='mr-2 flex-shrink-0'>
+                                    {getValidationIcon(passwordValidation.details.sequential.valid)}
+                                  </span>
+                                  <span className='leading-relaxed'>
+                                    {passwordValidation.details.sequential.message}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`flex items-center text-sm ${getValidationStatusColor(
+                                    passwordValidation.details.repeated.valid
+                                  )}`}
+                                >
+                                  <span className='mr-2 flex-shrink-0'>
+                                    {getValidationIcon(passwordValidation.details.repeated.valid)}
+                                  </span>
+                                  <span className='leading-relaxed'>{passwordValidation.details.repeated.message}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                    <div className='absolute inset-y-0 right-0 flex items-center pr-3'>
+                      <button
+                        type='button'
+                        onClick={() => setShowPassword(!showPassword)}
+                        className='text-muted-foreground hover:text-foreground transition-colors'
+                      >
+                        {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <Alert variant='destructive' className='animate-shake'>
+                    <AlertCircle className='h-4 w-4' />
+                    <AlertDescription>{error.message || '로그인 중 오류가 발생했습니다.'}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button type='submit' className='w-full' disabled={isPending}>
+                  {isPending ? (
+                    <>
+                      <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2'></div>
+                      로그인 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg className='h-4 w-4 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1'
+                        />
+                      </svg>
+                      로그인
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* 테스트 계정 정보 */}
+              <Alert>
+                <Info className='h-4 w-4' />
+                <AlertDescription className='text-xs'>
+                  <div className='space-y-1'>
+                    {/* 항상 보이는 admin */}
+                    <p className='flex items-center'>
+                      <span className='w-2 h-2 bg-red-500 rounded-full mr-2'></span>
+                      시스템 관리자: {testAccounts.users[0].username} / {testAccounts.users[0].password}
+                    </p>
+                    {/* 나머지 계정은 hover/touch 시만 노출 */}
+                    <div
+                      className='relative inline-block group select-none'
+                      tabIndex={0}
+                      onMouseEnter={() => setShowMore(true)}
+                      onMouseLeave={() => setShowMore(false)}
+                      onTouchStart={() => setShowMore(v => !v)}
+                      onBlur={() => setShowMore(false)}
+                    >
+                      <span className='flex items-center cursor-pointer'>
+                        <span className='w-2 h-2 bg-blue-500 rounded-full mr-2'></span>
+                        <span>기타 테스트 계정 보기</span>
+                        <ChevronDown className='ml-1 h-3 w-3' />
+                      </span>
+                      {showMore && (
+                        <div className='absolute left-0 z-10 bg-background border rounded-lg shadow-lg p-3 mt-2 w-max animate-fade-in'>
+                          {testAccounts.users.slice(1).map(u => (
+                            <div key={u.username} className='mb-2 last:mb-0'>
+                              <div className='font-semibold whitespace-nowrap'>
+                                {u.username} / {u.password}
+                              </div>
+                              <div className='text-muted-foreground text-xs'>{u.description}</div>
+                            </div>
+                          ))}
+                          {testAccounts.externalUsers.map(u => (
+                            <div key={u.username} className='mb-2 last:mb-0'>
+                              <div className='font-semibold whitespace-nowrap'>
+                                {u.username} / {u.password}
+                              </div>
+                              <div className='text-muted-foreground text-xs'>{u.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Toast 알림 */}
+    </div>
+  );
+}

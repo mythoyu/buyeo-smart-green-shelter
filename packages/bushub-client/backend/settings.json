@@ -1,0 +1,22 @@
+{
+  "client": {
+    "name": "Bushub Client",
+    "id": "BH001",
+    "description": "버스환승센터 클라이언트",
+    "location": "강릉시 버스환승센터"
+  },
+  "ntp": {
+    "enabled": true,
+    "server1": "time.windows.com",
+    "server2": "time.google.com",
+    "timezone": "Asia/Seoul"
+  },
+  "network": {
+    "dhcp": true,
+    "ip": "192.168.1.100",
+    "subnet": "255.255.255.0",
+    "gateway": "192.168.1.1",
+    "dns1": "8.8.8.8",
+    "dns2": "8.8.4.4"
+  }
+}

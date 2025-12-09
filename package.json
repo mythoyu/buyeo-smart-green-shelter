@@ -1,0 +1,29 @@
+{
+  "name": "smartcity",
+  "version": "1.1.25",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build:production",
+    "lint": "pnpm -r run lint",
+    "lint:fix": "pnpm -r run lint:fix",
+    "test": "pnpm -r run test",
+    "format": "pnpm -r run format",
+    "format:fix": "pnpm -r run format:fix",
+    "release": "./scripts/release.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "private": true,
+  "workspaces": [
+    "packages/bushub-client/backend",
+    "packages/bushub-client/frontend",
+    "packages/smartcity-platform/*",
+    "packages/shared"
+  ],
+  "dependencies": {},
+  "devDependencies": {}
+}

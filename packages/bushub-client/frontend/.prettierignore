@@ -1,0 +1,14 @@
+# 기타 일반적인 제외 파일들
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env*
+
+# Frontend 특화 제외 파일들
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+*.min.js
+*.min.css 

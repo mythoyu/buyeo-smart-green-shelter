@@ -1,0 +1,137 @@
+services:
+  # MongoDB 데이터베이스
+  db:
+    image: mongo:6.0.15
+    container_name: bushub-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - db_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=bushub_client
+    networks:
+      - bushub-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 백엔드 API 서버
+  backend:
+    container_name: bushub-backend
+    image: bushub-backend:${GITHUB_REF_NAME:-latest}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_logs:/app/logs
+      # 시리얼 포트 마운트 (Modbus 통신용)
+      - /dev/ttyS0:/dev/ttyS0:rw
+      # D-Bus 소켓 마운트 (NetworkManager 통신용)
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+    privileged: true
+    user: "0:20" # root:dialout 그룹으로 실행
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://db:27017/bushub_client
+      - LOG_LEVEL=info
+      - MODBUS_MOCK_ENABLED=false
+      - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
+    depends_on:
+      - db
+    networks:
+      - bushub-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    command: ["pnpm", "run", "start:production"]
+
+  # 프론트엔드 웹 서버
+  frontend:
+    container_name: bushub-frontend
+    image: bushub-frontend:${GITHUB_REF_NAME:-latest}
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - bushub-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # nginx 리버스 프록시
+  nginx:
+    image: nginx:1.28.0
+    container_name: bushub-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/mime.types:/etc/nginx/mime.types:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - bushub-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 네트워크 정의
+networks:
+  bushub-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# 볼륨 정의
+volumes:
+  db_data:
+    driver: local
+  backend_logs:
+    driver: local

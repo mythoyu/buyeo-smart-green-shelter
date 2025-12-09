@@ -1,0 +1,3 @@
+packages:
+  - "packages/bushub-client/backend"
+  - "packages/bushub-client/frontend"

@@ -1,0 +1,50 @@
+const Fastify = require('fastify');
+const fastifyJwt = require('@fastify/jwt');
+const axios = require('axios');
+
+const app = Fastify();
+
+app.register(fastifyJwt, {
+    secret: 'your-secret-key',
+    sign: { expiresIn: '15m' }
+});
+
+const REFRESH_SECRET = 'your-refresh-secret-key';
+
+app.post('/api/login', async (req, reply) => {
+    const { id, password } = req.body;
+    if (id === 'admin_dabom' || (id === 'testuser' && password === '1234')) {
+        const accessToken = app.jwt.sign({ id });
+        const refreshToken = app.jwt.sign({ id }, { secret: REFRESH_SECRET, expiresIn: '7d' });
+        return { accessToken, refreshToken };
+    }
+    return reply.status(401).send({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+});
+
+app.post('/api/refresh', async (req, reply) => {
+    const { refreshToken } = req.body;
+    try {
+        const payload = app.jwt.verify(refreshToken, { secret: REFRESH_SECRET });
+        const accessToken = app.jwt.sign({ id: payload.id });
+        return { accessToken };
+    } catch (err) {
+        return reply.status(401).send({ message: 'RefreshToken이 유효하지 않습니다.' });
+    }
+});
+
+app.decorate('authenticate', async function (req, reply) {
+    try {
+        await req.jwtVerify();
+    } catch (err) {
+        reply.send(err);
+    }
+});
+
+app.get('/api/protected', { preHandler: [app.authenticate] }, async (req, reply) => {
+    return { message: `Hello, ${req.user.id}!` };
+});
+
+app.listen({ port: 3000 }, err => {
+    if (err) throw err;
+    console.log('Server running on http://localhost:3000');
+}); 

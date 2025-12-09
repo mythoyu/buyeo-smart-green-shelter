@@ -1,0 +1,77 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "frontend: dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "options": {
+        "cwd": "packages/bushub-client/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "frontend: build",
+      "type": "shell",
+      "command": "pnpm build",
+      "options": {
+        "cwd": "packages/bushub-client/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "frontend: start",
+      "type": "shell",
+      "command": "pnpm preview",
+      "options": {
+        "cwd": "packages/bushub-client/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "backend: dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "options": {
+        "cwd": "packages/bushub-client/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "backend: build",
+      "type": "shell",
+      "command": "pnpm build",
+      "options": {
+        "cwd": "packages/bushub-client/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "backend: start",
+      "type": "shell",
+      "command": "pnpm start",
+      "options": {
+        "cwd": "packages/bushub-client/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}

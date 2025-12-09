@@ -1,0 +1,50 @@
+[Unit]
+Description=Bushub Network Control API Service
+Documentation=https://github.com/your-org/smartcity
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=jecs
+Group=jecs
+WorkingDirectory=/home/jecs/projects/smartcity/packages/bushub-client/network-control-api
+ExecStart=/home/jecs/.nvm/versions/node/v22.18.0/bin/node dist/index.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bushub-network-control-api
+
+# Environment variables
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=HOST=0.0.0.0
+Environment=LOG_LEVEL=info
+
+# Security settings (모든 보안 제한 해제)
+NoNewPrivileges=false
+PrivateTmp=false
+ProtectSystem=false
+ProtectHome=false
+ProtectKernelTunables=false
+ProtectKernelModules=false
+ProtectControlGroups=false
+RestrictNamespaces=false
+RestrictRealtime=false
+RestrictSUIDSGID=false
+RemoveIPC=false
+PrivateDevices=false
+ProtectKernelLogs=false
+ProtectClock=false
+ProtectHostname=false
+KillMode=control-group
+PrivateUsers=false
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

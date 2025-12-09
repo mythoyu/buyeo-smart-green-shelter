@@ -1,0 +1,42 @@
+name: Mirror Third-Party Images
+
+on:
+  workflow_dispatch: # 수동 실행만 허용
+
+jobs:
+  mirror-public-images:
+    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+
+    strategy:
+      matrix:
+        image:
+          - mongo:6.0.15
+          - nginx:1.28.0
+          - nginx:alpine
+          - node:18-alpine
+          - node:18
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull, Retag, and Push to GHCR
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          TARGET_IMAGE_NAME=$(echo "${{ matrix.image }}" | tr '/' '-')
+          GHCR_IMAGE="ghcr.io/$REPO_LOWER/external/$TARGET_IMAGE_NAME"
+          docker pull ${{ matrix.image }}
+          docker tag ${{ matrix.image }} $GHCR_IMAGE
+          docker push $GHCR_IMAGE

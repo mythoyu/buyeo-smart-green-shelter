@@ -1,0 +1,837 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* 기본 색상 */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* 추가 색상들 */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+  --blue-950: #172554;
+
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+  --red-950: #450a0a;
+
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-900: #14532d;
+  --green-950: #052e16;
+
+  --yellow-50: #fefce8;
+  --yellow-100: #fef3c7;
+  --yellow-200: #fde68a;
+  --yellow-300: #fcd34d;
+  --yellow-400: #fbbf24;
+  --yellow-500: #f59e0b;
+  --yellow-600: #d97706;
+  --yellow-700: #b45309;
+  --yellow-800: #92400e;
+  --yellow-900: #78350f;
+  --yellow-950: #451a03;
+
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-200: #e9d5ff;
+  --purple-300: #d8b4fe;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --purple-600: #9333ea;
+  --purple-700: #7c3aed;
+  --purple-800: #6b21a8;
+  --purple-900: #581c87;
+  --purple-950: #3b0764;
+
+  --cyan-50: #ecfeff;
+  --cyan-100: #cffafe;
+  --cyan-200: #a5f3fc;
+  --cyan-300: #67e8f9;
+  --cyan-400: #22d3ee;
+  --cyan-500: #06b6d4;
+  --cyan-600: #0891b2;
+  --cyan-700: #0e7490;
+  --cyan-800: #155e75;
+  --cyan-900: #164e63;
+  --cyan-950: #083344;
+
+  --orange-50: #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-200: #fed7aa;
+  --orange-300: #fdba74;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+  --orange-900: #7c2d12;
+  --orange-950: #431407;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+html,
+body {
+  background-color: #fff;
+  color: #000;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background-color: #fff;
+    color: #000;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  /* 기본 반경 - 더 작게 조정 */
+  --radius: 0.375rem;
+  --radius-xs: 0.125rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+
+  /* 간격 시스템 */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* max-width 시스템 */
+  --max-width-xs: 20rem; /* 320px */
+  --max-width-sm: 24rem; /* 384px */
+  --max-width-md: 28rem; /* 448px */
+  --max-width-lg: 32rem; /* 512px */
+  --max-width-xl: 36rem; /* 576px */
+  --max-width-2xl: 42rem; /* 672px */
+  --max-width-3xl: 48rem; /* 768px */
+  --max-width-4xl: 56rem; /* 896px */
+  --max-width-5xl: 64rem; /* 1024px */
+  --max-width-6xl: 72rem; /* 1152px */
+  --max-width-7xl: 80rem; /* 1280px */
+
+  /* 그림자 제거 - 깔끔한 디자인을 위해 */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+  --shadow-inner: none;
+  --shadow-primary: none;
+  --shadow-secondary: none;
+
+  /* 타이포그래피 시스템 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  /* 라인 높이 */
+  --leading-xs: 1rem;
+  --leading-sm: 1.25rem;
+  --leading-base: 1.5rem;
+  --leading-lg: 1.75rem;
+  --leading-xl: 1.75rem;
+  --leading-2xl: 2rem;
+  --leading-3xl: 2.25rem;
+  --leading-4xl: 2.5rem;
+
+  /* 폰트 웨이트 */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* 애니메이션 지속시간 */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* 트랜지션 타이밍 함수 */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* 반응형 브레이크포인트 */
+  --breakpoint-xs: 475px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* Z-인덱스 */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 1060;
+  --z-toast: 1070;
+
+  /* 그라데이션 제거 - 깔끔한 디자인을 위해 */
+  --gradient-primary: none;
+  --gradient-secondary: none;
+  --gradient-accent: none;
+  --gradient-card: none;
+
+  /* 색상 시스템 */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  /* 기본 반경 - 더 작게 조정 */
+  --radius: 0.375rem;
+  --radius-xs: 0.125rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+
+  /* 간격 시스템 */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-2xl: 3rem; /* 48px */
+  --spacing-3xl: 4rem; /* 64px */
+
+  /* max-width 시스템 */
+  --max-width-xs: 20rem; /* 320px */
+  --max-width-sm: 24rem; /* 384px */
+  --max-width-md: 28rem; /* 448px */
+  --max-width-lg: 32rem; /* 512px */
+  --max-width-xl: 36rem; /* 576px */
+  --max-width-2xl: 42rem; /* 672px */
+  --max-width-3xl: 48rem; /* 768px */
+  --max-width-4xl: 56rem; /* 896px */
+  --max-width-5xl: 64rem; /* 1024px */
+  --max-width-6xl: 72rem; /* 1152px */
+  --max-width-7xl: 80rem; /* 1280px */
+
+  /* 그림자 제거 - 깔끔한 디자인을 위해 */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+  --shadow-inner: none;
+  --shadow-primary: none;
+  --shadow-secondary: none;
+
+  /* 타이포그래피 시스템 */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+
+  /* 라인 높이 */
+  --leading-xs: 1rem;
+  --leading-sm: 1.25rem;
+  --leading-base: 1.5rem;
+  --leading-lg: 1.75rem;
+  --leading-xl: 1.75rem;
+  --leading-2xl: 2rem;
+  --leading-3xl: 2.25rem;
+  --leading-4xl: 2.5rem;
+
+  /* 폰트 웨이트 */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* 애니메이션 지속시간 */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* 트랜지션 타이밍 함수 */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* 반응형 브레이크포인트 */
+  --breakpoint-xs: 475px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* Z-인덱스 */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 1060;
+  --z-toast: 1070;
+
+  /* 그라데이션 제거 - 깔끔한 디자인을 위해 */
+  --gradient-primary: none;
+  --gradient-secondary: none;
+  --gradient-accent: none;
+  --gradient-card: none;
+
+  /* 기본 색상 - 깔끔한 블루 계열 */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.55 0.15 240); /* blue-600 */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.55 0.15 240); /* primary와 동일 */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.55 0.15 240); /* primary와 동일 */
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.55 0.15 240); /* primary와 동일 */
+
+  /* Primary 색상 팔레트 - Blue 계열 */
+  --primary-50: oklch(0.98 0.005 240); /* blue-50 */
+  --primary-100: oklch(0.95 0.01 240); /* blue-100 */
+  --primary-200: oklch(0.9 0.015 240); /* blue-200 */
+  --primary-300: oklch(0.85 0.02 240); /* blue-300 */
+  --primary-400: oklch(0.8 0.025 240); /* blue-400 */
+  --primary-500: oklch(0.75 0.03 240); /* blue-500 */
+  --primary-600: oklch(0.7 0.035 240); /* blue-600 */
+  --primary-700: oklch(0.65 0.04 240); /* blue-700 */
+  --primary-800: oklch(0.6 0.045 240); /* blue-800 */
+  --primary-900: oklch(0.55 0.05 240); /* blue-900 */
+
+  /* Secondary 색상 팔레트 */
+  --secondary-50: oklch(0.98 0.005 200);
+  --secondary-100: oklch(0.95 0.01 200);
+  --secondary-200: oklch(0.9 0.015 200);
+  --secondary-300: oklch(0.85 0.02 200);
+  --secondary-400: oklch(0.8 0.025 200);
+  --secondary-500: oklch(0.75 0.03 200);
+  --secondary-600: oklch(0.7 0.035 200);
+  --secondary-700: oklch(0.65 0.04 200);
+  --secondary-800: oklch(0.6 0.045 200);
+  --secondary-900: oklch(0.55 0.05 200);
+
+  /* Blue 색상 팔레트 */
+  --blue-50: oklch(0.98 0.005 240);
+  --blue-100: oklch(0.95 0.01 240);
+  --blue-200: oklch(0.9 0.015 240);
+  --blue-300: oklch(0.85 0.02 240);
+  --blue-400: oklch(0.8 0.025 240);
+  --blue-500: oklch(0.75 0.03 240);
+  --blue-600: oklch(0.7 0.035 240);
+  --blue-700: oklch(0.65 0.04 240);
+  --blue-800: oklch(0.6 0.045 240);
+  --blue-900: oklch(0.55 0.05 240);
+
+  /* Gray 색상 팔레트 */
+  --gray-50: oklch(0.98 0 0);
+  --gray-100: oklch(0.95 0 0);
+  --gray-200: oklch(0.9 0 0);
+  --gray-300: oklch(0.85 0 0);
+  --gray-400: oklch(0.7 0 0);
+  --gray-500: oklch(0.6 0 0);
+  --gray-600: oklch(0.5 0 0);
+  --gray-700: oklch(0.4 0 0);
+  --gray-800: oklch(0.3 0 0);
+  --gray-900: oklch(0.2 0 0);
+
+  /* Red 색상 팔레트 */
+  --red-50: oklch(0.98 0.005 20);
+  --red-100: oklch(0.95 0.01 20);
+  --red-200: oklch(0.9 0.015 20);
+  --red-300: oklch(0.85 0.02 20);
+  --red-400: oklch(0.8 0.025 20);
+  --red-500: oklch(0.75 0.03 20);
+  --red-600: oklch(0.7 0.035 20);
+  --red-700: oklch(0.65 0.04 20);
+  --red-800: oklch(0.6 0.045 20);
+  --red-900: oklch(0.55 0.05 20);
+}
+
+.dark {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.55 0.15 240); /* blue-600 */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.55 0.15 240); /* primary와 동일 */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.55 0.15 240); /* primary와 동일 */
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.55 0.15 240); /* primary와 동일 */
+
+  /* 다크 테마용 색상 팔레트 */
+  --primary-50: oklch(0.2 0.005 240);
+  --primary-100: oklch(0.25 0.01 240);
+  --primary-200: oklch(0.3 0.015 240);
+  --primary-300: oklch(0.35 0.02 240);
+  --primary-400: oklch(0.4 0.025 240);
+  --primary-500: oklch(0.45 0.03 240);
+  --primary-600: oklch(0.5 0.035 240);
+  --primary-700: oklch(0.55 0.04 240);
+  --primary-800: oklch(0.6 0.045 240);
+  --primary-900: oklch(0.65 0.05 240);
+
+  --secondary-50: oklch(0.2 0.005 200);
+  --secondary-100: oklch(0.25 0.01 200);
+  --secondary-200: oklch(0.3 0.015 200);
+  --secondary-300: oklch(0.35 0.02 200);
+  --secondary-400: oklch(0.4 0.025 200);
+  --secondary-500: oklch(0.45 0.03 200);
+  --secondary-600: oklch(0.5 0.035 200);
+  --secondary-700: oklch(0.55 0.04 200);
+  --secondary-800: oklch(0.6 0.045 200);
+  --secondary-900: oklch(0.65 0.05 200);
+
+  --blue-50: oklch(0.2 0.005 240);
+  --blue-100: oklch(0.25 0.01 240);
+  --blue-200: oklch(0.3 0.015 240);
+  --blue-300: oklch(0.35 0.02 240);
+  --blue-400: oklch(0.4 0.025 240);
+  --blue-500: oklch(0.45 0.03 240);
+  --blue-600: oklch(0.5 0.035 240);
+  --blue-700: oklch(0.55 0.04 240);
+  --blue-800: oklch(0.6 0.045 240);
+  --blue-900: oklch(0.65 0.05 240);
+
+  --gray-50: oklch(0.2 0 0);
+  --gray-100: oklch(0.25 0 0);
+  --gray-200: oklch(0.3 0 0);
+  --gray-300: oklch(0.35 0 0);
+  --gray-400: oklch(0.4 0 0);
+  --gray-500: oklch(0.5 0 0);
+  --gray-600: oklch(0.6 0 0);
+  --gray-700: oklch(0.7 0 0);
+  --gray-800: oklch(0.8 0 0);
+  --gray-900: oklch(0.9 0 0);
+
+  --red-50: oklch(0.2 0.005 20);
+  --red-100: oklch(0.25 0.01 20);
+  --red-200: oklch(0.3 0.015 20);
+  --red-300: oklch(0.35 0.02 20);
+  --red-400: oklch(0.4 0.025 20);
+  --red-500: oklch(0.45 0.03 20);
+  --red-600: oklch(0.5 0.035 20);
+  --red-700: oklch(0.55 0.04 20);
+  --red-800: oklch(0.6 0.045 20);
+  --red-900: oklch(0.65 0.05 20);
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 500px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 500px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    max-height: 0;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes bounceIn {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 전역 스타일 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  line-height: 1.6;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c7d2fe;
+  border-radius: 8px;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #c7d2fe #f3f4f6;
+}
+
+@layer utilities {
+  .animate-in {
+    animation: fadeIn 0.2s both;
+  }
+  .animate-out {
+    animation: fadeOut 0.2s both;
+  }
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out both;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-in both;
+  }
+  .fade-in-0 {
+    animation: fadeIn 0.2s both;
+  }
+  .fade-out-0 {
+    animation: fadeOut 0.2s both;
+  }
+  .zoom-in-95 {
+    animation: zoomIn 0.2s both;
+  }
+  .zoom-out-95 {
+    animation: zoomOut 0.2s both;
+  }
+  .slide-in-from-top-2 {
+    animation: slideInFromTop 0.25s both;
+  }
+  .slide-in-from-bottom-2 {
+    animation: slideInFromBottom 0.25s both;
+  }
+  .slide-in-from-left-2 {
+    animation: slideInFromLeft 0.25s both;
+  }
+  .slide-in-from-right-2 {
+    animation: slideInFromRight 0.25s both;
+  }
+  .data-[state='open']:animate-in {
+    animation: fadeIn 0.2s both;
+  }
+  .data-[state='closed']:animate-out {
+    animation: fadeOut 0.2s both;
+  }
+  .data-[state='open']:fade-in-0 {
+    animation: fadeIn 0.2s both;
+  }
+  .data-[state='closed']:fade-out-0 {
+    animation: fadeOut 0.2s both;
+  }
+  .data-[state='open']:zoom-in-95 {
+    animation: zoomIn 0.2s both;
+  }
+  .data-[state='closed']:zoom-out-95 {
+    animation: zoomOut 0.2s both;
+  }
+  .data-[side='bottom']:slide-in-from-top-2 {
+    animation: slideInFromTop 0.25s both;
+  }
+  .data-[side='left']:slide-in-from-right-2 {
+    animation: slideInFromRight 0.25s both;
+  }
+  .data-[side='right']:slide-in-from-left-2 {
+    animation: slideInFromLeft 0.25s both;
+  }
+  .data-[side='top']:slide-in-from-bottom-2 {
+    animation: slideInFromBottom 0.25s both;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-azuretools.vscode-docker",
+    "mongodb.mongodb-vscode",
+    "ms-ceintl.vscode-language-pack-ko",
+    "alefragnani.project-manager",
+    "markdowntoword.markdown-to-word",
+    "marp-team.marp-vscode",
+    "naumovs.color-highlight",
+    "robole.markdown-snippets",
+    "yzhang.markdown-all-in-one",
+    "anweber.vscode-httpyac",
+    "csstools.postcss"
+  ]
+}

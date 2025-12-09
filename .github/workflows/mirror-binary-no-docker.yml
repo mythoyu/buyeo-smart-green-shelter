@@ -1,0 +1,73 @@
+name: Mirror Binary No-Docker
+
+on:
+  workflow_dispatch:
+    inputs:
+      mongodb_version:
+        description: MongoDB version (e.g. 6.0.15)
+        required: true
+        default: "6.0.15"
+      nginx_version:
+        description: Nginx version (e.g. 1.28.0)
+        required: true
+        default: "1.28.0"
+
+jobs:
+  create-binaries:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write # To create releases
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create MongoDB binaries
+        run: |
+          MONGO_VER="${{ github.event.inputs.mongodb_version || '6.0.15' }}"
+          echo "Creating MongoDB ${MONGO_VER} binaries..."
+
+          # MongoDB 바이너리 추출 (환경변수로 전달)
+          docker run --rm -v "$PWD":/out -e MONGO_VER=${MONGO_VER} mongo:${MONGO_VER} bash -c 'mkdir -p /out/mongodb-linux-x86_64-$MONGO_VER && cp -a /usr/bin/* /out/mongodb-linux-x86_64-$MONGO_VER/'
+
+          # tar 파일 생성
+          tar -czf mongodb-linux-x86_64-${MONGO_VER}.tar.gz mongodb-linux-x86_64-${MONGO_VER}/
+
+      - name: Create Nginx binaries
+        run: |
+          NGINX_VER="${{ github.event.inputs.nginx_version || '1.28.0' }}"
+          echo "Creating Nginx ${NGINX_VER} binaries..."
+
+          # Nginx 바이너리 추출 (환경변수로 전달)
+          docker run --rm -v "$PWD":/out -e NGINX_VER=${NGINX_VER} nginx:${NGINX_VER} bash -c 'mkdir -p /out/nginx-$NGINX_VER && cp -a /usr/sbin/nginx /out/nginx-$NGINX_VER/'
+
+          # tar 파일 생성
+          tar -czf nginx-${NGINX_VER}-linux-x86_64.tar.gz nginx-${NGINX_VER}/
+
+      - name: Create checksums
+        run: |
+          echo "Creating checksums..."
+          sha256sum mongodb-*.tar.gz nginx-*.tar.gz > SHA256SUMS.txt
+
+      - name: Create GitHub Release and upload MongoDB binaries
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            mongodb-linux-x86_64-${{ github.event.inputs.mongodb_version || '6.0.15' }}.tar.gz
+            SHA256SUMS.txt
+          tag_name: v${{ github.event.inputs.mongodb_version || '6.0.15' }}
+          name: MongoDB ${{ github.event.inputs.mongodb_version || '6.0.15' }} Binaries
+          body: "MongoDB binaries for no-docker deployment"
+          draft: false
+          prerelease: false
+
+      - name: Create GitHub Release and upload Nginx binaries
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            nginx-${{ github.event.inputs.nginx_version || '1.28.0' }}-linux-x86_64.tar.gz
+            SHA256SUMS.txt
+          tag_name: v${{ github.event.inputs.nginx_version || '1.28.0' }}
+          name: Nginx ${{ github.event.inputs.nginx_version || '1.28.0' }} Binaries
+          body: "Nginx binaries for no-docker deployment"
+          draft: false
+          prerelease: false

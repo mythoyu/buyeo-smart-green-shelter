@@ -1,0 +1,26 @@
+types {
+    text/html                             html htm shtml;
+    text/css                              css;
+    application/javascript                 js;
+    text/javascript                       js;
+    application/json                      json;
+    text/xml                              xml;
+    application/xml                       xml;
+    text/csv                              csv;
+    image/gif                             gif;
+    image/jpeg                            jpeg jpg;
+    image/png                             png;
+    image/svg+xml                         svg;
+    image/webp                            webp;
+    image/avif                            avif;
+    application/font-woff                 woff;
+    application/font-woff2                woff2;
+    font/woff                             woff;
+    font/woff2                            woff2;
+    application/pdf                       pdf;
+    text/plain                           txt;
+    application/zip                       zip;
+    application/octet-stream              bin exe dll;
+    application/vnd.ms-excel              xls;
+    application/vnd.openxmlformats-officedocument.spreadsheetml.sheet xlsx;
+}

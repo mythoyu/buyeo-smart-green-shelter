@@ -1,0 +1,93 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "sinwoo*it*2025A",
+      "role": "superuser",
+      "companyId": null,
+      "description": "내부 관리자 계정",
+      "apiKey": {
+        "name": "admin",
+        "key": "admin_universal_key_2025",
+        "type": "universal",
+        "permissions": ["read:devices", "read:status", "write:commands", "admin:settings", "admin:users"],
+        "status": "active",
+        "description": "관리자용 전체 권한 API 키"
+      }
+    },
+    {
+      "username": "admin_gov",
+      "password": "sinwoo*it*2025A",
+      "role": "user",
+      "companyId": null,
+      "description": "시스템 관리자 계정",
+      "apiKey": {
+        "name": "admin_gov",
+        "key": "admin_gov_internal_key_2025",
+        "type": "internal",
+        "permissions": ["read:devices", "read:status", "write:commands", "admin:settings", "admin:users"],
+        "status": "active",
+        "description": "내부 관리자용 API 키"
+      }
+    },
+    {
+      "username": "test",
+      "password": "sinwoo*it*2025A",
+      "role": "engineer",
+      "companyId": null,
+      "description": "테스트용 내부 사용자 계정",
+      "apiKey": {
+        "name": "test",
+        "key": "test_internal_key_2025",
+        "type": "internal",
+        "permissions": ["read:devices", "read:status", "write:commands", "admin:settings"],
+        "status": "active",
+        "description": "내부 관리자용 API 키"
+      }
+    },
+    {
+      "username": "sinwoo",
+      "password": "sinwoo*it*2025A",
+      "role": "ex-user",
+      "companyId": "sinwoo",
+      "description": "sinwoo 외부 사용자",
+      "apiKey": {
+        "name": "sinwoo",
+        "key": "sinwoo_external_key_2025",
+        "type": "external",
+        "permissions": ["read:devices", "read:status"],
+        "status": "active",
+        "description": "신우 외부 사용자 API 키"
+      }
+    },
+    {
+      "username": "nzero",
+      "password": "nzero*it*2024A",
+      "role": "ex-user",
+      "companyId": "nzero",
+      "description": "nzero 외부 사용자",
+      "apiKey": {
+        "name": "nzero",
+        "key": "nzero_external_key_2025",
+        "type": "external",
+        "permissions": ["read:devices", "read:status"],
+        "status": "active",
+        "description": "nzero 외부 사용자 API 키"
+      }
+    }
+  ],
+  "settings": {
+    "defaultPassword": "sinwoo*it*2025A",
+    "passwordPolicy": {
+      "minLength": 8,
+      "requireUppercase": true,
+      "requireLowercase": true,
+      "requireNumbers": true,
+      "requireSpecialChars": true
+    },
+    "apiKeyPolicy": {
+      "keyLength": 32,
+      "expirationDays": 365
+    }
+  }
+}

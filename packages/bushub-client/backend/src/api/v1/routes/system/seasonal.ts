@@ -1,0 +1,320 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+import { ServiceContainer } from '../../../../core/container/ServiceContainer';
+import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
+
+export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
+  // 🌸 계절 설정 저장
+  fastify.post(
+    '/system/seasonal',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['seasonal'],
+          properties: {
+            seasonal: {
+              type: 'object',
+              required: [
+                'season',
+                'january',
+                'february',
+                'march',
+                'april',
+                'may',
+                'june',
+                'july',
+                'august',
+                'september',
+                'october',
+                'november',
+                'december',
+              ],
+              properties: {
+                season: { type: 'number' },
+                january: { type: 'number' },
+                february: { type: 'number' },
+                march: { type: 'number' },
+                april: { type: 'number' },
+                may: { type: 'number' },
+                june: { type: 'number' },
+                july: { type: 'number' },
+                august: { type: 'number' },
+                september: { type: 'number' },
+                october: { type: 'number' },
+                november: { type: 'number' },
+                december: { type: 'number' },
+              },
+            },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+              data: { type: 'object' },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+          500: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { seasonal } = request.body as any;
+
+        // ServiceContainer에서 SystemService 가져오기
+        const serviceContainer = ServiceContainer.getInstance();
+        const systemService = serviceContainer.getSystemService();
+
+        // 🆕 실제 클라이언트 정보 조회
+        const clientRepository = serviceContainer.getClientRepository();
+        const clients = await clientRepository.findAll();
+
+        if (!clients || clients.length === 0) {
+          return reply.code(400).send({
+            success: false,
+            message: '활성 클라이언트가 없습니다.',
+          });
+        }
+
+        // 첫 번째 활성 클라이언트 사용
+        const activeClient = clients[0];
+        const clientId = activeClient.id;
+
+        fastify.log.info(`🌸 계절 설정 저장 대상 클라이언트: ${clientId} (${activeClient.name})`);
+
+        // 계절 설정 저장
+        const result = await systemService.saveSeasonal(clientId, seasonal);
+
+        if (result.success) {
+          return reply.code(200).send(result);
+        }
+        return reply.code(400).send(result);
+      } catch (error) {
+        fastify.log.error(`계절 설정 저장 실패: ${error}`);
+        return reply.code(500).send({
+          success: false,
+          message: `계절 설정 저장 실패: ${error}`,
+        });
+      }
+    },
+  );
+
+  // 🌸 계절 설정 조회
+  fastify.get(
+    '/system/seasonal',
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+              data: {
+                type: 'object',
+                properties: {
+                  seasonal: {
+                    type: 'object',
+                    properties: {
+                      season: { type: 'number' },
+                      january: { type: 'number' },
+                      february: { type: 'number' },
+                      march: { type: 'number' },
+                      april: { type: 'number' },
+                      may: { type: 'number' },
+                      june: { type: 'number' },
+                      july: { type: 'number' },
+                      august: { type: 'number' },
+                      september: { type: 'number' },
+                      october: { type: 'number' },
+                      november: { type: 'number' },
+                      december: { type: 'number' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+          500: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        // ServiceContainer에서 SystemService 가져오기
+        const serviceContainer = ServiceContainer.getInstance();
+        const systemService = serviceContainer.getSystemService();
+
+        // 🆕 실제 클라이언트 정보 조회
+        const clientRepository = serviceContainer.getClientRepository();
+        const clients = await clientRepository.findAll();
+
+        if (!clients || clients.length === 0) {
+          return reply.code(400).send({
+            success: false,
+            message: '활성 클라이언트가 없습니다.',
+          });
+        }
+
+        // 첫 번째 활성 클라이언트 사용
+        const activeClient = clients[0];
+        const clientId = activeClient.id;
+
+        fastify.log.info(`🌸 계절 설정 조회 대상 클라이언트: ${clientId} (${activeClient.name})`);
+
+        // 계절 설정 조회
+        const seasonal = await systemService.getSeasonal(clientId);
+
+        if (seasonal) {
+          return reply.send(createSuccessResponse('계절 설정 조회 성공', { seasonal }));
+        }
+
+        // 🆕 계절 설정이 없으면 기본값 생성 후 반환
+        fastify.log.warn(`계절 설정이 없어 기본값 생성: ${clientId}`);
+
+        // 기본 계절 설정 (6-8월만 여름, 나머지는 겨울)
+        const defaultSeasonal = {
+          season: 0, // 현재 계절: 겨울
+          january: 0,
+          february: 0,
+          march: 0,
+          april: 0,
+          may: 0,
+          june: 1,
+          july: 1,
+          august: 1,
+          september: 0,
+          october: 0,
+          november: 0,
+          december: 0,
+        };
+
+        // 기본값 저장
+        await systemService.updateSettings({ seasonal: defaultSeasonal });
+
+        return reply.send(createSuccessResponse('계절 설정 조회 성공 (기본값 생성)', { seasonal: defaultSeasonal }));
+      } catch (error) {
+        fastify.log.error(`계절 설정 조회 실패: ${error}`);
+        return reply.code(500).send({
+          success: false,
+          message: `계절 설정 조회 실패: ${error}`,
+        });
+      }
+    },
+  );
+
+  // 🌸 계절 설정 새로고침
+  fastify.post(
+    '/system/seasonal/refresh',
+    {
+      preHandler: [fastify.requireAuth],
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+              data: {
+                type: 'object',
+                properties: {
+                  seasonal: {
+                    type: 'object',
+                    properties: {
+                      season: { type: 'number' },
+                      january: { type: 'number' },
+                      february: { type: 'number' },
+                      march: { type: 'number' },
+                      april: { type: 'number' },
+                      may: { type: 'number' },
+                      june: { type: 'number' },
+                      july: { type: 'number' },
+                      august: { type: 'number' },
+                      september: { type: 'number' },
+                      october: { type: 'number' },
+                      november: { type: 'number' },
+                      december: { type: 'number' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+          500: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const serviceContainer = ServiceContainer.getInstance();
+        const systemService = serviceContainer.getSystemService();
+        const clientRepository = serviceContainer.getClientRepository();
+        const clients = await clientRepository.findAll();
+
+        if (!clients || clients.length === 0) {
+          return reply.code(400).send({
+            success: false,
+            message: '활성 클라이언트가 없습니다.',
+          });
+        }
+
+        const activeClient = clients[0];
+        const clientId = activeClient.id;
+
+        fastify.log.info(`🌸 계절 설정 새로고침 대상 클라이언트: ${clientId} (${activeClient.name})`);
+
+        const result = await systemService.refreshSeasonal(clientId);
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error(`계절 설정 새로고침 실패: ${error}`);
+        return reply.code(500).send({
+          success: false,
+          message: `계절 설정 새로고침 실패: ${error}`,
+        });
+      }
+    },
+  );
+}

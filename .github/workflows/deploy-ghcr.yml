@@ -1,0 +1,145 @@
+name: Deploy Bushub Images to GHCR
+
+on:
+  # push:
+  #   tags:
+  #     - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build-and-push-images:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for backend image
+        id: meta_backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/bushub-backend
+
+      - name: Extract metadata for frontend image
+        id: meta_frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/bushub-frontend
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/bushub-client/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta_backend.outputs.tags }}
+          labels: ${{ steps.meta_backend.outputs.labels }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/bushub-client/frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta_frontend.outputs.tags }}
+          labels: ${{ steps.meta_frontend.outputs.labels }}
+  create-release-package:
+    runs-on: ubuntu-22.04
+    needs: build-and-push-images # Wait for images to be pushed successfully
+    permissions:
+      contents: write # To create releases
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create deployment package directory
+        run: mkdir -p deployment
+
+      - name: Copy necessary files to deployment package
+        run: |
+          # Linux 온라인 배포
+          mkdir -p deployment/linux/online
+          cp packages/bushub-client/docker-compose.linux.yml deployment/linux/online/
+          cp packages/bushub-client/update.sh deployment/linux/online/
+          cp packages/bushub-client/install-docker.sh deployment/linux/online/
+
+          # Linux 오프라인 배포
+          mkdir -p deployment/linux/offline
+          cp packages/bushub-client/docker-compose.offline.yml deployment/linux/offline/
+          cp packages/bushub-client/update-offline.sh deployment/linux/offline/
+          cp packages/bushub-client/install-offline.sh deployment/linux/offline/
+          cp packages/bushub-client/install-docker.sh deployment/linux/offline/
+
+          # Windows 온라인 배포
+          mkdir -p deployment/windows/online
+          cp packages/bushub-client/docker-compose.linux.yml deployment/windows/online/
+          cp packages/bushub-client/update-windows.bat deployment/windows/online/
+          cp packages/bushub-client/install-docker-windows.bat deployment/windows/online/
+
+          # Windows 오프라인 배포
+          mkdir -p deployment/windows/offline
+          cp packages/bushub-client/docker-compose.offline.yml deployment/windows/offline/
+          cp packages/bushub-client/update-windows.bat deployment/windows/offline/
+          cp packages/bushub-client/install-docker-windows.bat deployment/windows/offline/
+
+          # 공통 파일들
+          mkdir -p deployment/shared
+          cp -r packages/bushub-client/nginx deployment/shared/
+          cp -r packages/bushub-client/db deployment/shared/
+
+      - name: Update image tags and versions in files
+        run: |
+          TAG=${{ github.ref_name }}
+          # The repository name in GHCR is owner/repo-name. It needs to be lowercase.
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          # Update image tags for Linux online deployment
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-backend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-backend:$TAG|g" deployment/linux/online/docker-compose.linux.yml
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-frontend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-frontend:$TAG|g" deployment/linux/online/docker-compose.linux.yml
+
+          # Update image tags for Windows online deployment
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-backend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-backend:$TAG|g" deployment/windows/online/docker-compose.linux.yml
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-frontend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-frontend:$TAG|g" deployment/windows/online/docker-compose.linux.yml
+
+          # Update image tags for Linux offline deployment
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-backend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-backend:$TAG|g" deployment/linux/offline/docker-compose.offline.yml
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-frontend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-frontend:$TAG|g" deployment/linux/offline/docker-compose.offline.yml
+
+          # Update image tags for Windows offline deployment
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-backend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-backend:$TAG|g" deployment/windows/offline/docker-compose.offline.yml
+          sed -i "s|ghcr.io/{{GITHUB_REPOSITORY}}/bushub-frontend:{{TAG}}|ghcr.io/$REPO_LOWER/bushub-frontend:$TAG|g" deployment/windows/offline/docker-compose.offline.yml
+
+          # Update version in Windows batch files
+          sed -i "s|set VERSION={{TAG}}|set VERSION=$TAG|g" deployment/windows/online/update-windows.bat
+          sed -i "s|set VERSION={{TAG}}|set VERSION=$TAG|g" deployment/windows/offline/update-windows.bat
+
+          # Update version in Linux offline scripts
+          sed -i "s|VERSION=\"{{TAG}}\"|VERSION=\"$TAG\"|g" deployment/linux/offline/update-offline.sh
+          sed -i "s|VERSION=\"{{TAG}}\"|VERSION=\"$TAG\"|g" deployment/linux/offline/install-offline.sh
+
+      - name: Zip the deployment package
+        run: |
+          cd deployment
+          VERSION=${{ github.ref_name }}
+          zip -r ../deployment-${VERSION}.zip .
+
+      - name: Create GitHub Release and upload package
+        uses: softprops/action-gh-release@v1
+        with:
+          files: deployment-${{ github.ref_name }}.zip
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Automated release for version ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
