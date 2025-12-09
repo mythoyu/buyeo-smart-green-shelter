@@ -38,14 +38,14 @@ export const USERS_RESPONSE_EXAMPLE = {
       status: 'active',
     },
     {
-      id: 'sinwoo',
-      name: 'sinwoo',
+      id: 'youjobs',
+      name: 'youjobs',
       role: 'external',
       status: 'active',
     },
     {
-      id: 'nzero',
-      name: 'nzero',
+      id: 'external',
+      name: 'external',
       role: 'external',
       status: 'active',
     },

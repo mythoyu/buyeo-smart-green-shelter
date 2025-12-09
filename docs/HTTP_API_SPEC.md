@@ -503,7 +503,7 @@ GET /internal/api-keys
       {
         "id": "key1",
         "name": "Internal API Key",
-        "key": "sinwooapidevclient",
+        "key": "youjobsapidevclient",
         "status": "active",
         "createdAt": "2024-01-01T00:00:00Z"
       }

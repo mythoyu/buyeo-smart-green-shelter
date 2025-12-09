@@ -146,7 +146,7 @@ cp env.production.example .env.production
 | DB_NAME             | bushub_client             | bushub_client             | bushub-client                                                                      | bushub_client             |
 | LOG_LEVEL           | debug                     | debug                     | info                                                                               | info                      |
 | CORS_ORIGIN         | true                      | true                      | https://smartcity-frontend-uzjw.vercel.app                                         | true                      |
-| JWT_SECRET          | sinwoo-secret-key-2024    | sinwoo-secret-key-2024    | sinwoo-secret-key-2024                                                             | sinwoo-secret-key-2024    |
+| JWT_SECRET          | youjobs-secret-key-2025   | youjobs-secret-key-2025   | youjobs-secret-key-2025                                                            | youjobs-secret-key-2025   |
 | MODBUS_MOCK_ENABLED | true                      | true                      | false                                                                              | true                      |
 | IS_LOCAL            | -                         | true                      | -                                                                                  | -                         |
 
@@ -242,13 +242,13 @@ Docker 환경에서는 환경변수를 통해 환경을 설정할 수 있습니�
 
 ```bash
 # 개발 환경
-docker run -e APP_MODE=development -e JWT_SECRET=sinwoo-secret-key-2024 ...
+docker run -e APP_MODE=development -e JWT_SECRET=youjobs-secret-key-2025 ...
 
 # 스테이징 환경
-docker run -e APP_MODE=staging -e JWT_SECRET=sinwoo-secret-key-2024 -e MONGODB_URI=mongodb+srv://sinwitdev:1357913579@bushub-client.kcojcax.mongodb.net/bushub-client ...
+docker run -e APP_MODE=staging -e JWT_SECRET=youjobs-secret-key-2025 -e MONGODB_URI=mongodb+srv://sinwitdev:1357913579@bushub-client.kcojcax.mongodb.net/bushub-client ...
 
 # 운영 환경
-docker run -e APP_MODE=production -e JWT_SECRET=sinwoo-secret-key-2024 ...
+docker run -e APP_MODE=production -e JWT_SECRET=youjobs-secret-key-2025 ...
 ```
 
 ### Docker Compose 예시
@@ -260,7 +260,7 @@ services:
     build: .
     environment:
       - APP_MODE=staging
-      - JWT_SECRET=sinwoo-secret-key-2024
+      - JWT_SECRET=youjobs-secret-key-2025
       - MONGODB_URI=mongodb+srv://sinwitdev:1357913579@bushub-client.kcojcax.mongodb.net/bushub-client
       - CORS_ORIGIN=https://smartcity-frontend-uzjw.vercel.app
       # Modbus 설정

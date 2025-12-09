@@ -12,8 +12,8 @@ TAG="v${VERSION}"
 
 # Git 사용자 설정
 echo "Setting up Git user configuration..."
-git config --global user.email "sinwit.dev@gmail.com"
-git config --global user.name "sinwooeng-dev"
+git config --global user.email "mythoyu@gmail.com"
+git config --global user.name "Brian Yu"
 echo "Git user configuration completed."
 
 # 0) 안전장치: 워킹트리 깨끗한지 확인

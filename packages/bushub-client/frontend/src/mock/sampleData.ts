@@ -479,11 +479,11 @@ export const sampleUserApiResponses: SampleUserApiResponse[] = [
     data: {
       user: {
         id: '6878445622aaad055d8e2ddf',
-        username: 'sinwoo',
+        username: 'youjobs',
         role: 'external',
-        companyId: 'sinwoo',
+        companyId: 'youjobs',
       },
-      token: 'sinwoo_external_key_2025',
+      token: 'youjobs_external_key',
     },
   },
   {

@@ -34,7 +34,7 @@ export const LogoutResponseSchema = Type.Object({
 // 로그인 요청 예시
 export const LOGIN_REQUEST_EXAMPLE = {
   username: 'admin',
-  password: 'sinwoo*it*2025A',
+  password: 'youjobsA1!S',
 };
 
 // 로그인 응답 예시

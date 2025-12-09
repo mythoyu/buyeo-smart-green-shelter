@@ -133,8 +133,8 @@ export const SYSTEM_CONFIG: SystemConfigOptions = {
   // 📶 WiFi SSID 템플릿
   wifiSSIDs: [
     {
-      value: 'SinwooManagement',
-      label: 'AS용 (SinwooManagement)',
+      value: 'YouJobs-Management',
+      label: 'AS용 (YouJobs-Management)',
       category: 'default',
     },
   ],

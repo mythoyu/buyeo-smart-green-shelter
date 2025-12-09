@@ -39,23 +39,23 @@ const testAccounts = {
   users: [
     {
       username: 'admin',
-      password: 'sinwoo*it*2025A',
+      password: 'youjobsA1!S',
       role: 'superuser',
       description: '시스템 관리자 계정',
     },
     {
       username: 'testuser',
-      password: 'sinwoo*it*2025A',
+      password: 'youjobsA1!',
       role: 'user',
       description: '테스트용 내부 사용자 계정',
     },
   ],
   externalUsers: [
     {
-      username: 'sinwoo',
-      password: 'sinwoo_password_2025',
+      username: 'youjobs',
+      password: 'youjobsA1!',
       role: 'ex-user',
-      description: 'sinwoo 외부 사용자',
+      description: 'youjobs 외부 사용자',
     },
     {
       username: 'nzero',

@@ -39,7 +39,7 @@ const DEFAULT_CONFIGS = {
     mongoUrl: 'mongodb://localhost:27017/bushub-client',
     logLevel: 'info',
     corsOrigin: true,
-    jwtSecret: 'sinwoo-secret-key-2024',
+    jwtSecret: 'youjobs-secret-key-2025',
   },
   staging: {
     port: 3000,
@@ -47,7 +47,7 @@ const DEFAULT_CONFIGS = {
     mongoUrl: 'mongodb+srv://sinwitdev:1357913579@bushub-client.kcojcax.mongodb.net/bushub-client',
     logLevel: 'info',
     corsOrigin: ['https://smartcity-frontend-uzjw.vercel.app'] as string[],
-    jwtSecret: 'sinwoo-secret-key-2024',
+    jwtSecret: 'youjobs-secret-key-2025',
   },
   production: {
     port: 3000,
@@ -55,7 +55,7 @@ const DEFAULT_CONFIGS = {
     mongoUrl: 'mongodb://localhost:27017/bushub-client',
     logLevel: 'info',
     corsOrigin: true,
-    jwtSecret: 'sinwoo-secret-key-2024',
+    jwtSecret: 'youjobs-secret-key-2025',
   },
 } as const;
 

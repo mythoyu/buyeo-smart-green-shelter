@@ -617,7 +617,7 @@ const SystemSettingsPage: React.FC = () => {
             error={getFieldError('softap', 'ssid')}
             disabled={!softapInput?.enabled}
             showDefaultValueButton={true}
-            defaultValue='SinwooManagement'
+            defaultValue='YouJobs-Management'
           />
           <InputWithLabel
             label='WiFi 비밀번호'

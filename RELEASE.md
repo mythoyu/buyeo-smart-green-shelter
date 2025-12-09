@@ -157,9 +157,9 @@ git push origin :refs/tags/v1.0.0
 
 ## 🔗 관련 링크
 
-- **GitHub Actions**: https://github.com/sinwooeng-dev/smartcity/actions
-- **GHCR**: https://github.com/orgs/sinwooeng-dev/packages
-- **릴리즈 태그**: https://github.com/sinwooeng-dev/smartcity/tags
+- **GitHub Actions**: https://github.com/mythoyu/buyeo-smart-green-shelter/actions
+- **GHCR**: https://github.com/mythoyu/buyeo-smart-green-shelter/pkgs
+- **릴리즈 태그**: https://github.com/mythoyu/buyeo-smart-green-shelter/tags
 
 ## 📞 지원
 

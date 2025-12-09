@@ -150,7 +150,7 @@ export class SoftapService {
           // 폴백 기본값
           status = {
             enabled: false,
-            ssid: "SinwooManagement",
+            ssid: "YouJobs-Management",
             security: "wpa2",
             channel: 6,
             hidden: false,

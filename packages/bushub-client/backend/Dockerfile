@@ -48,7 +48,7 @@ ENV NODE_ENV=development \
     USERS_CONFIG_PATH=./src/config/users.json \
     CORS_ORIGIN=true \
     # 🔐 민감 정보 (최고 보안 등급)
-    JWT_SECRET=sinwoo-secret-key-2024 \
+    JWT_SECRET=youjobs-secret-key-2025 \
     MONGODB_URI=mongodb://localhost:27017 \
     DB_NAME=bushub_client \
     # MongoDB 연결 설정 (개발환경 - 빠른 실패)
@@ -100,7 +100,7 @@ ENV NODE_ENV=production \
     USERS_CONFIG_PATH=./src/config/users.json \
     CORS_ORIGIN=true \
     # 🔐 민감 정보 (최고 보안 등급)
-    JWT_SECRET=sinwoo-secret-key-2024 \
+    JWT_SECRET=youjobs-secret-key-2025 \
     MONGODB_URI=mongodb://localhost:27017 \
     DB_NAME=bushub_client \
     # MongoDB 연결 설정 (운영환경 - 안정성 우선)
