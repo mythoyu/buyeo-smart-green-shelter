@@ -4,17 +4,14 @@ import {
   BarChart3,
   Users,
   Database,
-  User,
   LogOut,
-  Crown,
-  Wrench,
-  Globe,
   MessageSquare,
   Menu,
   Bus,
   Activity,
   Cpu,
   AlertTriangle,
+  Info,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -28,11 +25,9 @@ import { useLayoutData } from '../../hooks/useLayoutData';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { canAccessPage, getRoleDisplayName } from '../../lib/permissions';
 import { getCurrentUTCTime } from '../../utils/format';
+import { getFormattedVersion } from '../../utils/version';
 import { ErrorPanel } from '../common/ErrorPanel';
 import { ProcessDialog } from '../common/ProcessDialog';
-import VersionInfo from '../common/VersionInfo';
-import { Card, CardContent } from '../ui';
-import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -199,54 +194,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   ].filter(item => canAccessPage(user?.role || '', item.href));
   const isActiveRoute = (href: string) => location.pathname === href;
 
-  // 사용자 권한별 아이콘 반환 함수
-  const getUserIcon = (role?: string, size: number = 20, colorClass = 'text-primary') => {
-    switch (role) {
-      case 'superuser':
-        return <Crown size={size} className={colorClass} />;
-      case 'engineer':
-        return <Wrench size={size} className={colorClass} />;
-      case 'user':
-        return <User size={size} className={colorClass} />;
-      case 'ex-user':
-        return <Globe size={size} className={colorClass} />;
-      default:
-        return <User size={size} className={colorClass} />;
-    }
-  };
-
-  // 사용자 권한별 라이트 배경색 반환 함수
-  const getUserLightBgColor = (role?: string) => {
-    switch (role) {
-      case 'superuser':
-        return 'bg-purple-100';
-      case 'engineer':
-        return 'bg-orange-100';
-      case 'user':
-        return 'bg-blue-100';
-      case 'ex-user':
-        return 'bg-green-100';
-      default:
-        return 'bg-blue-100';
-    }
-  };
-
-  // 사용자 권한별 진한 아이콘 컬러 반환 함수
-  const getUserIconColor = (role?: string) => {
-    switch (role) {
-      case 'superuser':
-        return 'text-purple-600';
-      case 'engineer':
-        return 'text-orange-600';
-      case 'user':
-        return 'text-blue-600';
-      case 'ex-user':
-        return 'text-green-600';
-      default:
-        return 'text-blue-600';
-    }
-  };
-
   // 폴링 상태 변경 핸들러
   const handlePollingToggle = async (pollingEnabled: boolean) => {
     console.log(`[MainLayout] 폴링 스위치 클릭: ${pollingEnabled ? 'ON' : 'OFF'}`);
@@ -351,14 +298,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* 반응형 사이드바 - 헤더 밑에서 시작 */}
       <div
         className={`
-          fixed top-16 left-0 z-50 w-64 h-[calc(100vh-4rem)] transform transition-all duration-300 ease-in-out
+          fixed top-16 left-0 z-50 w-20 h-[calc(100vh-4rem)] transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           bg-card border-r border-gray-200 shadow-lg
         `}
       >
         {/* 네비게이션 메뉴 */}
-        <nav className='p-4'>
-          <div className='space-y-2'>
+        <nav className='flex-1 py-4 flex flex-col'>
+          <div className='flex flex-col items-center gap-1'>
             {navigation.map(item => {
               const Icon = item.icon;
               const isActive = isActiveRoute(item.href);
@@ -373,42 +320,39 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     }
                   }}
                   variant={isActive ? 'default' : 'ghost'}
-                  className='w-full justify-start'
+                  className='whitespace-nowrap text-sm font-medium duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-16 h-16 flex flex-col gap-1 items-center justify-center rounded-lg transition-colors'
+                  title={item.name}
                 >
-                  <Icon size={20} className='mr-3' />
-                  {item.name}
+                  <Icon className='h-5 w-5 mb-0.5' aria-hidden='true' />
+                  <span className='text-xs text-center leading-tight whitespace-pre-line'>{item.name}</span>
                 </Button>
               );
             })}
           </div>
-        </nav>
 
-        {/* 하단 사용자 정보 */}
-        <div className='absolute bottom-0 left-0 right-0 p-4'>
-          <Card>
-            <CardContent className='flex items-center space-x-3'>
-              <Avatar>
-                <AvatarFallback className={`w-10 h-10 ${getUserLightBgColor(user?.role)}`}>
-                  {getUserIcon(user?.role, 20, getUserIconColor(user?.role))}
-                </AvatarFallback>
-              </Avatar>
-              <div className='flex-1 min-w-0'>
-                <p className='text-sm font-medium text-foreground truncate'>{user?.name || '사용자'}</p>
-                <p className='text-xs text-muted-foreground truncate'>{getRoleDisplayName(user?.role || 'user')}</p>
-                <div className='mt-1'>
-                  <VersionInfo />
-                </div>
-              </div>
-              <Button onClick={() => navigate('/logout')} size='icon' variant='ghost'>
-                <LogOut size={16} />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+          {/* 하단 버전 정보 및 로그아웃 */}
+          <div className='mt-auto pt-4 border-t flex justify-center'>
+            <div className='w-16 h-16 flex flex-col items-center justify-center text-xs text-muted-foreground hover:text-foreground transition-colors duration-150 cursor-default'>
+              <Info className='h-5 w-5 mb-0.5' aria-hidden='true' />
+              <span className='text-center leading-tight whitespace-pre-line'>{getFormattedVersion()}</span>
+            </div>
+          </div>
+          <div className='pt-2 flex justify-center'>
+            <Button
+              onClick={() => navigate('/logout')}
+              variant='ghost'
+              className='whitespace-nowrap text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-16 h-16 flex flex-col gap-1 items-center justify-center rounded-lg transition-all duration-150 hover:bg-red-50 dark:hover:bg-red-950/20 hover:shadow-md hover:scale-105 text-red-600 hover:text-red-700 dark:hover:text-red-400'
+              title='로그아웃'
+            >
+              <LogOut className='h-5 w-5 mb-0.5' aria-hidden='true' />
+              <span className='text-xs text-center leading-tight whitespace-pre-line'>로그아웃</span>
+            </Button>
+          </div>
+        </nav>
       </div>
 
       {/* 메인 콘텐츠 - 헤더 밑에서 시작 */}
-      <div className={`pt-16 flex flex-col h-screen transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : ''}`}>
+      <div className={`pt-16 flex flex-col h-screen transition-all duration-300 ${sidebarOpen ? 'lg:ml-20' : ''}`}>
         {/* 메인 콘텐츠 영역 */}
         <main className='flex-1 overflow-auto bg-background custom-scrollbar'>
           <div className='p-4'>{children || <Outlet />}</div>
