@@ -1,6 +1,6 @@
 # 신우이엔지 환승센터 연동 시스템 외부API 명세서 (v1)
 
-## 문서 버전 : v0.4
+## 문서 버전 : v0.5
 
 ## 소속 : 주식회사 신우이엔지
 
@@ -14,6 +14,7 @@
 | v0.2     | 2025.06.30 | 상세 작성<br>엔드포인트 정리 ( 데이터가 크지 않으므로 )<br>- /devices 이하 제거<br>- POST만 유지 ( 제어용 )                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 구조 단순화    |
 | v0.3     | 2025.07.03 | 2.1 API목록<br>- BaseURL : /external prefix 명시 ( 내부API와 분리 위해 )<br>- 특정유닛 제어 : 엔드포인트 변경<br>- 특정유닛 대량제어 엔드포인트 추가<br>- 특정유닛 대량제어 상태조회 엔드포인트 추가<br>- 캐싱정책추가<br>3.2 클라이언트 상태조회<br>- [devices 객체] : 장비상태설명추가<br>- [units 객체] : 유닛상태설명추가<br>3.5 특정유닛제어 명세변경<br>- 엔드포인트 변경 /devices/{deviceId}/units/{unitId} → /devices/{deviceId}/units/{unitId}/command<br>3.6 특정유닛대량제어 명세추가<br>3.7 특정유닛대량제어 상태조회 명세추가<br>5. 예제 curl 요청 메뉴 삭제 | 협의내용 반영  |
 | v0.4     | 2025.08.03 | 문서 포맷 정리<br>- 마크다운 테이블 형식 정렬 및 가독성 개선<br>- 목차 번호 수정 (5→4, 6→5, 7→6)<br>- API 목록 테이블 구조 개선<br>- 장비코드, 타입, 데이터필드 테이블 정렬<br>- 장비, 유닛 코드일람 테이블 정렬<br>- 모든 응답필드 테이블 정렬 및 가독성 개선<br>- 오류 코드 테이블 정렬                                                                                                                                                                                                                                                                                 | 문서 포맷 개선 |
+| v0.5     | 2025.01.XX | 계절 설정 API 추가<br>- 계절 설정 조회 엔드포인트 추가<br>- 계절 설정 저장 엔드포인트 추가                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 기능 추가      |
 
 ## 목차
 
@@ -35,6 +36,8 @@
    - 4.4 클라이언트 에러조회
    - 4.5 특정유닛 대량제어
    - 4.6 특정유닛 대량제어 상태조회
+   - 4.7 계절 설정 조회
+   - 4.8 계절 설정 저장
 5. 오류 코드
 6. 테스트 토큰
 7. 문의처
@@ -117,6 +120,8 @@
 | 클라이언트 에러 조회        | 클라이언트의 에러 조회      | `GET /errors`                                      |
 | 특정 유닛 대량제어          | 여러 명령 동시 제어         | `POST /devices/{deviceId}/units/{unitId}/commands` |
 | 특정 유닛 대량제어 상태조회 | 대량제어 결과 조회          | `GET /devices/{deviceId}/units/{unitId}/commands`  |
+| 계절 설정 조회              | 월별 계절 설정 조회         | `GET /system/seasonal`                             |
+| 계절 설정 저장              | 월별 계절 설정 저장         | `POST /system/seasonal`                             |
 
 | 항목     | 값/설명                      |
 | -------- | ---------------------------- |
@@ -130,6 +135,20 @@
 ※ 참고: 모든 요청은 Authorization 헤더에 발급받은 API Key를 포함해야 합니다. 회사 코드는 각 회사명 기준으로 고유하게 발급되며, 외부에 공개되지 않도록 주의하십시오.
 
 ※ 로컬테스트용 : Authorization: Bearer nzero_external_key_2025
+
+### 3.2.1 스키마 엔드포인트
+
+**[스키마 엔드포인트 – 응답필드 데이터타입 및 응답 예시 확인용]**
+
+| 설명                        | path                                    |
+| --------------------------- | --------------------------------------- |
+| 클라이언트 정보 조회        | `GET /client/schema`                    |
+| 클라이언트 상태 조회        | `GET /status/schema`                    |
+| 클라이언트 데이터 조회      | `GET /data/schema`                      |
+| 클라이언트 에러 조회        | `GET /errors/schema`                    |
+| 특정유닛 대량제어           | `POST /devices/{deviceId}/units/{unitId}/commands/schema` |
+| 특정유닛 대량제어 상태조회  | `GET /devices/{deviceId}/units/{unitId}/commands/schema` |
+| 계절 설정 조회              | `GET /system/seasonal/schema`           |
 
 ### 3.3 HTTP 에러코드
 
@@ -648,6 +667,145 @@
       "status": "waiting"
     }
   ]
+}
+```
+
+### 4.7 계절 설정 조회
+
+- 메서드: GET
+- 엔드포인트: /system/seasonal
+- 설명: 현재 저장된 월별 계절 설정(여름/겨울)을 조회합니다. 각 월별로 여름(1) 또는 겨울(0) 설정값을 반환합니다.
+
+**응답필드:**
+
+| 필드      | 설명             | 타입   | 예시 |
+| --------- | ---------------- | ------ | ---- |
+| seasonal   | 계절 설정 객체   | object | -    |
+| season     | 현재 계절        | number | 0    |
+| january    | 1월 계절 설정    | number | 0    |
+| february   | 2월 계절 설정    | number | 0    |
+| march      | 3월 계절 설정    | number | 0    |
+| april      | 4월 계절 설정    | number | 0    |
+| may        | 5월 계절 설정    | number | 0    |
+| june       | 6월 계절 설정    | number | 1    |
+| july       | 7월 계절 설정    | number | 1    |
+| august     | 8월 계절 설정    | number | 1    |
+| september  | 9월 계절 설정    | number | 0    |
+| october    | 10월 계절 설정   | number | 0    |
+| november   | 11월 계절 설정   | number | 0    |
+| december   | 12월 계절 설정   | number | 0    |
+
+**설명:**
+- 각 월별 설정값: `0` = 겨울(동절기), `1` = 여름(하절기)
+- `season`: 현재 계절 설정 (0: 겨울, 1: 여름)
+
+**예시응답:**
+
+```json
+{
+  "success": true,
+  "message": "계절 설정 조회 성공",
+  "data": {
+    "seasonal": {
+      "season": 0,
+      "january": 0,
+      "february": 0,
+      "march": 0,
+      "april": 0,
+      "may": 0,
+      "june": 1,
+      "july": 1,
+      "august": 1,
+      "september": 0,
+      "october": 0,
+      "november": 0,
+      "december": 0
+    }
+  }
+}
+```
+
+### 4.8 계절 설정 저장
+
+- 메서드: POST
+- 엔드포인트: /system/seasonal
+- 설명: 월별 계절 설정(여름/겨울)을 저장합니다. 저장된 설정은 DDC(제어기)에 즉시 반영됩니다.
+
+**요청필드:**
+
+| 필드      | 설명             | 타입   | 필수 | 예시 |
+| --------- | ---------------- | ------ | ---- | ---- |
+| seasonal   | 계절 설정 객체   | object | O    | -    |
+| season     | 현재 계절        | number | O    | 0    |
+| january    | 1월 계절 설정    | number | O    | 0    |
+| february   | 2월 계절 설정    | number | O    | 0    |
+| march      | 3월 계절 설정    | number | O    | 0    |
+| april      | 4월 계절 설정    | number | O    | 0    |
+| may        | 5월 계절 설정    | number | O    | 0    |
+| june       | 6월 계절 설정    | number | O    | 1    |
+| july       | 7월 계절 설정    | number | O    | 1    |
+| august     | 8월 계절 설정    | number | O    | 1    |
+| september  | 9월 계절 설정    | number | O    | 0    |
+| october    | 10월 계절 설정   | number | O    | 0    |
+| november   | 11월 계절 설정   | number | O    | 0    |
+| december   | 12월 계절 설정   | number | O    | 0    |
+
+**설명:**
+- 각 월별 설정값: `0` = 겨울(동절기), `1` = 여름(하절기)
+- `season`: 현재 계절 설정 (0: 겨울, 1: 여름)
+- 모든 필드는 필수입니다.
+
+**예시요청:**
+
+```json
+{
+  "seasonal": {
+    "season": 0,
+    "january": 0,
+    "february": 0,
+    "march": 0,
+    "april": 0,
+    "may": 0,
+    "june": 1,
+    "july": 1,
+    "august": 1,
+    "september": 0,
+    "october": 0,
+    "november": 0,
+    "december": 0
+  }
+}
+```
+
+**응답필드:**
+
+| 필드      | 설명             | 타입   | 예시 |
+| --------- | ---------------- | ------ | ---- |
+| seasonal   | 저장된 계절 설정 | object | -    |
+
+**예시응답:**
+
+```json
+{
+  "success": true,
+  "message": "계절 설정이 성공적으로 저장되었습니다.",
+  "data": {
+    "seasonal": {
+      "season": 0,
+      "january": 0,
+      "february": 0,
+      "march": 0,
+      "april": 0,
+      "may": 0,
+      "june": 1,
+      "july": 1,
+      "august": 1,
+      "september": 0,
+      "october": 0,
+      "november": 0,
+      "december": 0
+    }
+  }
 }
 ```
 

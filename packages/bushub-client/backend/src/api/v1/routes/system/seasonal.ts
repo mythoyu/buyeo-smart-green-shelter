@@ -1,7 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { ServiceContainer } from '../../../../core/container/ServiceContainer';
-import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
+import { createSuccessResponse, handleRouteError } from '../../../../shared/utils/responseHelper';
+import {
+  SeasonalResponseSchema,
+  SEASONAL_RESPONSE_EXAMPLE,
+  SEASONAL_REQUEST_EXAMPLE,
+} from '../../schemas/seasonal.schema';
 
 export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
   // 🌸 계절 설정 저장
@@ -316,6 +321,52 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
           success: false,
           message: `계절 설정 새로고침 실패: ${error}`,
         });
+      }
+    },
+  );
+
+  // 🌸 계절 설정 스키마 조회
+  fastify.get(
+    '/system/seasonal/schema',
+    {
+      preHandler: [fastify.requireAuth],
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+              data: { type: 'object' },
+            },
+          },
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        reply.send(
+          createSuccessResponse('계절 설정 API 스키마', {
+            schema: SeasonalResponseSchema,
+            requestExample: SEASONAL_REQUEST_EXAMPLE,
+            responseExample: SEASONAL_RESPONSE_EXAMPLE,
+            description: '계절 설정 조회 및 저장 API의 응답 구조와 예시 데이터입니다.',
+            endpoints: [
+              {
+                path: '/api/v1/external/system/seasonal',
+                method: 'GET',
+                description: '계절 설정 조회',
+              },
+              {
+                path: '/api/v1/external/system/seasonal',
+                method: 'POST',
+                description: '계절 설정 저장',
+              },
+            ],
+          }),
+        );
+      } catch (error) {
+        return handleRouteError(error, reply, 'seasonal', '계절 설정 스키마 조회 중 오류가 발생했습니다.');
       }
     },
   );
