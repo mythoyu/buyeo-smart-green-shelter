@@ -50,10 +50,10 @@ export const SNGIL_DDC_COMMAND_MAP: { [key: string]: ModbusCommand } = {
     length: 1,
   },
 
-  // 월별 계절 설정 읽기 (1x Registers)
+  // 월별 절기 설정 읽기 (1x Registers)
   GET_MONTHLY_SEASON_STATUS: {
     name: 'Get Monthly Season Status',
-    description: '월별 계절 설정 확인',
+    description: '월별 절기 설정 확인',
     functionCode: 1,
     address: 328,
     length: 12,

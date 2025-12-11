@@ -8,7 +8,7 @@
  * - 1-based → 0-based 변환: Modbus frame address = Document address - 1
  *
  * 📋 레지스터 타입별 Function Code
- * - 0x Coil: 05 (Write Single Coil), 01 (Read Coils) - DO 제어, 계절 설정, DI 기능 활성화
+ * - 0x Coil: 05 (Write Single Coil), 01 (Read Coils) - DO 제어, 절기 설정, DI 기능 활성화
  * - 1x Discrete Input: 02 (Read Discrete Inputs) - DI 상태 읽기
  * - 3x Input Register: 04 (Read Input Registers) - 센서 데이터 읽기
  * - 4x Holding Register: 06 (Write Single Register), 03 (Read Holding Registers) - 스케줄, 딜레이타임, DDC 시간
@@ -68,7 +68,7 @@ export const HW_PORTS = {
   // 🎯 DI 기능 (Coil 기반 - 0x 레지스터)
   // DI1-DI16: 기능활성화(403-418)
   //
-  // 🎯 계절 설정 (Coil 기반 - 0x 레지스터)
+  // 🎯 절기 설정 (Coil 기반 - 0x 레지스터)
   // 계절선택(326), 월별하절기(327-338), 자동계절판단(339-350)
   //
   // 🎯 DI 딜레이타임 (Holding Register 기반 - 4x 레지스터)
@@ -1725,7 +1725,7 @@ export const HW_PORTS = {
     },
   },
 
-  // 🆕 계절 설정 - Coil 기반 (0x 레지스터)
+  // 🆕 절기 설정 - Coil 기반 (0x 레지스터)
   SEASONAL: {
     SEASON: {
       set: { functionCode: MODBUS_FC.WR_SNGL_COIL, address: 326, description: '계절 선택 설정' },

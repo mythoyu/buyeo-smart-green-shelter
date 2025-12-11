@@ -9,7 +9,7 @@ import {
 } from '../../schemas/seasonal.schema';
 
 export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
-  // 🌸 계절 설정 저장
+  // 🌸 절기 설정 저장
   fastify.post(
     '/system/seasonal',
     {
@@ -103,9 +103,9 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
         const activeClient = clients[0];
         const clientId = activeClient.id;
 
-        fastify.log.info(`🌸 계절 설정 저장 대상 클라이언트: ${clientId} (${activeClient.name})`);
+        fastify.log.info(`🌸 절기 설정 저장 대상 클라이언트: ${clientId} (${activeClient.name})`);
 
-        // 계절 설정 저장
+        // 절기 설정 저장
         const result = await systemService.saveSeasonal(clientId, seasonal);
 
         if (result.success) {
@@ -113,16 +113,16 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
         }
         return reply.code(400).send(result);
       } catch (error) {
-        fastify.log.error(`계절 설정 저장 실패: ${error}`);
+        fastify.log.error(`절기 설정 저장 실패: ${error}`);
         return reply.code(500).send({
           success: false,
-          message: `계절 설정 저장 실패: ${error}`,
+          message: `절기 설정 저장 실패: ${error}`,
         });
       }
     },
   );
 
-  // 🌸 계절 설정 조회
+  // 🌸 절기 설정 조회
   fastify.get(
     '/system/seasonal',
     {
@@ -197,19 +197,19 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
         const activeClient = clients[0];
         const clientId = activeClient.id;
 
-        fastify.log.info(`🌸 계절 설정 조회 대상 클라이언트: ${clientId} (${activeClient.name})`);
+        fastify.log.info(`🌸 절기 설정 조회 대상 클라이언트: ${clientId} (${activeClient.name})`);
 
-        // 계절 설정 조회
+        // 절기 설정 조회
         const seasonal = await systemService.getSeasonal(clientId);
 
         if (seasonal) {
-          return reply.send(createSuccessResponse('계절 설정 조회 성공', { seasonal }));
+          return reply.send(createSuccessResponse('절기 설정 조회 성공', { seasonal }));
         }
 
-        // 🆕 계절 설정이 없으면 기본값 생성 후 반환
-        fastify.log.warn(`계절 설정이 없어 기본값 생성: ${clientId}`);
+        // 🆕 절기 설정이 없으면 기본값 생성 후 반환
+        fastify.log.warn(`절기 설정이 없어 기본값 생성: ${clientId}`);
 
-        // 기본 계절 설정 (6-8월만 여름, 나머지는 겨울)
+        // 기본 절기 설정 (6-8월만 여름, 나머지는 겨울)
         const defaultSeasonal = {
           season: 0, // 현재 계절: 겨울
           january: 0,
@@ -229,18 +229,18 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
         // 기본값 저장
         await systemService.updateSettings({ seasonal: defaultSeasonal });
 
-        return reply.send(createSuccessResponse('계절 설정 조회 성공 (기본값 생성)', { seasonal: defaultSeasonal }));
+        return reply.send(createSuccessResponse('절기 설정 조회 성공 (기본값 생성)', { seasonal: defaultSeasonal }));
       } catch (error) {
-        fastify.log.error(`계절 설정 조회 실패: ${error}`);
+        fastify.log.error(`절기 설정 조회 실패: ${error}`);
         return reply.code(500).send({
           success: false,
-          message: `계절 설정 조회 실패: ${error}`,
+          message: `절기 설정 조회 실패: ${error}`,
         });
       }
     },
   );
 
-  // 🌸 계절 설정 새로고침
+  // 🌸 절기 설정 새로고침
   fastify.post(
     '/system/seasonal/refresh',
     {
@@ -311,21 +311,21 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
         const activeClient = clients[0];
         const clientId = activeClient.id;
 
-        fastify.log.info(`🌸 계절 설정 새로고침 대상 클라이언트: ${clientId} (${activeClient.name})`);
+        fastify.log.info(`🌸 절기 설정 새로고침 대상 클라이언트: ${clientId} (${activeClient.name})`);
 
         const result = await systemService.refreshSeasonal(clientId);
         return reply.send(result);
       } catch (error) {
-        fastify.log.error(`계절 설정 새로고침 실패: ${error}`);
+        fastify.log.error(`절기 설정 새로고침 실패: ${error}`);
         return reply.code(500).send({
           success: false,
-          message: `계절 설정 새로고침 실패: ${error}`,
+          message: `절기 설정 새로고침 실패: ${error}`,
         });
       }
     },
   );
 
-  // 🌸 계절 설정 스키마 조회
+  // 🌸 절기 설정 스키마 조회
   fastify.get(
     '/system/seasonal/schema',
     {
@@ -346,27 +346,27 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         reply.send(
-          createSuccessResponse('계절 설정 API 스키마', {
+          createSuccessResponse('절기 설정 API 스키마', {
             schema: SeasonalResponseSchema,
             requestExample: SEASONAL_REQUEST_EXAMPLE,
             responseExample: SEASONAL_RESPONSE_EXAMPLE,
-            description: '계절 설정 조회 및 저장 API의 응답 구조와 예시 데이터입니다.',
+            description: '절기 설정 조회 및 저장 API의 응답 구조와 예시 데이터입니다.',
             endpoints: [
               {
                 path: '/api/v1/external/system/seasonal',
                 method: 'GET',
-                description: '계절 설정 조회',
+                description: '절기 설정 조회',
               },
               {
                 path: '/api/v1/external/system/seasonal',
                 method: 'POST',
-                description: '계절 설정 저장',
+                description: '절기 설정 저장',
               },
             ],
           }),
         );
       } catch (error) {
-        return handleRouteError(error, reply, 'seasonal', '계절 설정 스키마 조회 중 오류가 발생했습니다.');
+        return handleRouteError(error, reply, 'seasonal', '절기 설정 스키마 조회 중 오류가 발생했습니다.');
       }
     },
   );

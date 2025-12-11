@@ -1,7 +1,7 @@
 import { SuccessResponse } from '../../../shared/utils/responseHelper';
 import { SystemSettings } from '../../repositories/interfaces/ISystemRepository';
 
-// 계절 설정 데이터 타입
+// 절기 설정 데이터 타입
 interface SeasonalData {
   season?: number;
   january?: number;

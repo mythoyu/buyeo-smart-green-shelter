@@ -119,7 +119,7 @@ async function initializeDdcSettings(clientId: string) {
       second: now.getSeconds(),
     };
 
-    // 기본 계절 설정 (6-8월만 여름, 나머지는 겨울)
+    // 기본 절기 설정 (6-8월만 여름, 나머지는 겨울)
     const seasonalData = {
       season: 0, // 현재 계절: 겨울
       january: 0,

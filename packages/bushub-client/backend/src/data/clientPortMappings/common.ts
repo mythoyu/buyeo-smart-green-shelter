@@ -94,7 +94,7 @@ export const COMMON_SYSTEM_PORTS = {
     },
   },
 
-  // 계절 설정
+  // 절기 설정
   seasonal: {
     GET_SEASON: {
       port: HW_PORTS.SEASONAL.SEASON.get,

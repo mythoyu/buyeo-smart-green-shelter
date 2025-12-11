@@ -13,7 +13,7 @@ import type { SystemPort, SystemSettings, HardwareControlError } from '../../../
 // 시스템 포트별 설명 정보
 const SYSTEM_PORT_DESCRIPTIONS: Record<SystemPort, { name: string; icon: React.ComponentType<any> }> = {
   SEASONAL: {
-    name: '계절 설정',
+    name: '절기 설정',
     icon: Calendar,
   },
   DDC_TIME: {
@@ -30,7 +30,7 @@ interface SystemSettingsTabProps {
 
 /**
  * 시스템 설정 탭 컴포넌트
- * 계절 설정 및 DDC 시간 설정
+ * 절기 설정 및 DDC 시간 설정
  */
 export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled = false, onError, pollingStatus }) => {
   const sendCommand = useSendDirectHardwareCommand();
@@ -66,7 +66,7 @@ export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled =
     },
   });
 
-  // 계절 설정 읽기 함수
+  // 절기 설정 읽기 함수
   const handleReadSeasonal = async () => {
     try {
       const result = await seasonalRead.mutateAsync();
@@ -76,11 +76,11 @@ export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled =
           season: !!result.data!.season,
           monthlySummer: { ...prev.monthlySummer, ...result.data!.monthlySummer },
         }));
-        toast.success('계절 설정 읽기 완료', { id: 'hw-system-season-read-success' });
+        toast.success('절기 설정 읽기 완료', { id: 'hw-system-season-read-success' });
       }
     } catch (error: any) {
-      console.error('[SystemSettingsTab] 계절 설정 읽기 실패:', error);
-      toast.error(`계절 설정 읽기 실패: ${error.message || '알 수 없는 오류'}`, {
+      console.error('[SystemSettingsTab] 절기 설정 읽기 실패:', error);
+      toast.error(`절기 설정 읽기 실패: ${error.message || '알 수 없는 오류'}`, {
         id: 'hw-system-season-read-error',
       });
 
@@ -172,13 +172,13 @@ export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled =
 
   return (
     <div className='space-y-6 relative'>
-      {/* 계절 설정 카드 */}
+      {/* 절기 설정 카드 */}
       <Card>
         <CardHeader className='flex flex-row items-center justify-between'>
           <div>
             <CardTitle className='flex items-center gap-2'>
               <Calendar className='h-5 w-5' />
-              계절 설정
+              절기 설정
             </CardTitle>
           </div>
           {!pollingStatus?.pollingEnabled && (

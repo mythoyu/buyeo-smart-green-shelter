@@ -43,7 +43,7 @@ export interface SystemSettings {
     second: number;
   };
 
-  // 🌸 계절 설정 추가
+  // 🌸 절기 설정 추가
   seasonal?: {
     season?: number;
     january?: number;

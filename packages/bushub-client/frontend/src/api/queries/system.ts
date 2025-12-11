@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { internalApi, networkControlApi } from '../axiosInstance';
 
-// 계절 설정 데이터 타입
+// 절기 설정 데이터 타입
 interface SeasonalData {
   season: number;
   january: number;
@@ -19,7 +19,7 @@ interface SeasonalData {
   december: number;
 }
 
-// 계절 설정 응답 타입
+// 절기 설정 응답 타입
 interface SeasonalResponse {
   success: boolean;
   message: string;
@@ -141,7 +141,7 @@ const restartBackend = async (): Promise<any> => {
   return internalApi.post('/system', { action: 'restart-backend' }).then(res => res.data);
 };
 
-// 계절 설정 저장
+// 절기 설정 저장
 const saveSeasonal = async (seasonal: SeasonalData): Promise<SeasonalResponse> => {
   return internalApi
     .post<SeasonalResponse>('/system/seasonal', {
@@ -150,12 +150,12 @@ const saveSeasonal = async (seasonal: SeasonalData): Promise<SeasonalResponse> =
     .then(res => res.data);
 };
 
-// 🌸 계절 설정 조회
+// 🌸 절기 설정 조회
 const getSeasonal = async (): Promise<SeasonalResponse> => {
   return internalApi.get<SeasonalResponse>('/system/seasonal').then(res => res.data);
 };
 
-// 🌸 계절 설정 새로고침
+// 🌸 절기 설정 새로고침
 const refreshSeasonal = async (): Promise<SeasonalResponse> => {
   return internalApi.post<SeasonalResponse>('/system/seasonal/refresh').then(res => res.data);
 };
@@ -235,19 +235,19 @@ export const useSetDdcTimeSync = () =>
     mutationFn: setDdcTimeSync,
   });
 
-// 계절 설정 저장 훅
+// 절기 설정 저장 훅
 export const useSaveSeasonal = () =>
   useMutation({
     mutationFn: saveSeasonal,
     onSuccess: () => {
-      console.log('계절 설정이 성공적으로 저장되었습니다.');
+      console.log('절기 설정이 성공적으로 저장되었습니다.');
     },
     onError: error => {
-      console.error('계절 설정 저장 실패:', error);
+      console.error('절기 설정 저장 실패:', error);
     },
   });
 
-// 🌸 계절 설정 조회 훅
+// 🌸 절기 설정 조회 훅
 export const useGetSeasonal = () =>
   useQuery({
     queryKey: ['system', 'seasonal'],
@@ -258,10 +258,10 @@ export const useRefreshSeasonal = () =>
   useMutation({
     mutationFn: refreshSeasonal,
     onSuccess: () => {
-      console.log('계절 설정이 성공적으로 새로고침되었습니다.');
+      console.log('절기 설정이 성공적으로 새로고침되었습니다.');
     },
     onError: error => {
-      console.error('계절 설정 새로고침 실패:', error);
+      console.error('절기 설정 새로고침 실패:', error);
     },
   });
 

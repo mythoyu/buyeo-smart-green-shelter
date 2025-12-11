@@ -55,7 +55,7 @@ const monthNames = {
   12: '12월',
 };
 
-// 계절 설정 데이터 타입
+// 절기 설정 데이터 타입
 interface SeasonalData {
   season: number;
   january: number;
@@ -100,7 +100,7 @@ const SystemSettingsPage: React.FC = () => {
   const { data: networkIfaces } = useGetNetworkInterfaces();
   const { data: softapStatus } = useGetSoftapStatus();
 
-  // 🌸 계절 설정 조회
+  // 🌸 절기 설정 조회
   const { data: seasonalData, refetch: refetchSeasonal, isFetching: isSeasonalFetching } = useGetSeasonal();
   const refreshSeasonalMutation = useRefreshSeasonal();
 
@@ -201,7 +201,7 @@ const SystemSettingsPage: React.FC = () => {
     connectionName: '',
   });
 
-  // 계절 설정 상태 (DDCConfigurationPage와 동일한 구조)
+  // 절기 설정 상태 (DDCConfigurationPage와 동일한 구조)
   const [seasonInput, setSeasonInput] = useState<SeasonalData>({
     season: 0, // 0: 겨울, 1: 여름
     january: 0, // 0: 겨울, 1: 여름
@@ -236,7 +236,7 @@ const SystemSettingsPage: React.FC = () => {
   const syncDdcTimeMutation = useSyncDdcTime();
   const setPollingIntervalMutation = useSetPollingInterval();
 
-  // 🌸 계절 설정 초기 로드 (저장된 설정이 있으면 불러오기)
+  // 🌸 절기 설정 초기 로드 (저장된 설정이 있으면 불러오기)
   useEffect(() => {
     if (seasonalData?.data?.seasonal) {
       setSeasonInput(seasonalData.data.seasonal);
@@ -487,26 +487,26 @@ const SystemSettingsPage: React.FC = () => {
     });
   };
 
-  // 계절 설정 관련 핸들러들 (DDCConfigurationPage에서 이동)
+  // 절기 설정 관련 핸들러들 (DDCConfigurationPage에서 이동)
   const handleSeasonalChange = (field: keyof SeasonalData, value: number) => {
     setSeasonInput(prev => ({ ...prev, [field]: value }));
   };
 
-  // 계절 설정 적용 핸들러
+  // 절기 설정 적용 핸들러
   const handleSeasonApply = async () => {
     if (seasonInput) {
       try {
         const result = await saveSeasonalMutation.mutateAsync(seasonInput);
         if (result.success) {
-          const message = result.message || '계절 설정이 성공적으로 적용되었습니다.';
+          const message = result.message || '절기 설정이 성공적으로 적용되었습니다.';
           toast.success(message, { id: 'system-season-save-success' });
         } else {
-          const message = result.message || '계절 설정 적용 실패';
+          const message = result.message || '절기 설정 적용 실패';
           toast.error(message, { id: 'system-season-save-error' });
         }
       } catch (error: any) {
         const message =
-          error?.response?.data?.message || error?.response?.data?.error || '계절 설정 적용 중 오류가 발생했습니다.';
+            error?.response?.data?.message || error?.response?.data?.error || '절기 설정 적용 중 오류가 발생했습니다.';
         toast.error(message, { id: 'system-season-save-error' });
       }
     }
@@ -843,10 +843,10 @@ const SystemSettingsPage: React.FC = () => {
           />
         </SettingsCard>
 
-        {/* 계절 설정 - DDCConfigurationPage 스타일로 교체 */}
+        {/* 절기 설정 - DDCConfigurationPage 스타일로 교체 */}
         <SettingsCard
           icon={Sun}
-          title='계절 설정'
+          title='절기 설정'
           description='월별 여름/겨울 설정을 관리합니다.'
           onApply={handleSeasonApply}
           applyDisabled={false}
@@ -862,11 +862,11 @@ const SystemSettingsPage: React.FC = () => {
                   const refreshed = response?.data?.seasonal;
                   if (refreshed) {
                     setSeasonInput(refreshed as SeasonalData);
-                    toast.success(response?.message || '계절 설정을 다시 불러왔습니다.', {
+                    toast.success(response?.message || '절기 설정을 다시 불러왔습니다.', {
                       id: 'seasonal-refresh-success',
                     });
                   } else {
-                    toast.success('계절 설정을 다시 불러왔습니다.', { id: 'seasonal-refresh-success' });
+                    toast.success('절기 설정을 다시 불러왔습니다.', { id: 'seasonal-refresh-success' });
                   }
                   await refetchSeasonal();
                 } catch (error: any) {
@@ -874,7 +874,7 @@ const SystemSettingsPage: React.FC = () => {
                     error?.response?.data?.message ||
                     error?.response?.data?.error ||
                     error?.message ||
-                    '계절 설정 불러오기 실패';
+                    '절기 설정 불러오기 실패';
                   toast.error(message, { id: 'seasonal-refresh-failure' });
                 }
               }}

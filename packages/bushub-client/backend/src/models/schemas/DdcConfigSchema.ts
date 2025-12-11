@@ -14,7 +14,7 @@ export interface IDdcConfig extends Document {
     second?: number; // GET_SECOND
   };
 
-  // 🌸 계절 설정 (월별 여름 설정)
+  // 🌸 절기 설정 (월별 여름 설정)
   seasonal?: {
     season?: number; // GET_SEASON
     january?: number; // GET_JAN_SUMMER
@@ -55,7 +55,7 @@ const DdcConfigSchema = new Schema<IDdcConfig>(
       second: { type: Number, min: 0, max: 59 },
     },
 
-    // 🌸 계절 설정 (월별 여름 설정)
+    // 🌸 절기 설정 (월별 여름 설정)
     seasonal: {
       season: { type: Number, min: 0, max: 1 }, // 0=겨울, 1=여름
       january: { type: Number, min: 0, max: 1 }, // 0=겨울, 1=여름

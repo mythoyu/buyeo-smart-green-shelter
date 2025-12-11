@@ -134,7 +134,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
           monthly[m] = mv === 1;
         }
         return reply.code(200).send(
-          createSuccessResponse('계절 설정 조회 성공', {
+          createSuccessResponse('절기 설정 조회 성공', {
             season: seasonVal === 1,
             monthlySummer: monthly,
           }),
@@ -173,7 +173,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
             }
           }
         }
-        return reply.code(200).send(createSuccessResponse('계절 설정 적용 성공'));
+        return reply.code(200).send(createSuccessResponse('절기 설정 적용 성공'));
       }
 
       return reply.code(400).send(createErrorResponse('INVALID_PARAM', 'action은 read 또는 set 이어야 합니다.'));
@@ -183,7 +183,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
         .send(
           createErrorResponse(
             'INTERNAL_ERROR',
-            `계절 설정 처리 중 오류: ${error instanceof Error ? error.message : String(error)}`,
+            `절기 설정 처리 중 오류: ${error instanceof Error ? error.message : String(error)}`,
           ),
         );
     }

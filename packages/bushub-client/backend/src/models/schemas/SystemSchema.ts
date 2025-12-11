@@ -16,7 +16,7 @@ export interface ISystem extends Document {
     applyInProgress: boolean;
   };
 
-  // 🌸 계절 설정
+  // 🌸 절기 설정
   seasonal?: {
     season: number;
     january: number;
@@ -84,7 +84,7 @@ const SystemSchema = new Schema<ISystem>(
       },
       applyInProgress: { type: Boolean, default: false },
     },
-    // 🌸 계절 설정
+    // 🌸 절기 설정
     seasonal: {
       season: { type: Number, default: 0 }, // 0: 겨울, 1: 여름
       january: { type: Number, default: 0 }, // 0: 겨울, 1: 여름
@@ -127,7 +127,7 @@ SystemSchema.statics.getDefaultSettings = function () {
       pollingInterval: 20000,
       applyInProgress: false,
     },
-    // 🌸 계절 설정 기본값
+    // 🌸 절기 설정 기본값
     seasonal: {
       season: 0, // 0: 겨울, 1: 여름
       january: 0, // 0: 겨울, 1: 여름

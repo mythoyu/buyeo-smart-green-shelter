@@ -194,7 +194,7 @@ export const SNGIL_HOLDING_REGISTERS = {
     },
   },
 
-  // 계절 설정 레지스터 (327-351)
+  // 절기 설정 레지스터 (327-351)
   SEASON: {
     START: 327,
     END: 351,

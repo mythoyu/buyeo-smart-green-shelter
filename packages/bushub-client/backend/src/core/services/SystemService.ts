@@ -8,7 +8,7 @@ import { ISystemRepository, SystemSettings } from '../repositories/interfaces/IS
 import { ISystemService } from './interfaces/ISystemService';
 import { IWebSocketService } from './interfaces/IWebSocketService';
 
-// 계절 설정 데이터 타입
+// 절기 설정 데이터 타입
 interface SeasonalData {
   season?: number;
   january?: number;
@@ -587,16 +587,16 @@ export class SystemService implements ISystemService {
     }
   }
 
-  // ==================== 🌸 계절 설정 관련 메서드들 ====================
+  // ==================== 🌸 절기 설정 관련 메서드들 ====================
 
   /**
-   * 🌸 계절 설정 저장
+   * 🌸 절기 설정 저장
    */
   async saveSeasonal(clientId: string, seasonal: SeasonalData): Promise<SuccessResponse> {
     try {
-      this.logger?.info(`🔄 ${clientId} 계절 설정 저장 시작`);
+      this.logger?.info(`🔄 ${clientId} 절기 설정 저장 시작`);
 
-      // 1️⃣ 시스템 설정에 계절 설정 저장
+      // 1️⃣ 시스템 설정에 절기 설정 저장
       const updated = await this.systemRepository.updateSettings({ seasonal });
       if (!updated) {
         throw new Error('시스템 설정 업데이트 실패');
@@ -606,27 +606,27 @@ export class SystemService implements ISystemService {
       const modbusSuccess = await this.applySeasonalToModbus(clientId, seasonal);
 
       if (modbusSuccess) {
-        this.logger?.info(`✅ ${clientId} 계절 설정 저장 완료`);
-        return createSuccessResponse('계절 설정이 성공적으로 저장되었습니다.', { seasonal });
+        this.logger?.info(`✅ ${clientId} 절기 설정 저장 완료`);
+        return createSuccessResponse('절기 설정이 성공적으로 저장되었습니다.', { seasonal });
       }
       throw new Error('모드버스 설정 반영 실패');
     } catch (error) {
-      this.logger?.error(`❌ ${clientId} 계절 설정 저장 실패: ${error}`);
+      this.logger?.error(`❌ ${clientId} 절기 설정 저장 실패: ${error}`);
       throw error;
     }
   }
 
   /**
-   * 🌸 계절 설정 조회
+   * 🌸 절기 설정 조회
    */
   async getSeasonal(clientId: string): Promise<SeasonalData | null> {
     try {
-      this.logger?.info(`🔄 ${clientId} 계절 설정 조회 시작`);
+      this.logger?.info(`🔄 ${clientId} 절기 설정 조회 시작`);
 
       const systemDoc = await this.systemRepository.findOne();
       const seasonal = systemDoc?.seasonal;
 
-      this.logger?.info(`✅ ${clientId} 계절 설정 조회 완료`);
+      this.logger?.info(`✅ ${clientId} 절기 설정 조회 완료`);
 
       // 기본값 제공으로 타입 안전성 확보
       if (seasonal) {
@@ -647,7 +647,7 @@ export class SystemService implements ISystemService {
         };
       }
 
-      // 기본 계절 설정 반환
+      // 기본 절기 설정 반환
       return {
         season: 0, // 겨울
         january: 0, // 겨울
@@ -664,23 +664,23 @@ export class SystemService implements ISystemService {
         december: 0, // 겨울
       };
     } catch (error) {
-      this.logger?.error(`❌ ${clientId} 계절 설정 조회 실패: ${error}`);
+      this.logger?.error(`❌ ${clientId} 절기 설정 조회 실패: ${error}`);
       return null;
     }
   }
 
   /**
-   * 🌸 계절 설정을 모드버스에 반영
+   * 🌸 절기 설정을 모드버스에 반영
    */
   async applySeasonalToModbus(clientId: string, seasonal: SeasonalData): Promise<boolean> {
-    this.logger?.info(`🔄 ${clientId} 계절 설정 모드버스 반영 시작`);
+    this.logger?.info(`🔄 ${clientId} 절기 설정 모드버스 반영 시작`);
 
     // CLIENT_PORT_MAPPINGS에서 DDC 설정 매핑 가져오기
     const { CLIENT_PORT_MAPPINGS } = await import('../../data/clientPortMappings');
     const clientMapping = (CLIENT_PORT_MAPPINGS as any)[clientId];
 
     if (!clientMapping || !clientMapping.seasonal) {
-      throw new Error(`Client ${clientId}에 계절 설정 매핑이 없습니다.`);
+      throw new Error(`Client ${clientId}에 절기 설정 매핑이 없습니다.`);
     }
 
     // 모드버스 서비스 가져오기
@@ -714,7 +714,7 @@ export class SystemService implements ISystemService {
           this.logger?.info(`ℹ️ ${clientId} ${field} 설정은 장비에서 지원하지 않아 건너뜁니다.`);
           continue;
         }
-        throw new Error(`계절 설정 매핑 누락: ${clientId} - ${actionKey}`);
+        throw new Error(`절기 설정 매핑 누락: ${clientId} - ${actionKey}`);
       }
 
       let functionCode: number;
@@ -747,18 +747,18 @@ export class SystemService implements ISystemService {
       this.logger?.info(`✅ ${clientId} ${field} 설정 성공: ${seasonal[field as keyof SeasonalData]}`);
     }
 
-    this.logger?.info(`✅ ${clientId} 계절 설정 모드버스 반영 완료`);
+    this.logger?.info(`✅ ${clientId} 절기 설정 모드버스 반영 완료`);
     return true;
   }
 
   async refreshSeasonal(clientId: string): Promise<SuccessResponse> {
-    this.logger?.info(`🔄 ${clientId} 계절 설정 새로고침 시작`);
+    this.logger?.info(`🔄 ${clientId} 절기 설정 새로고침 시작`);
 
     const { CLIENT_PORT_MAPPINGS } = await import('../../data/clientPortMappings');
     const clientMapping = (CLIENT_PORT_MAPPINGS as any)[clientId];
 
     if (!clientMapping || !clientMapping.seasonal) {
-      throw new Error(`Client ${clientId}에 계절 설정 매핑이 없습니다.`);
+      throw new Error(`Client ${clientId}에 절기 설정 매핑이 없습니다.`);
     }
 
     const unifiedModbusService = ServiceContainer.getInstance().getUnifiedModbusService();
@@ -784,7 +784,7 @@ export class SystemService implements ISystemService {
     for (const [field, actionKey] of Object.entries(seasonalGetMapping)) {
       const actionConfig = this.findSeasonalActionConfig(clientMapping, actionKey);
       if (!actionConfig) {
-        throw new Error(`계절 설정 읽기 매핑 누락: ${clientId} - ${actionKey}`);
+        throw new Error(`절기 설정 읽기 매핑 누락: ${clientId} - ${actionKey}`);
       }
 
       let functionCode: number;
@@ -824,13 +824,13 @@ export class SystemService implements ISystemService {
       seasonal: refreshedSeasonal as SeasonalData,
     });
 
-    this.logger?.info(`✅ ${clientId} 계절 설정 새로고침 완료`);
+    this.logger?.info(`✅ ${clientId} 절기 설정 새로고침 완료`);
 
-    return createSuccessResponse('계절 설정을 다시 불러왔습니다.', { seasonal: refreshedSeasonal });
+    return createSuccessResponse('절기 설정을 다시 불러왔습니다.', { seasonal: refreshedSeasonal });
   }
 
   /**
-   * 🌸 CLIENT_PORT_MAPPINGS에서 계절 설정 액션 설정 찾기
+   * 🌸 CLIENT_PORT_MAPPINGS에서 절기 설정 액션 설정 찾기
    */
   private findSeasonalActionConfig(clientMapping: any, actionKey: string): any {
     // seasonal에서 검색
