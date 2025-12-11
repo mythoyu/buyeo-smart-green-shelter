@@ -14,6 +14,7 @@ import logsRoutes from '../api/v1/routes/logs';
 import statusRoutes from '../api/v1/routes/status';
 import systemRoutes from '../api/v1/routes/system';
 import systemMonitoringRoutes from '../api/v1/routes/system-monitoring';
+import systemSeasonalRoutes from '../api/v1/routes/system/seasonal';
 import usersRoutes from '../api/v1/routes/users';
 import { logInfo, logError, logDebug } from '../logger';
 
@@ -96,7 +97,6 @@ export class RouterManager {
       errorsRoutes,
       logsRoutes,
       controlRoutes,
-
       domainStatusRoutes,
       hardwareRoutes, // 🆕 새로운 하드웨어 제어 라우트 추가
     ];
@@ -106,7 +106,7 @@ export class RouterManager {
    * 외부 라우터 목록 반환
    */
   public getExternalRoutes(): RouteModule[] {
-    return [clientRoutes, clientsRoutes, statusRoutes, dataRoutes, errorsRoutes, controlRoutes];
+    return [clientRoutes, clientsRoutes, statusRoutes, dataRoutes, errorsRoutes, controlRoutes, systemSeasonalRoutes];
   }
 
   /**

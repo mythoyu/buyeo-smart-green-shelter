@@ -8,6 +8,7 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/system/seasonal',
     {
+      preHandler: [fastify.requireAuth],
       schema: {
         body: {
           type: 'object',
@@ -120,6 +121,7 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/system/seasonal',
     {
+      preHandler: [fastify.requireAuth],
       schema: {
         response: {
           200: {
