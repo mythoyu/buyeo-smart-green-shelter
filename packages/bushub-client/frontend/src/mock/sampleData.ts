@@ -4,21 +4,21 @@
 // 클라이언트 정보
 export const sampleClient = {
   id: 'c0101',
-  type: 'bushub',
-  region: 'gn',
-  name: '샘플',
-  location: '강원도 강릉시 하슬라로 27',
-  latitude: 37.754692,
-  longitude: 128.878805,
+  type: 'sm-shelter',
+  region: 'by',
+  name: '세도면사무소',
+  location: '세도면 청송리 426-1',
+  latitude: 36.170399,
+  longitude: 126.946108,
   devices: [
     {
       id: 'd011',
       name: '조명',
       type: 'lighting',
       units: [
-        { id: 'u001', name: '내부조명1' },
-        { id: 'u002', name: '내부조명2' },
-        { id: 'u003', name: '외부조명1' },
+        { id: 'u001', name: 'LED 조명' },
+        { id: 'u003', name: '캐릭터구조물' },
+        { id: 'u004', name: '버스사각등' },
       ],
     },
     {
@@ -28,52 +28,16 @@ export const sampleClient = {
       units: [{ id: 'u001', name: '냉난방기' }],
     },
     {
-      id: 'd022',
-      name: '전열교환기',
-      type: 'exchanger',
-      units: [{ id: 'u001', name: '전열교환기' }],
-    },
-    {
-      id: 'd023',
-      name: '에어커튼',
-      type: 'aircurtain',
-      units: [
-        { id: 'u001', name: '에어커튼1' },
-        { id: 'u002', name: '에어커튼2' },
-      ],
-    },
-    {
       id: 'd041',
-      name: '온열벤치',
+      name: '스마트벤치',
       type: 'bench',
-      units: [
-        { id: 'u001', name: '내부벤치1' },
-        { id: 'u002', name: '내부벤치2' },
-      ],
+      units: [{ id: 'u001', name: '스마트벤치' }],
     },
     {
       id: 'd051',
       name: '자동문',
       type: 'door',
-      units: [
-        { id: 'u001', name: '자동문1' },
-        { id: 'u002', name: '자동문2' },
-      ],
-    },
-    {
-      id: 'd061',
-      name: '통합센서',
-      type: 'integrated_sensor',
-      units: [{ id: 'u001', name: '통합센서' }],
-    },
-    {
-      id: 'd081',
-      name: '자동문외부스위치',
-      type: 'externalsw',
-      units: [
-        { id: 'u001', name: '자동문외부스위치1' },
-        { id: 'u002', name: '자동문외부스위치2' },
-      ],
+      units: [{ id: 'u001', name: '자동문' }],
     },
   ],
 };
@@ -99,26 +63,10 @@ export const sampleStatus = {
       ],
     },
     {
-      id: 'd022',
-      status: 0, // 정상
-      units: [
-        { id: 'u001', status: 0 }, // 정상
-      ],
-    },
-    {
-      id: 'd023',
-      status: 0, // 정상
-      units: [
-        { id: 'u001', status: 0 }, // 정상
-        { id: 'u002', status: 0 }, // 정상
-      ],
-    },
-    {
       id: 'd041',
       status: 0, // 정상
       units: [
         { id: 'u001', status: 0 }, // 정상
-        { id: 'u002', status: 0 }, // 정상
       ],
     },
     {
@@ -126,23 +74,6 @@ export const sampleStatus = {
       status: 0, // 정상
       units: [
         { id: 'u001', status: 0 }, // 정상
-        { id: 'u002', status: 0 }, // 정상
-        { id: 'u003', status: 0 }, // 정상
-      ],
-    },
-    {
-      id: 'd061',
-      status: 0, // 정상
-      units: [
-        { id: 'u001', status: 0 }, // 정상
-      ],
-    },
-    {
-      id: 'd081',
-      status: 0, // 정상
-      units: [
-        { id: 'u001', status: 0 }, // 정상
-        { id: 'u002', status: 0 }, // 정상
       ],
     },
   ],
@@ -169,19 +100,19 @@ export const sampleData = {
           },
         },
         {
-          id: 'u002',
+          id: 'u003',
           data: {
-            power: false,
+            power: true,
             connection: true,
             start_time_1: '08:00',
             end_time_1: '22:00',
             start_time_2: '18:00',
             end_time_2: '06:00',
-            auto_mode: false,
+            auto_mode: true,
           },
         },
         {
-          id: 'u003',
+          id: 'u004',
           data: {
             power: true,
             connection: true,
@@ -211,45 +142,6 @@ export const sampleData = {
       ],
     },
     {
-      id: 'd022',
-      type: 'exchanger',
-      units: [
-        {
-          id: 'u001',
-          data: {
-            power: true,
-            connection: true,
-            speed: 2,
-            auto_mode: true,
-          },
-        },
-      ],
-    },
-    {
-      id: 'd023',
-      type: 'aircurtain',
-      units: [
-        {
-          id: 'u001',
-          data: {
-            power: true,
-            connection: true,
-            speed: 3,
-            auto_mode: true,
-          },
-        },
-        {
-          id: 'u002',
-          data: {
-            power: false,
-            connection: true,
-            speed: 2,
-            auto_mode: false,
-          },
-        },
-      ],
-    },
-    {
       id: 'd041',
       type: 'bench',
       units: [
@@ -260,15 +152,6 @@ export const sampleData = {
             connection: true,
             temperature: 30,
             auto_mode: true,
-          },
-        },
-        {
-          id: 'u002',
-          data: {
-            power: false,
-            connection: true,
-            temperature: 28,
-            auto_mode: false,
           },
         },
       ],
@@ -284,55 +167,6 @@ export const sampleData = {
             connection: true,
             auto: true,
             status: 'closed',
-          },
-        },
-        {
-          id: 'u002',
-          data: {
-            power: true,
-            connection: true,
-            auto: false,
-            status: 'open',
-          },
-        },
-      ],
-    },
-    {
-      id: 'd061',
-      type: 'integrated_sensor',
-      units: [
-        {
-          id: 'u001',
-          data: {
-            power: true,
-            connection: true,
-            temperature: 23,
-            humidity: 45,
-            enabled: true,
-          },
-        },
-      ],
-    },
-    {
-      id: 'd081',
-      type: 'externalsw',
-      units: [
-        {
-          id: 'u001',
-          data: {
-            power: true,
-            connection: true,
-            enabled: true,
-            status: 'normal',
-          },
-        },
-        {
-          id: 'u002',
-          data: {
-            power: false,
-            connection: true,
-            enabled: false,
-            status: 'normal',
           },
         },
       ],

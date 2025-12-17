@@ -10,15 +10,5 @@ export const clientStyles: Record<string, any> = {
     marker: 'bus',
     icon: 'Bus',
   },
-  c0103: {
-    color: '#fbc02d', // 노랑
-    marker: 'bus',
-    icon: 'Bus',
-  },
-  c0104: {
-    color: '#d32f2f', // 빨강
-    marker: 'bus',
-    icon: 'Bus',
-  },
-  // ...다른 클라이언트들
+  // ...다른 클라이언트들 (필요 시 확장)
 };

@@ -159,10 +159,8 @@ POST /client
 ```json
 {
   "clientId": "c0102",
-  "name": "구름다리(올리브영 앞)",
-  "location": "강원도 강릉시 교동 1881-8, 교동광장로",
-  "city": "강릉시",
-  "project": "버스환승센터"
+  "name": "정림사지입구",
+  "location": "충청남도 부여군 동남리 765-1"
 }
 ```
 
@@ -174,10 +172,8 @@ POST /client
   "message": "클라이언트 정보가 성공적으로 설정되었습니다.",
   "data": {
     "clientId": "c0102",
-    "name": "구름다리(올리브영 앞)",
-    "location": "강원도 강릉시 교동 1881-8, 교동광장로",
-    "city": "강릉시",
-    "project": "버스환승센터"
+    "name": "정림사지입구",
+    "location": "충청남도 부여군 동남리 765-1"
   }
 }
 ```
@@ -202,14 +198,12 @@ GET /clients
     "data": [
       {
         "id": "c0101",
-        "name": "강릉시외버스터미널",
-        "location": "강원도 강릉시 하슬라로 27",
-        "city": "강릉",
-        "project": "스마트시티",
-        "type": "bushub",
-        "region": "강릉",
-        "latitude": 37.754692,
-        "longitude": 128.878805,
+        "name": "세도면사무소",
+        "location": "세도면 청송리 426-1",
+        "type": "sm-shelter",
+        "region": "by",
+        "latitude": 36.170399,
+        "longitude": 126.946108,
         "devices": [
           {
             "id": "d021",
@@ -677,12 +671,12 @@ GET /client
   "message": "클라이언트 정보 조회 성공",
   "data": {
     "id": "c0101",
-    "type": "bushub",
-    "region": "gn",
-    "name": "강릉시외버스터미널",
-    "location": "강원도 강릉시 하슬라로 27",
-    "latitude": 37.754692,
-    "longitude": 128.878805,
+    "type": "sm-shelter",
+    "region": "by",
+    "name": "세도면사무소",
+    "location": "세도면 청송리 426-1",
+    "latitude": 36.170399,
+    "longitude": 126.946108,
     "devices": [
       {
         "id": "d021",

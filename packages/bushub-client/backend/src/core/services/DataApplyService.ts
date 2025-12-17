@@ -711,7 +711,7 @@ export class DataApplyService {
       this.updateProgress('applying', 'DOx 포트 초기화 진행 중...');
       await this.resetAllDOxPortsDirectly(unifiedModbusService);
 
-      // 3단계: c0101~c0104 에어커튼 특별 처리
+      // 3단계: c0101~c0102 에어커튼 특별 처리
       this.updateProgress('applying', '에어커튼 특별 처리 중...');
       await this.resetAirCurtainForSpecialClients(unifiedModbusService, clientId);
 
@@ -810,16 +810,13 @@ export class DataApplyService {
   }
 
   /**
-   * c0101~c0104 에어커튼에만 power=true 추가 명령 실행
+   * c0101~c0102 에어커튼에만 power=true 추가 명령 실행
    */
   private async resetAirCurtainForSpecialClients(unifiedModbusService: any, clientId: string): Promise<void> {
     try {
       const specialAirCurtainPorts: Record<string, string[]> = {
         c0101: ['DO7', 'DO8'],
         c0102: ['DO7', 'DO8'],
-        c0103: ['DO7', 'DO8'],
-        c0104: ['DO7', 'DO8'],
-        c0105: ['DO8'],
       };
 
       const airCurtainPorts = specialAirCurtainPorts[clientId];

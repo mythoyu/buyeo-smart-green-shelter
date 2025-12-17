@@ -563,7 +563,7 @@ const SystemSettingsPage: React.FC = () => {
       {/* 로그 패널 */}
       <TopLogPanel isConnected={isConnected} />
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'>
         {/* SoftAP 설정 */}
         <SettingsCard
           icon={Wifi}
@@ -617,7 +617,7 @@ const SystemSettingsPage: React.FC = () => {
             error={getFieldError('softap', 'ssid')}
             disabled={!softapInput?.enabled}
             showDefaultValueButton={true}
-            defaultValue='YouJobs-Management'
+            defaultValue='YouJobs'
           />
           <InputWithLabel
             label='WiFi 비밀번호'

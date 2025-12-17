@@ -14,7 +14,7 @@
 | v0.2     | 2025.06.30 | 상세 작성<br>엔드포인트 정리 ( 데이터가 크지 않으므로 )<br>- /devices 이하 제거<br>- POST만 유지 ( 제어용 )                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 구조 단순화    |
 | v0.3     | 2025.07.03 | 2.1 API목록<br>- BaseURL : /external prefix 명시 ( 내부API와 분리 위해 )<br>- 특정유닛 제어 : 엔드포인트 변경<br>- 특정유닛 대량제어 엔드포인트 추가<br>- 특정유닛 대량제어 상태조회 엔드포인트 추가<br>- 캐싱정책추가<br>3.2 클라이언트 상태조회<br>- [devices 객체] : 장비상태설명추가<br>- [units 객체] : 유닛상태설명추가<br>3.5 특정유닛제어 명세변경<br>- 엔드포인트 변경 /devices/{deviceId}/units/{unitId} → /devices/{deviceId}/units/{unitId}/command<br>3.6 특정유닛대량제어 명세추가<br>3.7 특정유닛대량제어 상태조회 명세추가<br>5. 예제 curl 요청 메뉴 삭제 | 협의내용 반영  |
 | v0.4     | 2025.08.03 | 문서 포맷 정리<br>- 마크다운 테이블 형식 정렬 및 가독성 개선<br>- 목차 번호 수정 (5→4, 6→5, 7→6)<br>- API 목록 테이블 구조 개선<br>- 장비코드, 타입, 데이터필드 테이블 정렬<br>- 장비, 유닛 코드일람 테이블 정렬<br>- 모든 응답필드 테이블 정렬 및 가독성 개선<br>- 오류 코드 테이블 정렬                                                                                                                                                                                                                                                                                 | 문서 포맷 개선 |
-| v0.5     | 2025.01.XX | 절기 설정 API 추가<br>- 절기 설정 조회 엔드포인트 추가<br>- 절기 설정 저장 엔드포인트 추가                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 기능 추가      |
+| v0.5     | 2025.01.XX | 절기 설정 API 추가<br>- 절기 설정 조회 엔드포인트 추가<br>- 절기 설정 저장 엔드포인트 추가                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 기능 추가      |
 
 ## 목차
 
@@ -121,7 +121,7 @@
 | 특정 유닛 대량제어          | 여러 명령 동시 제어         | `POST /devices/{deviceId}/units/{unitId}/commands` |
 | 특정 유닛 대량제어 상태조회 | 대량제어 결과 조회          | `GET /devices/{deviceId}/units/{unitId}/commands`  |
 | 절기 설정 조회              | 월별 절기 설정 조회         | `GET /system/seasonal`                             |
-| 절기 설정 저장              | 월별 절기 설정 저장         | `POST /system/seasonal`                             |
+| 절기 설정 저장              | 월별 절기 설정 저장         | `POST /system/seasonal`                            |
 
 | 항목     | 값/설명                      |
 | -------- | ---------------------------- |
@@ -140,15 +140,15 @@
 
 **[스키마 엔드포인트 – 응답필드 데이터타입 및 응답 예시 확인용]**
 
-| 설명                        | path                                    |
-| --------------------------- | --------------------------------------- |
-| 클라이언트 정보 조회        | `GET /client/schema`                    |
-| 클라이언트 상태 조회        | `GET /status/schema`                    |
-| 클라이언트 데이터 조회      | `GET /data/schema`                      |
-| 클라이언트 에러 조회        | `GET /errors/schema`                    |
-| 특정유닛 대량제어           | `POST /devices/{deviceId}/units/{unitId}/commands/schema` |
-| 특정유닛 대량제어 상태조회  | `GET /devices/{deviceId}/units/{unitId}/commands/schema` |
-| 절기 설정 조회              | `GET /system/seasonal/schema`           |
+| 설명                       | path                                                      |
+| -------------------------- | --------------------------------------------------------- |
+| 클라이언트 정보 조회       | `GET /client/schema`                                      |
+| 클라이언트 상태 조회       | `GET /status/schema`                                      |
+| 클라이언트 데이터 조회     | `GET /data/schema`                                        |
+| 클라이언트 에러 조회       | `GET /errors/schema`                                      |
+| 특정유닛 대량제어          | `POST /devices/{deviceId}/units/{unitId}/commands/schema` |
+| 특정유닛 대량제어 상태조회 | `GET /devices/{deviceId}/units/{unitId}/commands/schema`  |
+| 절기 설정 조회             | `GET /system/seasonal/schema`                             |
 
 ### 3.3 HTTP 에러코드
 
@@ -167,14 +167,12 @@
 
 ### 3.4 버스환승센터 클라이언트 코드
 
-| 코드  | 설명                               |
-| ----- | ---------------------------------- |
-| c0101 | 강릉시외버스터미널                 |
-| c0102 | 구름다리                           |
-| c0103 | 안목커피거리(동해상사 앞)          |
-| c0104 | 홍제동주민센터 (노인종합복지관 앞) |
+| 코드  | 설명                   |
+| ----- | ---------------------- |
+| c0101 | 세도면사무소(승강장형) |
+| c0102 | 정림사지입구(쉼터형)   |
 
-- 이후 추가되는 클라이언트는 함께 첨부되는 엑셀파일을 참고해주시기 바랍니다
+> 이후 추가되는 클라이언트는 함께 첨부되는 엑셀파일을 참고해주시기 바랍니다
 
 ### 3.5 버스환승센터 장비코드, 타입, 데이터필드
 
@@ -326,17 +324,17 @@
 
 **응답필드:**
 
-| 필드      | 설명             | 타입   | 예시                        |
-| --------- | ---------------- | ------ | --------------------------- |
-| id        | 클라이언트 ID    | string | "c0101"                     |
-| type      | 클라이언트 타입  | string | "bushub"                    |
-| region    | 운용 지자체 코드 | string | "gn"                        |
-| name      | 클라이언트 이름  | string | "강릉시외버스터미널"        |
-| location  | 주소             | string | "강원도 강릉시 하슬라로 27" |
-| latitude  | 위도             | number | 37.754692                   |
-| longitude | 경도             | number | 128.878805                  |
-| updatedAt | 갱신 시각        | string | "2025-06-29T10:10:00Z"      |
-| devices   | 장비 목록        | array  | [devices 객체 참조]         |
+| 필드      | 설명             | 타입   | 예시                   |
+| --------- | ---------------- | ------ | ---------------------- |
+| id        | 클라이언트 ID    | string | "c0101"                |
+| type      | 클라이언트 타입  | string | "sm-shelter"           |
+| region    | 운용 지자체 코드 | string | "by"                   |
+| name      | 클라이언트 이름  | string | "세도면사무소"         |
+| location  | 주소             | string | "세도면 청송리 426-1"  |
+| latitude  | 위도             | number | 36.170399              |
+| longitude | 경도             | number | 126.946108             |
+| updatedAt | 갱신 시각        | string | "2025-06-29T10:10:00Z" |
+| devices   | 장비 목록        | array  | [devices 객체 참조]    |
 
 **[devices 객체]**
 
@@ -359,12 +357,12 @@
 ```json
 {
   "id": "c0101",
-  "type": "bushub",
-  "region": "gn",
-  "name": "강릉시외버스터미널",
-  "location": "강원도 강릉시 하슬라로 27",
-  "latitude": 37.754692,
-  "longitude": 128.878805,
+  "type": "sm-shelter",
+  "region": "by",
+  "name": "세도면사무소",
+  "location": "세도면 청송리 426-1",
+  "latitude": 36.170399,
+  "longitude": 126.946108,
   "devices": [
     {
       "id": "d021",
@@ -674,28 +672,29 @@
 
 - 메서드: GET
 - 엔드포인트: /system/seasonal
-- 설명: 현재 저장된 월별 절기 설정(여름/겨울)을 조회합니다. 각 월별로 여름(1) 또는 겨울(0) 설정값을 반환합니다.
+- 설명: 현재 저장된 월별 절기 설정(하절기/동절기)을 조회합니다. 각 월별로 하절기(1) 또는 동절기(0) 설정값을 반환합니다. 이 절기 정보는 냉난방기 절기별 타겟온도(SET_SUMMER_CONT_TEMP, SET_WINTER_CONT_TEMP)와 온열벤치 절기별 운영의 기준이 됩니다.
 
 **응답필드:**
 
-| 필드      | 설명             | 타입   | 예시 |
-| --------- | ---------------- | ------ | ---- |
-| seasonal   | 절기 설정 객체   | object | -    |
-| season     | 현재 계절        | number | 0    |
-| january    | 1월 절기 설정    | number | 0    |
-| february   | 2월 절기 설정    | number | 0    |
-| march      | 3월 절기 설정    | number | 0    |
-| april      | 4월 절기 설정    | number | 0    |
-| may        | 5월 절기 설정    | number | 0    |
-| june       | 6월 절기 설정    | number | 1    |
-| july       | 7월 절기 설정    | number | 1    |
-| august     | 8월 절기 설정    | number | 1    |
-| september  | 9월 절기 설정    | number | 0    |
-| october    | 10월 절기 설정   | number | 0    |
-| november   | 11월 절기 설정   | number | 0    |
-| december   | 12월 절기 설정   | number | 0    |
+| 필드      | 설명           | 타입   | 예시 | 비고                 |
+| --------- | -------------- | ------ | ---- | -------------------- |
+| seasonal  | 절기 설정 객체 | object | -    | -                    |
+| season    | 현재 계절      | number | 0    | 0: 동절기, 1: 하절기 |
+| january   | 1월 절기 설정  | number | 0    | 0: 동절기, 1: 하절기 |
+| february  | 2월 절기 설정  | number | 0    | 0: 동절기, 1: 하절기 |
+| march     | 3월 절기 설정  | number | 0    | 0: 동절기, 1: 하절기 |
+| april     | 4월 절기 설정  | number | 0    | 0: 동절기, 1: 하절기 |
+| may       | 5월 절기 설정  | number | 0    | 0: 동절기, 1: 하절기 |
+| june      | 6월 절기 설정  | number | 1    | 0: 동절기, 1: 하절기 |
+| july      | 7월 절기 설정  | number | 1    | 0: 동절기, 1: 하절기 |
+| august    | 8월 절기 설정  | number | 1    | 0: 동절기, 1: 하절기 |
+| september | 9월 절기 설정  | number | 0    | 0: 동절기, 1: 하절기 |
+| october   | 10월 절기 설정 | number | 0    | 0: 동절기, 1: 하절기 |
+| november  | 11월 절기 설정 | number | 0    | 0: 동절기, 1: 하절기 |
+| december  | 12월 절기 설정 | number | 0    | 0: 동절기, 1: 하절기 |
 
 **설명:**
+
 - 각 월별 설정값: `0` = 겨울(동절기), `1` = 여름(하절기)
 - `season`: 현재 절기 설정 (0: 겨울, 1: 여름)
 
@@ -729,28 +728,29 @@
 
 - 메서드: POST
 - 엔드포인트: /system/seasonal
-- 설명: 월별 절기 설정(여름/겨울)을 저장합니다. 저장된 설정은 DDC(제어기)에 즉시 반영됩니다.
+- 설명: 월별 절기 설정(하절기/동절기)을 저장합니다. 저장된 설정은 DDC(제어기)에 반영됩니다. 이 절기 정보는 냉난방기 절기별 타겟온도(SET_SUMMER_CONT_TEMP, SET_WINTER_CONT_TEMP)와 온열벤치 절기별 운영의 기준이 됩니다.
 
 **요청필드:**
 
-| 필드      | 설명             | 타입   | 필수 | 예시 |
-| --------- | ---------------- | ------ | ---- | ---- |
-| seasonal   | 절기 설정 객체   | object | O    | -    |
-| season     | 현재 계절        | number | O    | 0    |
-| january    | 1월 절기 설정    | number | O    | 0    |
-| february   | 2월 절기 설정    | number | O    | 0    |
-| march      | 3월 절기 설정    | number | O    | 0    |
-| april      | 4월 절기 설정    | number | O    | 0    |
-| may        | 5월 절기 설정    | number | O    | 0    |
-| june       | 6월 절기 설정    | number | O    | 1    |
-| july       | 7월 절기 설정    | number | O    | 1    |
-| august     | 8월 절기 설정    | number | O    | 1    |
-| september  | 9월 절기 설정    | number | O    | 0    |
-| october    | 10월 절기 설정   | number | O    | 0    |
-| november   | 11월 절기 설정   | number | O    | 0    |
-| december   | 12월 절기 설정   | number | O    | 0    |
+| 필드      | 설명           | 타입   | 필수 | 예시 | 비고                 |
+| --------- | -------------- | ------ | ---- | ---- | -------------------- |
+| seasonal  | 절기 설정 객체 | object | O    | -    | -                    |
+| season    | 현재 계절      | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| january   | 1월 절기 설정  | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| february  | 2월 절기 설정  | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| march     | 3월 절기 설정  | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| april     | 4월 절기 설정  | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| may       | 5월 절기 설정  | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| june      | 6월 절기 설정  | number | O    | 1    | 0: 동절기, 1: 하절기 |
+| july      | 7월 절기 설정  | number | O    | 1    | 0: 동절기, 1: 하절기 |
+| august    | 8월 절기 설정  | number | O    | 1    | 0: 동절기, 1: 하절기 |
+| september | 9월 절기 설정  | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| october   | 10월 절기 설정 | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| november  | 11월 절기 설정 | number | O    | 0    | 0: 동절기, 1: 하절기 |
+| december  | 12월 절기 설정 | number | O    | 0    | 0: 동절기, 1: 하절기 |
 
 **설명:**
+
 - 각 월별 설정값: `0` = 겨울(동절기), `1` = 여름(하절기)
 - `season`: 현재 절기 설정 (0: 겨울, 1: 여름)
 - 모든 필드는 필수입니다.
@@ -779,9 +779,22 @@
 
 **응답필드:**
 
-| 필드      | 설명             | 타입   | 예시 |
-| --------- | ---------------- | ------ | ---- |
-| seasonal   | 저장된 절기 설정 | object | -    |
+| 필드      | 설명             | 타입   | 예시 | 비고                  |
+| --------- | ---------------- | ------ | ---- | --------------------- |
+| seasonal  | 저장된 절기 설정 | object | -    | 저장된 절기 설정 객체 |
+| season    | 현재 계절        | number | 0    | 0: 겨울, 1: 여름      |
+| january   | 1월 계절 설정    | number | 0    | 0: 겨울, 1: 여름      |
+| february  | 2월 계절 설정    | number | 0    | 0: 겨울, 1: 여름      |
+| march     | 3월 계절 설정    | number | 0    | 0: 겨울, 1: 여름      |
+| april     | 4월 계절 설정    | number | 0    | 0: 겨울, 1: 여름      |
+| may       | 5월 계절 설정    | number | 0    | 0: 겨울, 1: 여름      |
+| june      | 6월 계절 설정    | number | 1    | 0: 겨울, 1: 여름      |
+| july      | 7월 계절 설정    | number | 1    | 0: 겨울, 1: 여름      |
+| august    | 8월 계절 설정    | number | 1    | 0: 겨울, 1: 여름      |
+| september | 9월 계절 설정    | number | 0    | 0: 겨울, 1: 여름      |
+| october   | 10월 계절 설정   | number | 0    | 0: 겨울, 1: 여름      |
+| november  | 11월 계절 설정   | number | 0    | 0: 겨울, 1: 여름      |
+| december  | 12월 계절 설정   | number | 0    | 0: 겨울, 1: 여름      |
 
 **예시응답:**
 

@@ -15,7 +15,7 @@ import { EmptyState } from '../common/EmptyState';
 import { PollingDialog } from '../common/PollingDialog';
 import { ProcessDialog } from '../common/ProcessDialog';
 import { TopLogPanel } from '../common/TopLogPanel';
-import { Card, CardContent, Select, SelectItem, SelectTrigger, SelectContent, Input } from '../ui';
+import { Card, CardContent, Input } from '../ui';
 
 interface DeviceRegistrationPageProps {
   // 현재는 사용되지 않으므로 주석 처리
@@ -86,9 +86,6 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
   const { data: pollingState, isLoading: pollingLoading } = useGetPollingState();
   const updatePollingMutation = useUpdatePollingState();
 
-  const [region, setRegion] = useState('');
-  const [city, setCity] = useState('');
-  const [project, setProject] = useState('');
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<ClientInfoDto | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -158,37 +155,15 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
     return selectedClient && currentClient && currentClient.id !== selectedClient.id;
   }, [currentClient, selectedClient]);
 
-  // 필터링 (전체 클라이언트 목록에서 필터링)
-  const regionOptions = useMemo(() => Array.from(new Set(clients.map((c: any) => c.region))), [clients]);
-  const cityOptions = useMemo(() => {
-    if (!region) return Array.from(new Set(clients.map((c: any) => c.city)));
-    return Array.from(new Set(clients.filter((c: any) => c.region === region).map((c: any) => c.city)));
-  }, [clients, region]);
-  const projectOptions = useMemo(() => Array.from(new Set(clients.map(() => '스마트시티'))), [clients]);
+  // 필터링 (전체 클라이언트 목록에서 필터링 - 검색만 사용)
   const filteredClients = useMemo(
     () =>
       clients.filter((c: any) => {
-        const regionMatch = !region || c.region === region;
-        const cityMatch = !city || c.city === city;
         const searchMatch = !search || c.name.includes(search) || c.location.includes(search);
-        return regionMatch && cityMatch && searchMatch;
+        return searchMatch;
       }),
-    [clients, region, city, search]
+    [clients, search]
   );
-
-  // 필터링 콜백 함수들 메모이제이션
-  const handleRegionChange = useCallback((selectedRegion: string) => {
-    setRegion(selectedRegion);
-    setCity(''); // region 변경 시 city 초기화
-  }, []);
-
-  const handleCityChange = useCallback((selectedCity: string) => {
-    setCity(selectedCity);
-  }, []);
-
-  const handleProjectChange = useCallback((selectedProject: string) => {
-    setProject(selectedProject);
-  }, []);
 
   const handleSearchChange = useCallback((searchTerm: string) => {
     setSearch(searchTerm);
@@ -424,45 +399,6 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
       <Card>
         <CardContent className='px-6'>
           <div className='flex flex-col sm:flex-row gap-4 items-stretch sm:items-center'>
-            {/* 행정자치구 필터 */}
-            <div className='flex-1 min-w-0'>
-              <Select value={region} onValueChange={handleRegionChange}>
-                <SelectTrigger className='w-full'>{region || '행정자치구 선택'}</SelectTrigger>
-                <SelectContent>
-                  {regionOptions.map(opt => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 시군구 필터 */}
-            <div className='flex-1 min-w-0'>
-              <Select value={city} onValueChange={handleCityChange}>
-                <SelectTrigger className='w-full'>{city || '시군구 선택'}</SelectTrigger>
-                <SelectContent>
-                  {cityOptions.map(opt => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='flex-1 min-w-0'>
-              <Select value={project} onValueChange={handleProjectChange}>
-                <SelectTrigger className='w-full'>{project || '프로젝트 선택'}</SelectTrigger>
-                <SelectContent>
-                  {projectOptions.map(opt => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className='flex-1 min-w-0'>
               <Input
                 placeholder='현장명/주소 검색'
@@ -476,10 +412,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
       </Card>
 
       {/* 클라이언트 목록 */}
-      <div
-        key={`${region}-${city}-${project}-${search}`}
-        className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2'
-      >
+      <div key={search} className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2'>
         {filteredClients.length === 0 ? (
           <div className='col-span-full animate-in fade-in duration-300'>
             <EmptyState
@@ -523,9 +456,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
                   <MapPin className='h-7 w-7 text-primary' />
                 </div>
                 <div className='text-xl font-bold text-center'>{client.name}</div>
-                <div className='text-xs text-muted-foreground font-semibold mt-2'>
-                  {client.region} {client.city} / 스마트시티
-                </div>
+                <div className='text-xs text-muted-foreground font-semibold mt-2'>{client.city}</div>
                 <div className='text-muted-foreground text-sm mt-1 text-center'>{client.location}</div>
 
                 {/* 디바이스 정보 표시 */}

@@ -1,9 +1,6 @@
 // 클라이언트별 기본값 import
 import { c0101Defaults } from './c0101';
 import { c0102Defaults } from './c0102';
-import { c0103Defaults } from './c0103';
-import { c0104Defaults } from './c0104';
-import { c0105Defaults } from './c0105';
 
 // 디바이스별 기본 초기값 인터페이스
 export interface DeviceDefaultValues {
@@ -128,9 +125,6 @@ export interface ClientDefaultMapping {
 export const CLIENT_DEFAULT_MAPPING: ClientDefaultMapping = {
   c0101: c0101Defaults,
   c0102: c0102Defaults,
-  c0103: c0103Defaults,
-  c0104: c0104Defaults,
-  c0105: c0105Defaults,
 };
 
 // 기본값 조회 함수

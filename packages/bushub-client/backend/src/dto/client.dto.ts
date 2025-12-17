@@ -15,7 +15,6 @@ export interface ClientResponseDTO {
   id: string;
   type: string;
   region: string;
-  city: string;
   name: string;
   location: string;
   latitude: number;
@@ -45,7 +44,6 @@ export function toClientResponseDTO(client: Record<string, unknown>): ClientResp
     id: (client.clientId || client.id) as string,
     type: client.type as string,
     region: client.region as string,
-    city: client.city as string,
     name: client.name as string,
     location: client.location as string,
     latitude: client.latitude as number,

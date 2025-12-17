@@ -8,7 +8,6 @@ export const ClientResponseSchema = Type.Object({
     id: Type.String(),
     type: Type.String(),
     region: Type.String(),
-    city: Type.String(),
     name: Type.String(),
     location: Type.String(),
     latitude: Type.Number(),

@@ -23,20 +23,20 @@ fi
 
 # MongoDB 컨테이너 중지
 echo "⏹️  MongoDB 컨테이너 중지 중..."
-if docker ps | grep -q "mongodb-dev"; then
-    docker stop mongodb-dev
+if docker ps | grep -q "mongodb-buyeo-smartgreen-dev"; then
+    docker stop mongodb-buyeo-smartgreen-dev
     echo "✅ MongoDB 컨테이너가 중지되었습니다."
 else
-    echo "ℹ️  실행 중인 mongodb-dev 컨테이너가 없습니다."
+    echo "ℹ️  실행 중인 mongodb-buyeo-smartgreen-dev 컨테이너가 없습니다."
 fi
 
 # MongoDB 컨테이너 제거
 echo "🗑️  MongoDB 컨테이너 제거 중..."
-if docker ps -a | grep -q "mongodb-dev"; then
-    docker rm mongodb-dev
+if docker ps -a | grep -q "mongodb-buyeo-smartgreen-dev"; then
+    docker rm mongodb-buyeo-smartgreen-dev
     echo "✅ MongoDB 컨테이너가 제거되었습니다."
 else
-    echo "ℹ️  제거할 mongodb-dev 컨테이너가 없습니다."
+    echo "ℹ️  제거할 mongodb-buyeo-smartgreen-dev 컨테이너가 없습니다."
 fi
 
 # 데이터 삭제 옵션
@@ -62,7 +62,7 @@ if [ "$REMOVE_DATA" = true ]; then
 fi
 
 # 남은 MongoDB 관련 컨테이너 확인
-MONGO_CONTAINERS=$(docker ps -a --filter "name=mongo" --format "{{.Names}}" | grep -v mongodb-dev || true)
+MONGO_CONTAINERS=$(docker ps -a --filter "name=mongo" --format "{{.Names}}" | grep -v mongodb-buyeo-smartgreen-dev || true)
 if [ ! -z "$MONGO_CONTAINERS" ]; then
     echo ""
     echo "ℹ️  다른 MongoDB 관련 컨테이너가 있습니다:"

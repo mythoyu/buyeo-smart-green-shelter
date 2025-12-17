@@ -181,15 +181,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // }, [currentModeStatus]);
 
   const navigation = [
-    { name: '대시보드', href: '/dashboard', icon: Home },
-    { name: '현장설정', href: '/device-registration', icon: Database },
-    { name: '로그분석', href: '/log-analysis', icon: BarChart3 },
-    { name: '시스템설정', href: '/system-settings', icon: Settings },
-    { name: '시스템모니터링', href: '/system-monitoring', icon: Activity },
-    { name: '사용자관리', href: '/users', icon: Users },
+    { name: '대시보드', label: '대시\n보드', href: '/dashboard', icon: Home },
+    { name: '현장 설정', label: '현장\n설정', href: '/device-registration', icon: Database },
+    { name: '로그 분석', label: '로그\n분석', href: '/log-analysis', icon: BarChart3 },
+    { name: '시스템 설정', label: '시스템\n설정', href: '/system-settings', icon: Settings },
+    { name: '시스템 분석', label: '시스템\n분석', href: '/system-monitoring', icon: Activity },
+    { name: '사용자 관리', label: '사용자\n관리', href: '/users', icon: Users },
     // 하드웨어 제어는 superuser, engineer만 접근 가능
     ...(user?.role === 'superuser' || user?.role === 'engineer'
-      ? [{ name: '하드웨어제어', href: '/hardware-control', icon: Cpu }]
+      ? [{ name: '직접 제어', label: '직접\n제어', href: '/hardware-control', icon: Cpu }]
       : []),
   ].filter(item => canAccessPage(user?.role || '', item.href));
   const isActiveRoute = (href: string) => location.pathname === href;
@@ -230,7 +230,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   <Bus className='h-5 w-5 text-primary' />
                   <span className='text-sm font-medium text-muted-foreground'>클라이언트 정보</span>
                 </div>
-                <h3 className='font-bold text-lg'>{client?.name || '버스환승센터'}</h3>
+                <h3 className='font-bold text-lg'>{client?.name || '스마트 그린 쉼터'}</h3>
                 <p className='text-sm text-muted-foreground'>{client?.location || '클라이언트'}</p>
               </div>
             </PopoverContent>
@@ -243,7 +243,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <div className='hidden md:flex items-center gap-3'>
             <Bus className='h-6 w-6 text-primary' />
             <div className='text-center'>
-              <h1 className='text-lg font-bold'>{client?.name || '버스환승센터'}</h1>
+              <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
               <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>
             </div>
           </div>
@@ -295,12 +295,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         />
       )}
 
-      {/* 반응형 사이드바 - 헤더 밑에서 시작 */}
+      {/* 반응형 사이드바 - 헤더 밑에서 시작, 브라우저 하단까지 전체 채우기 */}
       <div
         className={`
-          fixed top-16 left-0 z-50 w-20 h-[calc(100vh-4rem)] transform transition-all duration-300 ease-in-out
+          fixed top-16 bottom-0 left-0 z-50 w-20 transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           bg-card border-r border-gray-200 shadow-lg
+          flex flex-col
         `}
       >
         {/* 네비게이션 메뉴 */}
@@ -309,6 +310,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             {navigation.map(item => {
               const Icon = item.icon;
               const isActive = isActiveRoute(item.href);
+              const label = (item as any).label ?? item.name;
               return (
                 <Button
                   key={item.name}
@@ -324,28 +326,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   title={item.name}
                 >
                   <Icon className='h-5 w-5 mb-0.5' aria-hidden='true' />
-                  <span className='text-xs text-center leading-tight whitespace-pre-line'>{item.name}</span>
+                  <span className='text-xs text-center leading-tight whitespace-pre-line'>{label}</span>
                 </Button>
               );
             })}
           </div>
 
           {/* 하단 버전 정보 및 로그아웃 */}
-          <div className='mt-auto pt-4 border-t flex justify-center'>
+          <div className='mt-auto pt-4 border-t flex flex-col items-center gap-2'>
             <div className='w-16 h-16 flex flex-col items-center justify-center text-xs text-muted-foreground hover:text-foreground transition-colors duration-150 cursor-default'>
               <Info className='h-5 w-5 mb-0.5' aria-hidden='true' />
               <span className='text-center leading-tight whitespace-pre-line'>{getFormattedVersion()}</span>
             </div>
-          </div>
-          <div className='pt-2 flex justify-center'>
             <Button
               onClick={() => navigate('/logout')}
               variant='ghost'
-              className='whitespace-nowrap text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-16 h-16 flex flex-col gap-1 items-center justify-center rounded-lg transition-all duration-150 hover:bg-red-50 dark:hover:bg-red-950/20 hover:shadow-md hover:scale-105 text-red-600 hover:text-red-700 dark:hover:text-red-400'
+              className='whitespace-nowrap text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-16 h-16 flex flex-col gap-1 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-red-50 dark:hover:bg-red-950/20 hover:shadow-md hover:scale-105 text-red-600 hover:text-red-700 dark:hover:text-red-400'
               title='로그아웃'
             >
               <LogOut className='h-5 w-5 mb-0.5' aria-hidden='true' />
-              <span className='text-xs text-center leading-tight whitespace-pre-line'>로그아웃</span>
+              <span className='text-xs text-center leading-tight whitespace-pre-line'>
+                로그{'\n'}아웃
+              </span>
             </Button>
           </div>
         </nav>

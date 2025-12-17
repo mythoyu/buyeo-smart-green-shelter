@@ -147,7 +147,7 @@ const SystemMonitoringPage = () => {
   }
 
   return (
-    <div className='container mx-auto p-6 space-y-6'>
+    <div className='w-full p-6 space-y-6'>
       {/* 헤더 */}
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-3'>
@@ -170,7 +170,7 @@ const SystemMonitoringPage = () => {
       </div>
 
       {/* 상태 카드 그리드 */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
         <SuperiorServerStatusCard />
         <PingTestCard />
         {data?.server && <ServerStatusCard data={data.server} />}

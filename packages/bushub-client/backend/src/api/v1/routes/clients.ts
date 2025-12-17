@@ -31,8 +31,6 @@ async function clientsRoutes(app: FastifyInstance) {
           id: client.id,
           name: client.name,
           location: client.location,
-          city: client.city,
-          project: '스마트시티',
           type: client.type,
           region: client.region,
           latitude: client.latitude,
