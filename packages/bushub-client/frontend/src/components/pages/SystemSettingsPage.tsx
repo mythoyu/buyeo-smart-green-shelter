@@ -38,6 +38,9 @@ import { TopLogPanel } from '../common/TopLogPanel';
 import { Button } from '../ui/button';
 import { SelectItem } from '../ui/select';
 import { Badge } from '../ui/badge';
+import { Checkbox } from '../ui/checkbox';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import type { NtpSettings, NetworkSettings, SoftapSettings } from '../../types/systemSettings';
 
 // 월별 이름 매핑
@@ -256,6 +259,7 @@ const SystemSettingsPage: React.FC = () => {
     if (selectedIface && !networkInput?.ipv4 && !networkInput?.gateway) {
       setNetworkInput(prev => ({
         ...prev,
+        dhcp4: selectedIface?.dhcp4 ?? true,
         ipv4: selectedIface?.ipv4 || '',
         subnetmask: selectedIface?.subnetmask || '',
         gateway: selectedIface?.gateway || '',
@@ -304,6 +308,9 @@ const SystemSettingsPage: React.FC = () => {
           return {
             enabled: ntpStatus.data.enabled ?? true,
             primaryServer: ntpStatus.data.primaryServer || '',
+            primaryServerCommented: ntpStatus.data.primaryServerCommented ?? false,
+            fallbackServer: ntpStatus.data.fallbackServer || '',
+            fallbackServerCommented: ntpStatus.data.fallbackServerCommented ?? false,
             timezone: ntpStatus.data.timezone || '',
           };
         }
@@ -336,6 +343,14 @@ const SystemSettingsPage: React.FC = () => {
     }
   };
 
+  // NTP 주석 상태 핸들러 (체크박스용)
+  const handleNtpCommentChange = (field: 'primaryServerCommented' | 'fallbackServerCommented', checked: boolean) => {
+    setNtpInput(prev => ({
+      ...prev,
+      [field]: checked,
+    }));
+  };
+
   // SoftAP 토글 핸들러
   const handleSoftapToggle = (enabled: boolean) => {
     const newValue = {
@@ -364,6 +379,7 @@ const SystemSettingsPage: React.FC = () => {
         ({
           ...prev,
           interface: value,
+          dhcp4: iface?.dhcp4 ?? true,
           ipv4: iface?.ipv4 || '',
           subnetmask: iface?.subnetmask || '',
           gateway: iface?.gateway || prev.gateway || '',
@@ -377,13 +393,14 @@ const SystemSettingsPage: React.FC = () => {
 
   // NTP 적용 핸들러
   const handleNtpApply = () => {
-    const payload: NtpSettings = ntpInput?.enabled
-      ? ntpInput
-      : ({
-          enabled: false,
-          primaryServer: null as any,
-          timezone: null as any,
-        } as any);
+    const payload: NtpSettings = {
+      enabled: ntpInput?.enabled || false,
+      primaryServer: ntpInput?.primaryServer || '',
+      primaryServerCommented: ntpInput?.primaryServerCommented || false,
+      fallbackServer: ntpInput?.fallbackServer || '',
+      fallbackServerCommented: ntpInput?.fallbackServerCommented || false,
+      timezone: ntpInput?.timezone || '',
+    };
 
     setNtpMutation.mutate(payload, {
       onSuccess: response => {
@@ -507,7 +524,7 @@ const SystemSettingsPage: React.FC = () => {
         }
       } catch (error: any) {
         const message =
-            error?.response?.data?.message || error?.response?.data?.error || '절기 설정 적용 중 오류가 발생했습니다.';
+          error?.response?.data?.message || error?.response?.data?.error || '절기 설정 적용 중 오류가 발생했습니다.';
         toast.error(message, { id: 'system-season-save-error' });
       }
     }
@@ -573,86 +590,86 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard
-          icon={Wifi}
-          title='SoftAP 설정'
-          description='WiFi 핫스팟 설정'
-          onApply={handleSoftapApply}
-          applyDisabled={
-            hasErrors('softap') ||
-            // 인터페이스는 항상 필요 (비활성화 시에도)
-            !softapInput?.interface ||
-            // SoftAP 활성화 시에만 추가 필드들 필요
-            (softapInput?.enabled && (!softapInput?.ssid || !softapInput?.password))
-          }
-          currentSettings={null}
-          isLoading={setSoftapMutation.isPending}
-        >
-          {/* SoftAP 활성화 토글 */}
-          <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-            <div>
-              <span className='text-sm font-medium'>SoftAP 활성화</span>
-              <p className='text-xs text-muted-foreground mt-1'>
-                현재: {softapStatus?.data?.enabled ? '활성화' : '비활성화'}
-              </p>
+            icon={Wifi}
+            title='SoftAP 설정'
+            description='WiFi 핫스팟 설정'
+            onApply={handleSoftapApply}
+            applyDisabled={
+              hasErrors('softap') ||
+              // 인터페이스는 항상 필요 (비활성화 시에도)
+              !softapInput?.interface ||
+              // SoftAP 활성화 시에만 추가 필드들 필요
+              (softapInput?.enabled && (!softapInput?.ssid || !softapInput?.password))
+            }
+            currentSettings={null}
+            isLoading={setSoftapMutation.isPending}
+          >
+            {/* SoftAP 활성화 토글 */}
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>SoftAP 활성화</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  현재: {softapStatus?.data?.enabled ? '활성화' : '비활성화'}
+                </p>
+              </div>
+              <OnOffToggleButton
+                checked={!!softapInput?.enabled}
+                onChange={handleSoftapToggle}
+                labelOn='ON'
+                labelOff='OFF'
+              />
             </div>
-            <OnOffToggleButton
-              checked={!!softapInput?.enabled}
-              onChange={handleSoftapToggle}
-              labelOn='ON'
-              labelOff='OFF'
+            {/* SoftAP 설정 입력들 */}
+            <SelectWithCommand
+              label='WiFi 인터페이스'
+              value={softapInput?.interface || ''}
+              onChange={value => handleInput('softap', 'interface', value)}
+              placeholder='WiFi 인터페이스 선택...'
+              description={`현재: ${firstWifiName || '설정되지 않음'}`}
+              error={getFieldError('softap', 'interface')}
+              disabled={!softapInput?.enabled}
+              options={wifiInterfaceOptions}
+              searchPlaceholder='WiFi 인터페이스 검색...'
+              allowCustomInput={false}
             />
-          </div>
-          {/* SoftAP 설정 입력들 */}
-          <SelectWithCommand
-            label='WiFi 인터페이스'
-            value={softapInput?.interface || ''}
-            onChange={value => handleInput('softap', 'interface', value)}
-            placeholder='WiFi 인터페이스 선택...'
-            description={`현재: ${firstWifiName || '설정되지 않음'}`}
-            error={getFieldError('softap', 'interface')}
-            disabled={!softapInput?.enabled}
-            options={wifiInterfaceOptions}
-            searchPlaceholder='WiFi 인터페이스 검색...'
-            allowCustomInput={false}
-          />
-          <InputWithLabel
-            label='WiFi 이름 (SSID)'
-            value={softapInput?.ssid || ''}
-            onChange={e => handleInput('softap', 'ssid', e.target.value)}
-            placeholder='WiFi 이름을 입력하세요'
-            description={`현재: ${softapStatus?.data?.ssid || '설정되지 않음'}`}
-            error={getFieldError('softap', 'ssid')}
-            disabled={!softapInput?.enabled}
-            showDefaultValueButton={true}
-            defaultValue='YouJobs'
-          />
-          <InputWithLabel
-            label='WiFi 비밀번호'
-            value={softapInput?.password || ''}
-            onChange={e => handleInput('softap', 'password', e.target.value)}
-            placeholder=''
-            description={`입력된 값만 사용됩니다`}
-            error={getFieldError('softap', 'password')}
-            type='password'
-            showPasswordToggle={true}
-            showDefaultValueButton={true}
-            defaultValue='1357913579'
-            disabled={!softapInput?.enabled}
-          />
-          {/* WiFi 인터페이스 IPv4 (읽기 전용 표시) */}
-          <InputWithLabel
-            label='WiFi IPv4 (읽기 전용)'
-            value={(() => {
-              const iface = allIfaces.find((i: any) => i.name === softapInput?.interface);
-              return iface?.ipv4?.split('/')?.[0] || '';
-            })()}
-            onChange={() => {}}
-            placeholder=''
-            description={`현재 WiFi 인터페이스의 IPv4 주소`}
-            error={''}
-            disabled={true}
-          />
-        </SettingsCard>
+            <InputWithLabel
+              label='WiFi 이름 (SSID)'
+              value={softapInput?.ssid || ''}
+              onChange={e => handleInput('softap', 'ssid', e.target.value)}
+              placeholder='WiFi 이름을 입력하세요'
+              description={`현재: ${softapStatus?.data?.ssid || '설정되지 않음'}`}
+              error={getFieldError('softap', 'ssid')}
+              disabled={!softapInput?.enabled}
+              showDefaultValueButton={true}
+              defaultValue='YouJobs'
+            />
+            <InputWithLabel
+              label='WiFi 비밀번호'
+              value={softapInput?.password || ''}
+              onChange={e => handleInput('softap', 'password', e.target.value)}
+              placeholder=''
+              description={`입력된 값만 사용됩니다`}
+              error={getFieldError('softap', 'password')}
+              type='password'
+              showPasswordToggle={true}
+              showDefaultValueButton={true}
+              defaultValue='1357913579'
+              disabled={!softapInput?.enabled}
+            />
+            {/* WiFi 인터페이스 IPv4 (읽기 전용 표시) */}
+            <InputWithLabel
+              label='WiFi IPv4 (읽기 전용)'
+              value={(() => {
+                const iface = allIfaces.find((i: any) => i.name === softapInput?.interface);
+                return iface?.ipv4?.split('/')?.[0] || '';
+              })()}
+              onChange={() => {}}
+              placeholder=''
+              description={`현재 WiFi 인터페이스의 IPv4 주소`}
+              error={''}
+              disabled={true}
+            />
+          </SettingsCard>
         </div>
 
         {/* 유선 네트워크 설정 */}
@@ -663,92 +680,94 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard
-          icon={Network}
-          title='유선 네트워크 설정'
-          description='Ethernet 전용 IP/DHCP 설정'
-          onApply={handleNetworkApply}
-          applyDisabled={
-            hasErrors('network') ||
-            !networkInput ||
-            !networkInput?.interface || // 인터페이스는 항상 필요
-            // 정적 IP 모드 시: 추가 필드들 필요
-            (!networkInput?.dhcp4 && (!networkInput?.ipv4 || !networkInput?.gateway || !networkInput?.subnetmask))
-          }
-          currentSettings={null}
-          isLoading={setNetworkMutation.isPending}
-        >
-          {/* 네트워크 DHCP 토글 */}
-          <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-            <div>
-              <span className='text-sm font-medium'>DHCP 사용</span>
-              <p className='text-xs text-muted-foreground mt-1'>현재: -</p>
+            icon={Network}
+            title='유선 네트워크 설정'
+            description='Ethernet 전용 IP/DHCP 설정'
+            onApply={handleNetworkApply}
+            applyDisabled={
+              hasErrors('network') ||
+              !networkInput ||
+              !networkInput?.interface || // 인터페이스는 항상 필요
+              // 정적 IP 모드 시: 추가 필드들 필요
+              (!networkInput?.dhcp4 && (!networkInput?.ipv4 || !networkInput?.gateway || !networkInput?.subnetmask))
+            }
+            currentSettings={null}
+            isLoading={setNetworkMutation.isPending}
+          >
+            {/* 네트워크 DHCP 토글 */}
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>DHCP 사용</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  현재: {selectedIface?.dhcp4 !== undefined ? (selectedIface.dhcp4 ? 'ON' : 'OFF') : '알 수 없음'}
+                </p>
+              </div>
+              <OnOffToggleButton
+                checked={!!networkInput?.dhcp4}
+                onChange={handleDhcpToggle}
+                labelOn='ON'
+                labelOff='OFF'
+              />
             </div>
-            <OnOffToggleButton
-              checked={!!networkInput?.dhcp4}
-              onChange={handleDhcpToggle}
-              labelOn='ON'
-              labelOff='OFF'
+            {/* 네트워크 인터페이스 선택 */}
+            <SelectWithCommand
+              label='유선 네트워크 인터페이스'
+              value={networkInput?.interface || ''}
+              onChange={value => handleNetworkInterfaceSelect(value)}
+              placeholder='유선 네트워크 인터페이스 선택...'
+              description={`현재: ${currentWiredInterface || '설정되지 않음'}`}
+              error={getFieldError('network', 'interface')}
+              options={networkInterfaceOptions}
+              searchPlaceholder='유선 네트워크 인터페이스 검색...'
+              allowCustomInput={false}
             />
-          </div>
-          {/* 네트워크 인터페이스 선택 */}
-          <SelectWithCommand
-            label='유선 네트워크 인터페이스'
-            value={networkInput?.interface || ''}
-            onChange={value => handleNetworkInterfaceSelect(value)}
-            placeholder='유선 네트워크 인터페이스 선택...'
-            description={`현재: ${currentWiredInterface || '설정되지 않음'}`}
-            error={getFieldError('network', 'interface')}
-            options={networkInterfaceOptions}
-            searchPlaceholder='유선 네트워크 인터페이스 검색...'
-            allowCustomInput={false}
-          />
 
-          {/* 네트워크 입력들 */}
-          <InputWithLabel
-            label='IP 주소'
-            value={networkInput?.ipv4 || ''}
-            onChange={e => handleInput('network', 'ipv4', e.target.value)}
-            placeholder='IP 주소를 입력하세요 (예: 192.168.0.120)'
-            description={`현재: ${(selectedIface?.ipv4 || '').split('/')?.[0] || '설정되지 않음'}`}
-            error={getFieldError('network', 'ipv4')}
-            disabled={networkInput?.dhcp4}
-            showDefaultValueButton={true}
-            defaultValue='192.168.0.120'
-          />
-          <InputWithLabel
-            label='게이트웨이'
-            value={networkInput?.gateway || ''}
-            onChange={e => handleInput('network', 'gateway', e.target.value)}
-            placeholder='게이트웨이를 입력하세요 (예: 192.168.0.1)'
-            description={`현재: ${selectedIface?.gateway || '설정되지 않음'}`}
-            error={getFieldError('network', 'gateway')}
-            disabled={networkInput?.dhcp4}
-            showDefaultValueButton={true}
-            defaultValue='192.168.0.1'
-          />
-          <InputWithLabel
-            label='서브넷 마스크'
-            value={networkInput?.subnetmask || ''}
-            onChange={e => handleInput('network', 'subnetmask', e.target.value)}
-            placeholder='서브넷 마스크를 입력하세요 (예: 255.255.255.0)'
-            description={`현재: ${selectedIface?.subnetmask || '설정되지 않음'}`}
-            error={getFieldError('network', 'subnetmask')}
-            disabled={networkInput?.dhcp4}
-            showDefaultValueButton={true}
-            defaultValue='255.255.255.0'
-          />
-          <InputWithLabel
-            label='DNS 서버'
-            value={networkInput?.nameservers?.[0] || ''}
-            onChange={e => handleInput('network', 'nameservers', e.target.value)}
-            placeholder='DNS 서버를 입력하세요 (예: 8.8.8.8)'
-            description={`현재: ${(selectedIface?.dns && selectedIface?.dns[0]) || '설정되지 않음'}`}
-            error={getFieldError('network', 'nameservers')}
-            disabled={networkInput?.dhcp4}
-            showDefaultValueButton={true}
-            defaultValue='8.8.8.8'
-          />
-        </SettingsCard>
+            {/* 네트워크 입력들 */}
+            <InputWithLabel
+              label='IP 주소'
+              value={networkInput?.ipv4 || ''}
+              onChange={e => handleInput('network', 'ipv4', e.target.value)}
+              placeholder='IP 주소를 입력하세요 (예: 192.168.0.120)'
+              description={`현재: ${(selectedIface?.ipv4 || '').split('/')?.[0] || '설정되지 않음'}`}
+              error={getFieldError('network', 'ipv4')}
+              disabled={networkInput?.dhcp4}
+              showDefaultValueButton={true}
+              defaultValue='192.168.0.120'
+            />
+            <InputWithLabel
+              label='게이트웨이'
+              value={networkInput?.gateway || ''}
+              onChange={e => handleInput('network', 'gateway', e.target.value)}
+              placeholder='게이트웨이를 입력하세요 (예: 192.168.0.1)'
+              description={`현재: ${selectedIface?.gateway || '설정되지 않음'}`}
+              error={getFieldError('network', 'gateway')}
+              disabled={networkInput?.dhcp4}
+              showDefaultValueButton={true}
+              defaultValue='192.168.0.1'
+            />
+            <InputWithLabel
+              label='서브넷 마스크'
+              value={networkInput?.subnetmask || ''}
+              onChange={e => handleInput('network', 'subnetmask', e.target.value)}
+              placeholder='서브넷 마스크를 입력하세요 (예: 255.255.255.0)'
+              description={`현재: ${selectedIface?.subnetmask || '설정되지 않음'}`}
+              error={getFieldError('network', 'subnetmask')}
+              disabled={networkInput?.dhcp4}
+              showDefaultValueButton={true}
+              defaultValue='255.255.255.0'
+            />
+            <InputWithLabel
+              label='DNS 서버'
+              value={networkInput?.nameservers?.[0] || ''}
+              onChange={e => handleInput('network', 'nameservers', e.target.value)}
+              placeholder='DNS 서버를 입력하세요 (예: 8.8.8.8)'
+              description={`현재: ${(selectedIface?.dns && selectedIface?.dns[0]) || '설정되지 않음'}`}
+              error={getFieldError('network', 'nameservers')}
+              disabled={networkInput?.dhcp4}
+              showDefaultValueButton={true}
+              defaultValue='8.8.8.8'
+            />
+          </SettingsCard>
         </div>
 
         {/* NTP 설정 */}
@@ -759,223 +778,281 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard
-          icon={Clock}
-          title='NTP 설정'
-          description='시스템 시간 동기화 설정'
-          onApply={handleNtpApply}
-          applyDisabled={hasErrors('ntp') || (!!ntpInput?.enabled && !ntpInput?.primaryServer)}
-          currentSettings={null}
-          isLoading={setNtpMutation.isPending}
-        >
-          {/* NTP 활성화 토글 */}
-          <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-            <div>
-              <span className='text-sm font-medium'>NTP 서비스 활성화</span>
-              <p className='text-xs text-muted-foreground mt-1'>
-                현재: {ntpStatus?.data?.enabled ? '활성화' : '비활성화'}
-              </p>
-            </div>
-            <OnOffToggleButton
-              checked={!!ntpInput?.enabled}
-              onChange={enabled => setNtpInput({ ...ntpInput, enabled } as NtpSettings)}
-              labelOn='ON'
-              labelOff='OFF'
-            />
-          </div>
-          {/* NTP 상태 정보 */}
-          {ntpStatus?.data && (
-            <div className='p-3 bg-muted rounded-lg space-y-2'>
-              {/* 동기화 상태 */}
-              <div className='flex justify-between items-center'>
-                <span className='text-sm font-medium'>동기화 상태</span>
-                <Badge
-                  variant={ntpStatus.data.synchronized ? 'default' : 'destructive'}
-                  className={`text-xs ${
-                    ntpStatus.data.synchronized
-                      ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
-                      : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
-                  }`}
-                >
-                  {ntpStatus.data.synchronized ? '✅ 동기화됨' : '❌ 동기화 안됨'}
-                </Badge>
+            icon={Clock}
+            title='NTP 설정'
+            description='시스템 시간 동기화 설정'
+            onApply={handleNtpApply}
+            applyDisabled={hasErrors('ntp') || (!!ntpInput?.enabled && !ntpInput?.primaryServer)}
+            currentSettings={null}
+            isLoading={setNtpMutation.isPending}
+          >
+            {/* NTP 활성화 토글 */}
+            {/* enabled는 실제 NTP 동기화 상태 (주석 처리 여부와 독립적) */}
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>NTP 서비스 활성화</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  현재: {ntpStatus?.data?.enabled ? '활성화' : '비활성화'} (실제 동기화 상태)
+                </p>
               </div>
-              {/* 현재 시간 */}
-              {ntpStatus.data.currentTime && (
-                <div className='flex justify-between items-center'>
-                  <span className='text-sm font-medium'>현재 시간</span>
-                  <span className='text-sm text-muted-foreground'>{ntpStatus.data.currentTime}</span>
-                </div>
-              )}
-              {/* 마지막 동기화 시간 */}
-              {ntpStatus.data.lastSync && (
-                <div className='flex justify-between items-center'>
-                  <span className='text-sm font-medium'>마지막 동기화</span>
-                  <span className='text-sm text-muted-foreground'>{ntpStatus.data.lastSync}</span>
-                </div>
-              )}
+              <OnOffToggleButton
+                checked={!!ntpInput?.enabled}
+                onChange={enabled => setNtpInput({ ...ntpInput, enabled } as NtpSettings)}
+                labelOn='ON'
+                labelOff='OFF'
+              />
             </div>
-          )}
-          {/* NTP 입력들 */}
-          <div>
-          <InputWithLabel
-            label='주 NTP 서버'
-            value={ntpInput?.primaryServer || ''}
-            onChange={e => handleInput('ntp', 'primaryServer', e.target.value)}
-            placeholder='NTP 서버 주소를 입력하세요 (예: time.google.com)'
-            description={`현재: ${ntpStatus?.data?.primaryServer || 'time.google.com'}`}
-            error={getFieldError('ntp', 'primaryServer')}
-            disabled={!ntpInput?.enabled}
-            showDefaultValueButton={true}
-            defaultValue='time.google.com'
-          />
-            {/* 주 NTP 서버 연결 확인 버튼 */}
-            <div className='mb-3'>
-            <Button
-              variant='secondary'
-              size='sm'
-              className='gap-2'
-              onClick={async () => {
-                try {
-                  const ip = (ntpInput?.primaryServer || '').trim();
-                  const res = await checkNtpMutation.mutateAsync(ip);
-
-                  // 백엔드에서 이미 성공/실패를 판단하여 응답
-                  if (res.success) {
-                    // 성공: 백엔드에서 200 상태 코드로 응답
-                    const p = res.data?.primary;
-                    const server = p?.timesync?.server || p?.ip || 'unknown';
-                    const offset = p?.timesync?.offsetMs;
-                    const stratum = p?.timesync?.stratum;
-                    const link = res.data?.ifaceLink;
-
-                    toast.success(
-                      `✅ NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
-                      { id: 'ntp-check-success' }
-                    );
-                  } else {
-                    // 실패: 백엔드에서 에러 정보 제공
-                    const errorCode = res.error?.code || 'UNKNOWN';
-                    const errorMessage = res.error?.message || '알 수 없는 오류';
-
-                    toast.error(`❌ NTP 확인 실패 (${errorCode}) - ${errorMessage}`, { id: 'ntp-check-failure' });
-                  }
-                } catch (e: any) {
-                  // 네트워크 오류나 기타 예외
-                  const errorData = e?.response?.data;
-                  if (errorData?.error) {
-                    toast.error(
-                      `❌ NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${errorData.error.message}`,
-                      { id: 'ntp-check-error' }
-                    );
-                  } else {
-                    const msg = e?.message || 'NTP 확인 실패';
-                    toast.error(msg, { id: 'ntp-check-error' });
-                  }
-                }
-              }}
-                disabled={!ntpInput?.enabled || checkNtpMutation.isPending || !ntpInput?.primaryServer}
-            >
-              {checkNtpMutation.isPending ? (
-                <span className='inline-flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
-                </span>
-              ) : (
-                <span className='inline-flex items-center gap-2'>
-                  <Network className='h-4 w-4' /> 연결 확인
-                </span>
-              )}
-            </Button>
-            </div>
-          </div>
-          {/* Secondary NTP 서버 (읽기 전용) */}
-          <div>
-            <InputWithLabel
-              label='백업 NTP 서버'
-              value={ntpStatus?.data?.fallbackServer || ''}
-              onChange={() => {}} // 읽기 전용
-              placeholder='백업 NTP 서버가 설정되지 않았습니다'
-              description='현재 설정된 백업 NTP 서버 (읽기 전용)'
-              disabled={true}
-            />
-            {/* 백업 NTP 서버 연결 확인 버튼 */}
-            <div className='mb-3'>
-              <Button
-                variant='secondary'
-                size='sm'
-                className='gap-2'
-                onClick={async () => {
-                  try {
-                    const fallbackServer = (ntpStatus?.data?.fallbackServer || '').trim();
-                    if (!fallbackServer) {
-                      toast.error('백업 NTP 서버가 설정되지 않았습니다.', { id: 'ntp-fallback-check-error' });
-                      return;
-                    }
-                    const res = await checkNtpMutation.mutateAsync(fallbackServer);
-
-                    // 백엔드에서 이미 성공/실패를 판단하여 응답
-                    if (res.success) {
-                      // 성공: 백엔드에서 200 상태 코드로 응답
-                      const p = res.data?.primary;
-                      const server = p?.timesync?.server || p?.ip || 'unknown';
-                      const offset = p?.timesync?.offsetMs;
-                      const stratum = p?.timesync?.stratum;
-                      const link = res.data?.ifaceLink;
-
-                      toast.success(
-                        `✅ 백업 NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
-                        { id: 'ntp-fallback-check-success' }
-                      );
-                    } else {
-                      // 실패: 백엔드에서 에러 정보 제공
-                      const errorCode = res.error?.code || 'UNKNOWN';
-                      const errorMessage = res.error?.message || '알 수 없는 오류';
-
-                      toast.error(`❌ 백업 NTP 확인 실패 (${errorCode}) - ${errorMessage}`, {
-                        id: 'ntp-fallback-check-failure',
-                      });
-                    }
-                  } catch (e: any) {
-                    // 네트워크 오류나 기타 예외
-                    const errorData = e?.response?.data;
-                    if (errorData?.error) {
-                      toast.error(
-                        `❌ 백업 NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${
-                          errorData.error.message
-                        }`,
-                        { id: 'ntp-fallback-check-error' }
-                      );
-                    } else {
-                      const msg = e?.message || '백업 NTP 확인 실패';
-                      toast.error(msg, { id: 'ntp-fallback-check-error' });
-                    }
-                  }
-                }}
-                disabled={!ntpStatus?.data?.fallbackServer || checkNtpMutation.isPending}
-              >
-                {checkNtpMutation.isPending ? (
-                  <span className='inline-flex items-center gap-2'>
-                    <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
-                  </span>
-                ) : (
-                  <span className='inline-flex items-center gap-2'>
-                    <Network className='h-4 w-4' /> 연결 확인
-                  </span>
+            {/* NTP 상태 정보 */}
+            {ntpStatus?.data && (
+              <div className='p-3 bg-muted rounded-lg space-y-2'>
+                {/* 동기화 상태 */}
+                <div className='flex justify-between items-center'>
+                  <span className='text-sm font-medium'>동기화 상태</span>
+                  <Badge
+                    variant={ntpStatus.data.synchronized ? 'default' : 'destructive'}
+                    className={`text-xs ${
+                      ntpStatus.data.synchronized
+                        ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
+                        : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
+                    }`}
+                  >
+                    {ntpStatus.data.synchronized ? '✅ 동기화됨' : '❌ 동기화 안됨'}
+                  </Badge>
+                </div>
+                {/* 현재 시간 */}
+                {ntpStatus.data.currentTime && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium'>현재 시간</span>
+                    <span className='text-sm text-muted-foreground'>{ntpStatus.data.currentTime}</span>
+                  </div>
                 )}
-              </Button>
+                {/* 마지막 동기화 시간 */}
+                {ntpStatus.data.lastSync && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium'>마지막 동기화</span>
+                    <span className='text-sm text-muted-foreground'>{ntpStatus.data.lastSync}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* NTP 입력들 */}
+            <div>
+              {/* 주 NTP 서버 */}
+              <div className='mb-3'>
+                <div className='flex items-center justify-between mb-1'>
+                  <Label className='text-sm font-medium text-gray-700'>주 NTP 서버</Label>
+                  <span className='text-xs text-gray-500 ml-2'>
+                    현재: {ntpStatus?.data?.primaryServer || 'time.google.com'}{' '}
+                    {ntpStatus?.data?.primaryServerCommented ? '(주석 처리됨)' : '(활성화됨)'}
+                  </span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    value={ntpInput?.primaryServer || ''}
+                    onChange={e => handleInput('ntp', 'primaryServer', e.target.value)}
+                    placeholder='NTP 서버 주소를 입력하세요 (예: time.google.com)'
+                    disabled={!ntpInput?.enabled}
+                    className={`flex-1 ${
+                      getFieldError('ntp', 'primaryServer') ? 'border-red-400' : 'border-gray-300'
+                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+                  />
+                  <Button
+                    variant='secondary'
+                    size='sm'
+                    className='gap-2 shrink-0'
+                    onClick={async () => {
+                      try {
+                        const ip = (ntpInput?.primaryServer || '').trim();
+                        const res = await checkNtpMutation.mutateAsync(ip);
+
+                        // 백엔드에서 이미 성공/실패를 판단하여 응답
+                        if (res.success) {
+                          // 성공: 백엔드에서 200 상태 코드로 응답
+                          const p = res.data?.primary;
+                          const server = p?.timesync?.server || p?.ip || 'unknown';
+                          const offset = p?.timesync?.offsetMs;
+                          const stratum = p?.timesync?.stratum;
+                          const link = res.data?.ifaceLink;
+
+                          toast.success(
+                            `✅ NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
+                            { id: 'ntp-check-success' }
+                          );
+                        } else {
+                          // 실패: 백엔드에서 에러 정보 제공
+                          const errorCode = res.error?.code || 'UNKNOWN';
+                          const errorMessage = res.error?.message || '알 수 없는 오류';
+
+                          toast.error(`❌ NTP 확인 실패 (${errorCode}) - ${errorMessage}`, { id: 'ntp-check-failure' });
+                        }
+                      } catch (e: any) {
+                        // 네트워크 오류나 기타 예외
+                        const errorData = e?.response?.data;
+                        if (errorData?.error) {
+                          toast.error(
+                            `❌ NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${errorData.error.message}`,
+                            { id: 'ntp-check-error' }
+                          );
+                        } else {
+                          const msg = e?.message || 'NTP 확인 실패';
+                          toast.error(msg, { id: 'ntp-check-error' });
+                        }
+                      }
+                    }}
+                    disabled={!ntpInput?.enabled || checkNtpMutation.isPending || !ntpInput?.primaryServer}
+                  >
+                    {checkNtpMutation.isPending ? (
+                      <span className='inline-flex items-center gap-2'>
+                        <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
+                      </span>
+                    ) : (
+                      <span className='inline-flex items-center gap-2'>
+                        <Network className='h-4 w-4' /> 연결 확인
+                      </span>
+                    )}
+                  </Button>
+                </div>
+                {getFieldError('ntp', 'primaryServer') && (
+                  <div className='text-xs text-red-500 mt-1'>{getFieldError('ntp', 'primaryServer')}</div>
+                )}
+              </div>
+              {/* 주 NTP 서버 주석 처리 체크박스 */}
+              <div className='mb-3 flex items-center gap-2'>
+                <Checkbox
+                  id='primary-server-commented'
+                  checked={ntpInput?.primaryServerCommented || false}
+                  onCheckedChange={checked => handleNtpCommentChange('primaryServerCommented', !!checked)}
+                  disabled={!ntpInput?.enabled || !ntpInput?.primaryServer}
+                />
+                <label
+                  htmlFor='primary-server-commented'
+                  className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer'
+                >
+                  주석 처리됨
+                </label>
+              </div>
             </div>
-          </div>
-          <InputWithLabel
-            label='타임존'
-            value={ntpInput?.timezone || ''}
-            onChange={e => handleInput('ntp', 'timezone', e.target.value)}
-            placeholder='타임존을 입력하세요 (예: Asia/Seoul)'
-            description={`현재: ${ntpStatus?.data?.timezone || '설정되지 않음'}`}
-            error={getFieldError('ntp', 'timezone')}
-            disabled={!ntpInput?.enabled}
-            showDefaultValueButton={true}
-            defaultValue='Asia/Seoul'
-          />
-        </SettingsCard>
+            {/* Secondary NTP 서버 (편집 가능) */}
+            <div>
+              {/* 백업 NTP 서버 */}
+              <div className='mb-3'>
+                <div className='flex items-center justify-between mb-1'>
+                  <Label className='text-sm font-medium text-gray-700'>백업 NTP 서버</Label>
+                  <span className='text-xs text-gray-500 ml-2'>
+                    현재: {ntpStatus?.data?.fallbackServer || '설정되지 않음'}{' '}
+                    {ntpStatus?.data?.fallbackServerCommented
+                      ? '(주석 처리됨)'
+                      : ntpStatus?.data?.fallbackServer
+                      ? '(활성화됨)'
+                      : ''}
+                  </span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    value={ntpInput?.fallbackServer || ''}
+                    onChange={e => handleInput('ntp', 'fallbackServer', e.target.value)}
+                    placeholder='백업 NTP 서버 주소를 입력하세요 (예: ntp.ubuntu.com)'
+                    disabled={!ntpInput?.enabled}
+                    className={`flex-1 ${
+                      getFieldError('ntp', 'fallbackServer') ? 'border-red-400' : 'border-gray-300'
+                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+                  />
+                  <Button
+                    variant='secondary'
+                    size='sm'
+                    className='gap-2 shrink-0'
+                    onClick={async () => {
+                      try {
+                        const fallbackServer = (ntpInput?.fallbackServer || '').trim();
+                        if (!fallbackServer) {
+                          toast.error('백업 NTP 서버 주소를 입력해주세요.', { id: 'ntp-fallback-check-no-ip' });
+                          return;
+                        }
+                        const res = await checkNtpMutation.mutateAsync(fallbackServer);
+
+                        // 백엔드에서 이미 성공/실패를 판단하여 응답
+                        if (res.success) {
+                          // 성공: 백엔드에서 200 상태 코드로 응답
+                          const p = res.data?.primary;
+                          const server = p?.timesync?.server || p?.ip || 'unknown';
+                          const offset = p?.timesync?.offsetMs;
+                          const stratum = p?.timesync?.stratum;
+                          const link = res.data?.ifaceLink;
+
+                          toast.success(
+                            `✅ 백업 NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
+                            { id: 'ntp-fallback-check-success' }
+                          );
+                        } else {
+                          // 실패: 백엔드에서 에러 정보 제공
+                          const errorCode = res.error?.code || 'UNKNOWN';
+                          const errorMessage = res.error?.message || '알 수 없는 오류';
+
+                          toast.error(`❌ 백업 NTP 확인 실패 (${errorCode}) - ${errorMessage}`, {
+                            id: 'ntp-fallback-check-failure',
+                          });
+                        }
+                      } catch (e: any) {
+                        // 네트워크 오류나 기타 예외
+                        const errorData = e?.response?.data;
+                        if (errorData?.error) {
+                          toast.error(
+                            `❌ 백업 NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${
+                              errorData.error.message
+                            }`,
+                            { id: 'ntp-fallback-check-error' }
+                          );
+                        } else {
+                          const msg = e?.message || '백업 NTP 확인 실패';
+                          toast.error(msg, { id: 'ntp-fallback-check-error' });
+                        }
+                      }
+                    }}
+                    disabled={!ntpInput?.fallbackServer || checkNtpMutation.isPending || !ntpInput?.enabled}
+                  >
+                    {checkNtpMutation.isPending ? (
+                      <span className='inline-flex items-center gap-2'>
+                        <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
+                      </span>
+                    ) : (
+                      <span className='inline-flex items-center gap-2'>
+                        <Network className='h-4 w-4' /> 연결 확인
+                      </span>
+                    )}
+                  </Button>
+                </div>
+                {getFieldError('ntp', 'fallbackServer') && (
+                  <div className='text-xs text-red-500 mt-1'>{getFieldError('ntp', 'fallbackServer')}</div>
+                )}
+              </div>
+              {/* 백업 NTP 서버 주석 처리 체크박스 */}
+              <div className='mb-3 flex items-center gap-2'>
+                <Checkbox
+                  id='fallback-server-commented'
+                  checked={ntpInput?.fallbackServerCommented || false}
+                  onCheckedChange={checked => handleNtpCommentChange('fallbackServerCommented', !!checked)}
+                  disabled={!ntpInput?.enabled || !ntpInput?.fallbackServer}
+                />
+                <label
+                  htmlFor='fallback-server-commented'
+                  className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer'
+                >
+                  주석 처리됨
+                </label>
+              </div>
+            </div>
+            <InputWithLabel
+              label='타임존'
+              value={ntpInput?.timezone || ''}
+              onChange={e => handleInput('ntp', 'timezone', e.target.value)}
+              placeholder='타임존을 입력하세요 (예: Asia/Seoul)'
+              description={`현재: ${ntpStatus?.data?.timezone || '설정되지 않음'}`}
+              error={getFieldError('ntp', 'timezone')}
+              disabled={!ntpInput?.enabled}
+              showDefaultValueButton={true}
+              defaultValue='Asia/Seoul'
+            />
+          </SettingsCard>
         </div>
 
         {/* 절기 설정 - DDCConfigurationPage 스타일로 교체 */}
@@ -986,111 +1063,111 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard
-          icon={Sun}
-          title='절기 설정'
-          description='월별 여름/겨울 설정을 관리합니다.'
-          onApply={handleSeasonApply}
-          applyDisabled={false}
-          currentSettings={null}
-          isLoading={false}
-          applyExtra={
-            <Button
-              variant='ghost'
-              size='icon'
-              onClick={async () => {
-                try {
-                  const response = await refreshSeasonalMutation.mutateAsync();
-                  const refreshed = response?.data?.seasonal;
-                  if (refreshed) {
-                    setSeasonInput(refreshed as SeasonalData);
-                    toast.success(response?.message || '절기 설정을 다시 불러왔습니다.', {
-                      id: 'seasonal-refresh-success',
-                    });
-                  } else {
-                    toast.success('절기 설정을 다시 불러왔습니다.', { id: 'seasonal-refresh-success' });
+            icon={Sun}
+            title='절기 설정'
+            description='월별 여름/겨울 설정을 관리합니다.'
+            onApply={handleSeasonApply}
+            applyDisabled={false}
+            currentSettings={null}
+            isLoading={false}
+            applyExtra={
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={async () => {
+                  try {
+                    const response = await refreshSeasonalMutation.mutateAsync();
+                    const refreshed = response?.data?.seasonal;
+                    if (refreshed) {
+                      setSeasonInput(refreshed as SeasonalData);
+                      toast.success(response?.message || '절기 설정을 다시 불러왔습니다.', {
+                        id: 'seasonal-refresh-success',
+                      });
+                    } else {
+                      toast.success('절기 설정을 다시 불러왔습니다.', { id: 'seasonal-refresh-success' });
+                    }
+                    await refetchSeasonal();
+                  } catch (error: any) {
+                    const message =
+                      error?.response?.data?.message ||
+                      error?.response?.data?.error ||
+                      error?.message ||
+                      '절기 설정 불러오기 실패';
+                    toast.error(message, { id: 'seasonal-refresh-failure' });
                   }
-                  await refetchSeasonal();
-                } catch (error: any) {
-                  const message =
-                    error?.response?.data?.message ||
-                    error?.response?.data?.error ||
-                    error?.message ||
-                    '절기 설정 불러오기 실패';
-                  toast.error(message, { id: 'seasonal-refresh-failure' });
-                }
-              }}
-              disabled={refreshSeasonalMutation.isPending || isSeasonalFetching}
-            >
-              <RefreshCcw
-                className={cn('h-4 w-4', (refreshSeasonalMutation.isPending || isSeasonalFetching) && 'animate-spin')}
-              />
-            </Button>
-          }
-        >
-          <div className='space-y-4'>
-            {/* 현재 월 동작절기 설정 */}
-            <div className='flex items-center space-x-4'>
-              <span className='text-sm font-medium text-gray-700'>현재 월 동작절기:</span>
-              <span
-                className={`text-sm font-medium px-3 py-1 rounded ${
-                  currentMonthSeasonValue === 1
-                    ? 'bg-orange-100 text-orange-800 border border-orange-300'
-                    : 'bg-blue-100 text-blue-800 border border-blue-300'
-                }`}
+                }}
+                disabled={refreshSeasonalMutation.isPending || isSeasonalFetching}
               >
-                {currentMonthSeasonValue === 1 ? '하절기' : '동절기'}
-              </span>
-            </div>
+                <RefreshCcw
+                  className={cn('h-4 w-4', (refreshSeasonalMutation.isPending || isSeasonalFetching) && 'animate-spin')}
+                />
+              </Button>
+            }
+          >
+            <div className='space-y-4'>
+              {/* 현재 월 동작절기 설정 */}
+              <div className='flex items-center space-x-4'>
+                <span className='text-sm font-medium text-gray-700'>현재 월 동작절기:</span>
+                <span
+                  className={`text-sm font-medium px-3 py-1 rounded ${
+                    currentMonthSeasonValue === 1
+                      ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                      : 'bg-blue-100 text-blue-800 border border-blue-300'
+                  }`}
+                >
+                  {currentMonthSeasonValue === 1 ? '하절기' : '동절기'}
+                </span>
+              </div>
 
-            {/* 월별 설정 */}
-            <div className='grid grid-cols-3 gap-2'>
-              {Object.entries(monthNames).map(([month, name]) => {
-                const monthKey =
-                  month === '1'
-                    ? 'january'
-                    : month === '2'
-                    ? 'february'
-                    : month === '3'
-                    ? 'march'
-                    : month === '4'
-                    ? 'april'
-                    : month === '5'
-                    ? 'may'
-                    : month === '6'
-                    ? 'june'
-                    : month === '7'
-                    ? 'july'
-                    : month === '8'
-                    ? 'august'
-                    : month === '9'
-                    ? 'september'
-                    : month === '10'
-                    ? 'october'
-                    : month === '11'
-                    ? 'november'
-                    : 'december';
-                const value = (seasonInput as any)[monthKey] || 0;
+              {/* 월별 설정 */}
+              <div className='grid grid-cols-3 gap-2'>
+                {Object.entries(monthNames).map(([month, name]) => {
+                  const monthKey =
+                    month === '1'
+                      ? 'january'
+                      : month === '2'
+                      ? 'february'
+                      : month === '3'
+                      ? 'march'
+                      : month === '4'
+                      ? 'april'
+                      : month === '5'
+                      ? 'may'
+                      : month === '6'
+                      ? 'june'
+                      : month === '7'
+                      ? 'july'
+                      : month === '8'
+                      ? 'august'
+                      : month === '9'
+                      ? 'september'
+                      : month === '10'
+                      ? 'october'
+                      : month === '11'
+                      ? 'november'
+                      : 'december';
+                  const value = (seasonInput as any)[monthKey] || 0;
 
-                return (
-                  <div key={month} className='flex items-center justify-center'>
-                    <button
-                      className={`min-w-[80px] px-3 py-2 rounded-md font-semibold text-xs shadow-sm transition-all flex flex-col items-center justify-center gap-1.5 ${
-                        value === 1
-                          ? 'bg-orange-500 hover:bg-orange-600 text-white' // 여름: 주황색
-                          : 'bg-blue-500 hover:bg-blue-600 text-white' // 겨울: 파란색
-                      }`}
-                      onClick={() => handleSeasonalChange(monthKey as keyof SeasonalData, value === 1 ? 0 : 1)}
-                      type='button'
-                    >
-                      <span className='leading-none'>{name}</span>
-                      <span className='leading-none text-[10px]'>{value === 1 ? '여름' : '겨울'}</span>
-                    </button>
-                  </div>
-                );
-              })}
+                  return (
+                    <div key={month} className='flex items-center justify-center'>
+                      <button
+                        className={`min-w-[80px] px-3 py-2 rounded-md font-semibold text-xs shadow-sm transition-all flex flex-col items-center justify-center gap-1.5 ${
+                          value === 1
+                            ? 'bg-orange-500 hover:bg-orange-600 text-white' // 여름: 주황색
+                            : 'bg-blue-500 hover:bg-blue-600 text-white' // 겨울: 파란색
+                        }`}
+                        onClick={() => handleSeasonalChange(monthKey as keyof SeasonalData, value === 1 ? 0 : 1)}
+                        type='button'
+                      >
+                        <span className='leading-none'>{name}</span>
+                        <span className='leading-none text-[10px]'>{value === 1 ? '여름' : '겨울'}</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </SettingsCard>
+          </SettingsCard>
         </div>
 
         {/* DDC 시간 설정 */}
@@ -1101,78 +1178,78 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard
-          icon={Clock}
-          title='DDC 시간 설정'
-          description='DDC 시간 동기화 설정'
-          onApply={handleDdcTimeSync}
-          applyDisabled={false}
-          currentSettings={null}
-          isLoading={syncDdcTimeMutation.isPending}
-          applyButtonText='동기화'
-          applyExtra={
-            <Button
-              variant='ghost'
-              size='icon'
-              onClick={async () => {
-                try {
-                  const response = await refreshDdcTimeMutation.mutateAsync();
-                  const message = response?.message || 'DDC 시간을 다시 불러왔습니다.';
-                  toast.success(message, { id: 'system-ddc-refresh-success' });
-                  await refetchDdcTime();
-                } catch (error: any) {
-                  const message =
-                    error?.response?.data?.message || error?.response?.data?.error || 'DDC 시간 불러오기 실패';
-                  toast.error(message, { id: 'system-ddc-refresh-error' });
-                }
-              }}
-              disabled={refreshDdcTimeMutation.isPending || isDdcTimeFetching}
-            >
-              <RefreshCcw
-                className={cn('h-4 w-4', (refreshDdcTimeMutation.isPending || isDdcTimeFetching) && 'animate-spin')}
-              />
-            </Button>
-          }
-        >
-          {/* 현재시간 표시 */}
-          <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-            <div>
-              <span className='text-sm font-medium'>현재시간</span>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {currentTime.toLocaleString('ko-KR', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                })}
-              </p>
+            icon={Clock}
+            title='DDC 시간 설정'
+            description='DDC 시간 동기화 설정'
+            onApply={handleDdcTimeSync}
+            applyDisabled={false}
+            currentSettings={null}
+            isLoading={syncDdcTimeMutation.isPending}
+            applyButtonText='동기화'
+            applyExtra={
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={async () => {
+                  try {
+                    const response = await refreshDdcTimeMutation.mutateAsync();
+                    const message = response?.message || 'DDC 시간을 다시 불러왔습니다.';
+                    toast.success(message, { id: 'system-ddc-refresh-success' });
+                    await refetchDdcTime();
+                  } catch (error: any) {
+                    const message =
+                      error?.response?.data?.message || error?.response?.data?.error || 'DDC 시간 불러오기 실패';
+                    toast.error(message, { id: 'system-ddc-refresh-error' });
+                  }
+                }}
+                disabled={refreshDdcTimeMutation.isPending || isDdcTimeFetching}
+              >
+                <RefreshCcw
+                  className={cn('h-4 w-4', (refreshDdcTimeMutation.isPending || isDdcTimeFetching) && 'animate-spin')}
+                />
+              </Button>
+            }
+          >
+            {/* 현재시간 표시 */}
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>현재시간</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  {currentTime.toLocaleString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                  })}
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* DDC시간 표시 */}
-          <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-            <div>
-              <span className='text-sm font-medium'>DDC시간</span>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {ddcTimeData?.data?.ddcTime
-                  ? `${ddcTimeData.data.ddcTime.year || '0000'}-${(ddcTimeData.data.ddcTime.month || 0)
-                      .toString()
-                      .padStart(2, '0')}-${(ddcTimeData.data.ddcTime.day || 0).toString().padStart(2, '0')} ${(
-                      ddcTimeData.data.ddcTime.hour || 0
-                    )
-                      .toString()
-                      .padStart(2, '0')}:${(ddcTimeData.data.ddcTime.minute || 0).toString().padStart(2, '0')}:${(
-                      ddcTimeData.data.ddcTime.second || 0
-                    )
-                      .toString()
-                      .padStart(2, '0')}`
-                  : '동기화 필요'}
-              </p>
+            {/* DDC시간 표시 */}
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>DDC시간</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  {ddcTimeData?.data?.ddcTime
+                    ? `${ddcTimeData.data.ddcTime.year || '0000'}-${(ddcTimeData.data.ddcTime.month || 0)
+                        .toString()
+                        .padStart(2, '0')}-${(ddcTimeData.data.ddcTime.day || 0).toString().padStart(2, '0')} ${(
+                        ddcTimeData.data.ddcTime.hour || 0
+                      )
+                        .toString()
+                        .padStart(2, '0')}:${(ddcTimeData.data.ddcTime.minute || 0).toString().padStart(2, '0')}:${(
+                        ddcTimeData.data.ddcTime.second || 0
+                      )
+                        .toString()
+                        .padStart(2, '0')}`
+                    : '동기화 필요'}
+                </p>
+              </div>
             </div>
-          </div>
-        </SettingsCard>
+          </SettingsCard>
         </div>
 
         {/* DDC 폴링 간격 설정 */}
@@ -1183,42 +1260,42 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard
-          icon={Cpu}
-          title='DDC 폴링 간격'
-          description='데이터 수집 주기 설정'
-          onApply={handlePollingIntervalApply}
-          applyDisabled={false}
-          currentSettings={null}
-          isLoading={setPollingIntervalMutation.isPending}
-          applyButtonText='적용'
-        >
-          {/* 현재 폴링 간격 표시 */}
-          <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-            <div>
-              <span className='text-sm font-medium'>현재 폴링 간격</span>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {pollingIntervalData?.data?.pollingInterval
-                  ? formatPollingInterval(pollingIntervalData.data.pollingInterval)
-                  : '로딩 중...'}
-              </p>
-            </div>
-          </div>
-
-          {/* 폴링 간격 선택 */}
-          <SelectWithLabel
-            label='폴링 간격'
-            value={pollingIntervalInput.toString()}
-            onValueChange={value => setPollingIntervalInput(parseInt(value))}
-            placeholder='폴링 간격 선택'
-            description='데이터 수집 주기를 설정합니다'
+            icon={Cpu}
+            title='DDC 폴링 간격'
+            description='데이터 수집 주기 설정'
+            onApply={handlePollingIntervalApply}
+            applyDisabled={false}
+            currentSettings={null}
+            isLoading={setPollingIntervalMutation.isPending}
+            applyButtonText='적용'
           >
-            <SelectItem value='10000'>10초</SelectItem>
-            <SelectItem value='20000'>20초</SelectItem>
-            <SelectItem value='30000'>30초</SelectItem>
-            <SelectItem value='60000'>1분</SelectItem>
-            <SelectItem value='120000'>2분</SelectItem>
-          </SelectWithLabel>
-        </SettingsCard>
+            {/* 현재 폴링 간격 표시 */}
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>현재 폴링 간격</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  {pollingIntervalData?.data?.pollingInterval
+                    ? formatPollingInterval(pollingIntervalData.data.pollingInterval)
+                    : '로딩 중...'}
+                </p>
+              </div>
+            </div>
+
+            {/* 폴링 간격 선택 */}
+            <SelectWithLabel
+              label='폴링 간격'
+              value={pollingIntervalInput.toString()}
+              onValueChange={value => setPollingIntervalInput(parseInt(value))}
+              placeholder='폴링 간격 선택'
+              description='데이터 수집 주기를 설정합니다'
+            >
+              <SelectItem value='10000'>10초</SelectItem>
+              <SelectItem value='20000'>20초</SelectItem>
+              <SelectItem value='30000'>30초</SelectItem>
+              <SelectItem value='60000'>1분</SelectItem>
+              <SelectItem value='120000'>2분</SelectItem>
+            </SelectWithLabel>
+          </SettingsCard>
         </div>
 
         {/* 시스템 재기동 카드 */}
@@ -1229,74 +1306,74 @@ const SystemSettingsPage: React.FC = () => {
           }}
         >
           <SettingsCard icon={Cpu} title='시스템 재기동' description='호스트 PC 또는 백엔드 서비스를 재시작합니다'>
-          <div className='space-y-4'>
-            {/* 호스트 PC 재기동 */}
-            <div className='flex flex-col gap-2'>
-              <h4 className='text-sm font-medium'>호스트 PC 재기동</h4>
-              <p className='text-xs text-muted-foreground'>
-                전체 시스템을 완전히 재시작합니다. 진행 중인 모든 작업이 종료됩니다.
-              </p>
-              <Button
-                variant='destructive'
-                size='sm'
-                onClick={() => {
-                  if (window.confirm('호스트 PC를 재기동하시겠습니까? 진행 중인 모든 작업이 종료됩니다.')) {
-                    restartHostSystemMutation.mutate(undefined, {
-                      onSuccess: response => {
-                        const message = response?.message || '호스트 PC 재기동이 시작되었습니다';
-                        toast.success(message);
-                      },
-                      onError: (error: any) => {
-                        const message =
-                          error?.response?.data?.message ||
-                          error?.response?.data?.error ||
-                          '호스트 PC 재기동에 실패했습니다';
-                        toast.error(message);
-                      },
-                    });
-                  }
-                }}
-                disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
-                className='w-fit'
-              >
-                {restartHostSystemMutation.isPending ? '재기동 중...' : '호스트 PC 재기동'}
-              </Button>
-            </div>
+            <div className='space-y-4'>
+              {/* 호스트 PC 재기동 */}
+              <div className='flex flex-col gap-2'>
+                <h4 className='text-sm font-medium'>호스트 PC 재기동</h4>
+                <p className='text-xs text-muted-foreground'>
+                  전체 시스템을 완전히 재시작합니다. 진행 중인 모든 작업이 종료됩니다.
+                </p>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => {
+                    if (window.confirm('호스트 PC를 재기동하시겠습니까? 진행 중인 모든 작업이 종료됩니다.')) {
+                      restartHostSystemMutation.mutate(undefined, {
+                        onSuccess: response => {
+                          const message = response?.message || '호스트 PC 재기동이 시작되었습니다';
+                          toast.success(message);
+                        },
+                        onError: (error: any) => {
+                          const message =
+                            error?.response?.data?.message ||
+                            error?.response?.data?.error ||
+                            '호스트 PC 재기동에 실패했습니다';
+                          toast.error(message);
+                        },
+                      });
+                    }
+                  }}
+                  disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
+                  className='w-fit'
+                >
+                  {restartHostSystemMutation.isPending ? '재기동 중...' : '호스트 PC 재기동'}
+                </Button>
+              </div>
 
-            {/* 백엔드 재기동 */}
-            <div className='flex flex-col gap-2'>
-              <h4 className='text-sm font-medium'>백엔드 재기동</h4>
-              <p className='text-xs text-muted-foreground'>
-                백엔드 서비스만 재시작합니다. 서비스가 잠시 중단될 수 있습니다.
-              </p>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => {
-                  if (window.confirm('백엔드 서비스를 재기동하시겠습니까? 서비스가 잠시 중단될 수 있습니다.')) {
-                    restartBackendMutation.mutate(undefined, {
-                      onSuccess: response => {
-                        const message = response?.message || '백엔드 재기동이 시작되었습니다';
-                        toast.success(message);
-                      },
-                      onError: (error: any) => {
-                        const message =
-                          error?.response?.data?.message ||
-                          error?.response?.data?.error ||
-                          '백엔드 재기동에 실패했습니다';
-                        toast.error(message);
-                      },
-                    });
-                  }
-                }}
-                disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
-                className='w-fit'
-              >
-                {restartBackendMutation.isPending ? '재기동 중...' : '백엔드 재기동'}
-              </Button>
+              {/* 백엔드 재기동 */}
+              <div className='flex flex-col gap-2'>
+                <h4 className='text-sm font-medium'>백엔드 재기동</h4>
+                <p className='text-xs text-muted-foreground'>
+                  백엔드 서비스만 재시작합니다. 서비스가 잠시 중단될 수 있습니다.
+                </p>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => {
+                    if (window.confirm('백엔드 서비스를 재기동하시겠습니까? 서비스가 잠시 중단될 수 있습니다.')) {
+                      restartBackendMutation.mutate(undefined, {
+                        onSuccess: response => {
+                          const message = response?.message || '백엔드 재기동이 시작되었습니다';
+                          toast.success(message);
+                        },
+                        onError: (error: any) => {
+                          const message =
+                            error?.response?.data?.message ||
+                            error?.response?.data?.error ||
+                            '백엔드 재기동에 실패했습니다';
+                          toast.error(message);
+                        },
+                      });
+                    }
+                  }}
+                  disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
+                  className='w-fit'
+                >
+                  {restartBackendMutation.isPending ? '재기동 중...' : '백엔드 재기동'}
+                </Button>
+              </div>
             </div>
-          </div>
-        </SettingsCard>
+          </SettingsCard>
         </div>
       </div>
     </div>

@@ -43,15 +43,31 @@ export class ExternalHttpClient {
           return { ok: false, status: res.status, error: `HTTP ${res.status} ${res.statusText}` };
         }
 
-        // JSON 파싱 시도, 실패 시 텍스트로 fallback
+        // Content-Type 확인 후 적절한 방식으로 읽기
+        const isJson = contentType.includes('application/json');
         let data: any;
-        try {
-          data = (await res.json()) as T;
-        } catch (jsonError) {
-          // JSON 파싱 실패 시 텍스트로 처리 (HTML, XML, plain text 등)
+
+        if (isJson) {
+          // JSON인 경우에만 json() 호출
+          try {
+            data = (await res.json()) as T;
+          } catch (jsonError) {
+            // JSON 파싱 실패 시 텍스트로 처리
+            const text = await res.text();
+            logInfo(
+              `[ExternalHttpClient] JSON 파싱 실패, 텍스트로 처리 (Content-Type: ${contentType}, 길이: ${text.length})`,
+            );
+            data = {
+              contentType,
+              content: text.substring(0, 5000), // 처음 5000자만 저장 (너무 큰 응답 방지)
+              length: text.length,
+            } as T;
+          }
+        } else {
+          // JSON이 아닌 경우 바로 text() 호출 (HTML, XML, plain text 등)
           const text = await res.text();
           logInfo(
-            `[ExternalHttpClient] JSON 파싱 실패, 텍스트로 처리 (Content-Type: ${contentType}, 길이: ${text.length})`,
+            `[ExternalHttpClient] 비JSON 콘텐츠를 텍스트로 처리 (Content-Type: ${contentType}, 길이: ${text.length})`,
           );
           data = {
             contentType,

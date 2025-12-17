@@ -1,7 +1,9 @@
 export interface NtpSettings {
   enabled: boolean;
   primaryServer: string;
+  primaryServerCommented?: boolean; // 주 서버 주석 처리 여부
   fallbackServer?: string; // 단일 백업 서버로 변경
+  fallbackServerCommented?: boolean; // 백업 서버 주석 처리 여부
   timezone: string;
 }
 

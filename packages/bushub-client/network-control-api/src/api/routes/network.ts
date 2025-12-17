@@ -317,7 +317,9 @@ export async function networkRoutes(fastify: FastifyInstance) {
           properties: {
             enabled: { type: "boolean" },
             primaryServer: { type: "string" },
+            primaryServerCommented: { type: "boolean" },
             fallbackServer: { type: "string" },
+            fallbackServerCommented: { type: "boolean" },
             timezone: { type: "string" },
           },
         },
