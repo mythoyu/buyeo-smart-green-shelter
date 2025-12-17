@@ -106,18 +106,18 @@ export async function seedUsers(): Promise<void> {
         createdUsers.set(userConfig.username, user);
       }
 
-      // 2. 사용자별 API 키 등록 (사용자 객체에 포함된 경우)
+      // 2. 사용자별 API 키 등록 (Repository를 통해 자동 생성 형식 사용)
       if (userConfig.apiKey) {
+        const apiKeyService = serviceContainer.getApiKeyService();
         const existsKey = await ApiKey.findOne({ username: userConfig.apiKey.name });
         if (!existsKey) {
-          await ApiKey.create({
+          // Repository를 통해 생성 (users.json의 고정 키 값 사용)
+          await apiKeyService.createApiKey({
             username: userConfig.apiKey.name,
-            key: userConfig.apiKey.key,
+            key: userConfig.apiKey.key, // users.json에 정의된 고정 키 값 사용
             type: userConfig.apiKey.type,
             permissions: userConfig.apiKey.permissions,
-            status: userConfig.apiKey.status,
-            description: userConfig.apiKey.description,
-            userId: user._id, // 사용자와 연결
+            userId: (user._id as any).toString(), // 사용자와 연결
           });
           logInfo(`ApiKey(${userConfig.apiKey.name}) 생성 - User(${userConfig.username}) 연결`);
         }

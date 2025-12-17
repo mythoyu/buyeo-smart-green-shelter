@@ -40,9 +40,21 @@ export class MongoApiKeyRepository implements IApiKeyRepository {
     });
   }
 
+  /**
+   * 안전한 API 키 생성
+   * 형식: bs_{type}_{random32hex}
+   * 예시: bs_ext_a3f8b9c2d1e4f5a6b7c8d9e0f1a2b3c4
+   */
+  private generateApiKey(type: 'internal' | 'external' | 'universal'): string {
+    const prefix = 'bs';
+    const typePrefix = type.substring(0, 3); // ext, int, uni
+    const randomPart = crypto.randomBytes(16).toString('hex'); // 32자리 hex
+    return `${prefix}_${typePrefix}_${randomPart}`;
+  }
+
   async create(data: CreateApiKeyDto): Promise<IApiKey> {
-    // API 키 생성 (32자리 랜덤 문자열)
-    const key = crypto.randomBytes(32).toString('hex');
+    // API 키가 제공되지 않으면 자동 생성 (접두사 + 타입 + 랜덤 문자열)
+    const key = data.key || this.generateApiKey(data.type);
 
     const newApiKey = new ApiKeySchema({
       ...data,

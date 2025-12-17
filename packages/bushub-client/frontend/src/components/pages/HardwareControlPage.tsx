@@ -15,14 +15,14 @@ import type { HardwareControlError } from '../../types/hardware';
 // 상수 분리
 const CONSTANTS = {
   TITLES: {
-    HARDWARE_CONTROL: '하드웨어 직접 제어',
+    HARDWARE_CONTROL: '직접 제어',
     ACCESS_DENIED: '접근 권한 없음',
     ERROR: '오류 발생',
-    LOADING: '하드웨어 직접 제어',
+    LOADING: '직접 제어',
   },
   MESSAGES: {
-    ACCESS_DENIED: '하드웨어 직접 제어 기능은 관리자(superuser) 또는 엔지니어(engineer) 권한이 필요합니다.',
-    POLLING_WARNING: '폴링이 활성화되어 있습니다. 하드웨어 직접 제어를 사용하려면 먼저 폴링을 중지해주세요.',
+    ACCESS_DENIED: '직접 제어 기능은 관리자(superuser) 또는 엔지니어(engineer) 권한이 필요합니다.',
+    POLLING_WARNING: '폴링이 활성화되어 있습니다. 직접 제어를 사용하려면 먼저 폴링을 중지해주세요.',
     LOADING_DESCRIPTION: '시스템 상태를 확인하는 중입니다...',
     DESCRIPTION: '폴링 중지 시에만 사용 가능',
     RETRY: '다시 시도',
@@ -35,7 +35,7 @@ const CONSTANTS = {
       { label: 'HVAC', desc: '냉난방기 및 전열교환기 제어 및 모니터링' },
       { label: '통합센서', desc: '통합센서 데이터 실시간 모니터링 (읽기 전용)' },
       { label: '시스템', desc: '절기 설정 및 DDC 시간 설정' },
-      { label: '주의사항', desc: '폴링이 활성화된 상태에서는 하드웨어 직접 제어가 불가능합니다.' },
+      { label: '주의사항', desc: '폴링이 활성화된 상태에서는 직접 제어가 불가능합니다.' },
       { label: '권한', desc: '관리자(superuser) 또는 엔지니어(engineer)만 사용할 수 있습니다.' },
     ],
   },
@@ -43,7 +43,7 @@ const CONSTANTS = {
 
 // 접근 거부 카드 컴포넌트
 const AccessDeniedCard = React.memo(() => (
-  <div className='container mx-auto p-6'>
+  <div className='w-full p-6'>
     <Card>
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-red-600'>
@@ -60,7 +60,7 @@ const AccessDeniedCard = React.memo(() => (
 
 // 로딩 카드 컴포넌트
 const LoadingCard = React.memo(() => (
-  <div className='container mx-auto p-6'>
+  <div className='w-full p-6'>
     <Card>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
@@ -80,7 +80,7 @@ const LoadingCard = React.memo(() => (
 
 // 에러 카드 컴포넌트
 const ErrorCard = React.memo<{ error: HardwareControlError; onRetry: () => void }>(({ error, onRetry }) => (
-  <div className='container mx-auto p-6'>
+  <div className='w-full p-6'>
     <Card>
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-red-600'>
@@ -149,7 +149,7 @@ const PollingWarningAlert = React.memo(() => (
 ));
 
 /**
- * 하드웨어 직접 제어 페이지
+ * 직접 제어 페이지
  * superuser, engineer 권한 사용자만 접근 가능
  */
 const HardwareControlPage: React.FC = React.memo(() => {
@@ -255,7 +255,7 @@ const HardwareControlPage: React.FC = React.memo(() => {
   }
 
   return (
-    <div className='container mx-auto p-6 space-y-6'>
+    <div className='w-full p-6 space-y-6'>
       {/* 페이지 헤더 */}
       <PageHeader />
 
@@ -272,7 +272,7 @@ const HardwareControlPage: React.FC = React.memo(() => {
       <PollingDialog
         isOpen={pollingDialog.isOpen}
         title='폴링이 활성화되어 있습니다'
-        message='현재 폴링이 실행 중입니다. 하드웨어 직접 제어는 폴링 중지 시에만 사용 가능합니다.'
+        message='현재 폴링이 실행 중입니다. 직접 제어는 폴링 중지 시에만 사용 가능합니다.'
         onAction={handlePollingAction}
         onClose={handlePollingDialogClose}
       />

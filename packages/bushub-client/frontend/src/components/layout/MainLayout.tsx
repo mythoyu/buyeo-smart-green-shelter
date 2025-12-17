@@ -12,6 +12,10 @@ import {
   Cpu,
   AlertTriangle,
   Info,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  User,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -29,8 +33,9 @@ import { getFormattedVersion } from '../../utils/version';
 import { ErrorPanel } from '../common/ErrorPanel';
 import { ProcessDialog } from '../common/ProcessDialog';
 import { Button } from '../ui/button';
-import { Switch } from '../ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
 
 interface MainLayoutProps {
   children?: React.ReactNode;
@@ -72,6 +77,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { data: pollingState, isLoading: pollingStateLoading } = useGetPollingState();
   const updatePollingStateMutation = useUpdatePollingState();
 
+  // ✅ FAB 표시 상태 관리
+  const [fabVisible, setFabVisible] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+
   // ✅ 에러 관련 상태 및 훅
   const [errorPanelOpen, setErrorPanelOpen] = useState(false);
   const { data: clientErrorsData } = useGetClientErrors({
@@ -102,7 +111,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     status: 'processing',
   });
 
-  const { toggleLogPanel } = useLogContext();
+  const { toggleLogPanel, isLogPanelOpen } = useLogContext();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -170,6 +179,42 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
+
+  // 페이지 이동 시 FAB 애니메이션 재생
+  useEffect(() => {
+    setShouldAnimate(false);
+    const timer = setTimeout(() => {
+      setShouldAnimate(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  // 현재 시간 상태 관리
+  const [currentTime, setCurrentTime] = useState<{ date: string; time: string }>({ date: '', time: '' });
+
+  // 시간 업데이트 (1초마다)
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const dateString = now.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const timeString = now.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false, // 24시간 형식
+      });
+      setCurrentTime({ date: dateString.replace(/\. /g, '.').replace(/\.$/, ''), time: timeString });
+    };
+
+    updateTime(); // 초기 업데이트
+    const interval = setInterval(updateTime, 1000); // 1초마다 업데이트
+
+    return () => clearInterval(interval);
+  }, []);
 
   // React Query 데이터와 로컬 상태 동기화 (제거됨)
   // useEffect(() => {
@@ -249,38 +294,46 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         </div>
 
-        {/* 오른쪽: 에러 버튼, 폴링 스위치, 실시간 로그 버튼 */}
-        <div className='flex items-center space-x-2'>
-          <div className='flex items-center gap-2 mr-2'>
-            <span className='text-sm text-muted-foreground'>폴링</span>
-            <Switch
-              checked={pollingState?.pollingEnabled ?? false}
-              disabled={pollingStateLoading || updatePollingStateMutation.isPending || pollingState?.applyInProgress}
-              onCheckedChange={handlePollingToggle}
-              className='data-[state=checked]:bg-green-600'
-            />
-            <span className='text-xs text-muted-foreground'>{pollingState?.pollingEnabled ? 'ON' : 'OFF'}</span>
-          </div>
-          {/* ✅ 에러 보기 버튼 */}
-          <Button size='icon' variant='ghost' onClick={toggleErrorPanel} className='relative'>
-            <AlertTriangle size={20} />
-            {errorCount > 0 && (
-              <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center'>
-                {errorCount}
+        {/* 오른쪽: 현재 시간 및 사용자 정보 */}
+        <div className='flex items-center gap-3'>
+          {/* 현재 시간 및 사용자 정보 - 데스크탑 (1줄) */}
+          <div className='hidden md:flex items-center gap-3 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50'>
+            <div className='flex items-center gap-1.5'>
+              <Clock className='h-4 w-4 text-muted-foreground shrink-0' />
+              <span className='text-sm font-medium tabular-nums'>
+                {currentTime.date} {currentTime.time}
               </span>
+            </div>
+            {user && (
+              <>
+                <Separator orientation='vertical' className='h-4' />
+                <div className='flex items-center gap-1.5'>
+                  <User className='h-4 w-4 text-muted-foreground shrink-0' />
+                  <span className='text-sm font-medium'>{user.name}</span>
+                  <Badge variant='secondary' className='h-5 px-1.5 text-xs'>
+                    {getRoleDisplayName(user.role)}
+                  </Badge>
+                </div>
+              </>
             )}
-          </Button>
-          {/* 실시간 로그 버튼 */}
-          <Button
-            size='icon'
-            variant='ghost'
-            onClick={() => {
-              console.log('[MainLayout] 헤더 로그 버튼 클릭!');
-              toggleLogPanel();
-            }}
-          >
-            <MessageSquare size={20} />
-          </Button>
+          </div>
+
+          {/* 모바일: 시간 및 사용자 정보 */}
+          <div className='md:hidden flex items-center gap-2'>
+            <div className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50'>
+              <Clock className='h-3.5 w-3.5 text-muted-foreground shrink-0' />
+              <span className='text-xs font-medium tabular-nums'>{currentTime.time}</span>
+            </div>
+            {user && (
+              <div className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50'>
+                <User className='h-3.5 w-3.5 text-muted-foreground shrink-0' />
+                <span className='text-xs font-medium'>{user.name}</span>
+                <Badge variant='secondary' className='h-4 px-1.5 text-[10px]'>
+                  {getRoleDisplayName(user.role)}
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -345,9 +398,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               title='로그아웃'
             >
               <LogOut className='h-5 w-5 mb-0.5' aria-hidden='true' />
-              <span className='text-xs text-center leading-tight whitespace-pre-line'>
-                로그{'\n'}아웃
-              </span>
+              <span className='text-xs text-center leading-tight whitespace-pre-line'>로그{'\n'}아웃</span>
             </Button>
           </div>
         </nav>
@@ -372,6 +423,103 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         progress={processDialog.progress}
         status={processDialog.status}
       />
+
+      {/* 플로팅 액션 버튼 (FAB) - 오른쪽 하단 */}
+      <div
+        className={`
+          fixed right-4 z-[60] flex flex-col gap-3
+          transition-all duration-300
+          ${shouldAnimate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+          ${import.meta.env.DEV ? 'bottom-20' : 'bottom-4'}
+        `}
+      >
+        {/* 숨김 가능한 버튼들 */}
+        <div
+          className={`
+            flex flex-col gap-3 transition-all duration-300
+            ${
+              fabVisible
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 -translate-y-4 pointer-events-none h-0 overflow-hidden'
+            }
+          `}
+        >
+          {/* 폴링 버튼 */}
+          <Button
+            className={`
+              rounded-full shadow-lg w-14 h-14 flex flex-col items-center justify-center gap-0.5
+              border-2 transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]
+              ${
+                pollingState?.pollingEnabled
+                  ? 'bg-green-600 hover:bg-green-700 text-white border-green-700'
+                  : 'bg-gray-400 hover:bg-gray-500 text-white border-gray-500'
+              }
+            `}
+            disabled={pollingStateLoading || updatePollingStateMutation.isPending || pollingState?.applyInProgress}
+            onClick={() => handlePollingToggle(!pollingState?.pollingEnabled)}
+            title={pollingState?.pollingEnabled ? '폴링 ON' : '폴링 OFF'}
+          >
+            <Activity size={20} />
+            <span className='text-[11px] font-medium'>{pollingState?.pollingEnabled ? 'ON' : 'OFF'}</span>
+          </Button>
+
+          {/* 에러 보기 버튼 */}
+          <Button
+            className={`
+              rounded-full shadow-lg w-14 h-14 flex flex-col items-center justify-center gap-0.5 relative border-2 transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]
+              ${
+                errorPanelOpen
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:border-yellow-700'
+                  : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-900 border-yellow-200 dark:bg-yellow-900/10 dark:hover:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800'
+              }
+            `}
+            onClick={toggleErrorPanel}
+            title={errorPanelOpen ? '에러 패널 닫기' : '에러 패널 열기'}
+          >
+            <AlertTriangle
+              size={20}
+              className={errorPanelOpen ? 'text-white' : 'text-yellow-700 dark:text-yellow-300'}
+            />
+            <span className='text-[11px] font-medium'>{errorPanelOpen ? 'ON' : 'OFF'}</span>
+            {errorCount > 0 && (
+              <span className='absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+                {errorCount}
+              </span>
+            )}
+          </Button>
+
+          {/* 실시간 로그 버튼 */}
+          <Button
+            className={`
+              rounded-full shadow-lg w-14 h-14 flex flex-col items-center justify-center gap-0.5 border-2 transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]
+              ${
+                isLogPanelOpen
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-700'
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800'
+              }
+            `}
+            onClick={() => {
+              console.log('[MainLayout] FAB 로그 버튼 클릭!');
+              toggleLogPanel();
+            }}
+            title={isLogPanelOpen ? '로그 패널 닫기' : '로그 패널 열기'}
+          >
+            <MessageSquare size={20} className={isLogPanelOpen ? 'text-white' : 'text-blue-700 dark:text-blue-300'} />
+            <span className='text-[11px] font-medium'>{isLogPanelOpen ? 'ON' : 'OFF'}</span>
+          </Button>
+        </div>
+
+        {/* 숨김 토글 버튼 - 항상 표시 */}
+        <Button
+          size='icon'
+          variant='ghost'
+          className='rounded-full shadow-lg w-14 h-14 bg-muted hover:bg-muted/80 border-2 border-border transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]'
+          onClick={() => setFabVisible(!fabVisible)}
+          title={fabVisible ? 'FAB 숨기기' : 'FAB 보이기'}
+        >
+          {fabVisible ? <ChevronDown size={22} /> : <ChevronUp size={22} />}
+        </Button>
+      </div>
     </div>
   );
 };

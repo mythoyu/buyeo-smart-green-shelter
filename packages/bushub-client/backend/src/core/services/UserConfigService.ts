@@ -9,6 +9,7 @@ import {
   ConfigFile,
 } from '../repositories/interfaces/IUserConfigRepository';
 
+import { IApiKeyService } from './interfaces/IApiKeyService';
 import { IUserConfigService } from './interfaces/IUserConfigService';
 import { IWebSocketService } from './interfaces/IWebSocketService';
 
@@ -17,6 +18,7 @@ export class UserConfigService implements IUserConfigService {
     private userConfigRepository: IUserConfigRepository,
     private _webSocketService?: IWebSocketService,
     private logger?: ILogger,
+    private _apiKeyService?: IApiKeyService,
   ) {}
 
   loadConfig(): ConfigFile {
@@ -125,19 +127,18 @@ export class UserConfigService implements IUserConfigService {
         user = exists;
       }
 
-      // 사용자별 API 키 초기화 (사용자 객체에 포함된 경우)
-      if (userConfig.apiKey) {
+      // 사용자별 API 키 초기화 (Repository를 통해 자동 생성 형식 사용)
+      if (userConfig.apiKey && this._apiKeyService) {
         const { ApiKey } = await import('../../models/schemas/ApiKeySchema');
-        const existsKey = await ApiKey.findOne({ name: userConfig.apiKey.name });
+        const existsKey = await ApiKey.findOne({ username: userConfig.apiKey.name });
         if (!existsKey) {
-          await ApiKey.create({
-            name: userConfig.apiKey.name,
-            key: userConfig.apiKey.key,
+          // Repository를 통해 생성 (users.json의 고정 키 값 사용)
+          await this._apiKeyService.createApiKey({
+            username: userConfig.apiKey.name,
+            key: userConfig.apiKey.key, // users.json에 정의된 고정 키 값 사용
             type: userConfig.apiKey.type,
             permissions: userConfig.apiKey.permissions,
-            status: userConfig.apiKey.status,
-            description: userConfig.apiKey.description,
-            userId: user._id, // 사용자와 연결
+            userId: (user._id as any).toString(), // 사용자와 연결
           });
           this.logger?.info(`✅ API 키 생성: ${userConfig.apiKey.name}`);
         }

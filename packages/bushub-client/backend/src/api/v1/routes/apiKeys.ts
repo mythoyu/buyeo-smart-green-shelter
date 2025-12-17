@@ -28,17 +28,33 @@ async function apiKeysRoutes(fastify: FastifyInstance) {
         const { apiKeys } = await apiKeyService.getApiKeys();
 
         const result = apiKeys.map((key: any) => ({
-          id: key._id,
-          name: key.name,
+          id: key.id,
+          username: key.username,
+          key: key.key,
           type: key.type,
+          permissions: key.permissions || [],
           status: key.status,
-          createdAt: key.createdAt.toISOString(),
-          expiresAt: key.expiresAt?.toISOString(),
+          description: key.description || '',
+          createdAt: key.createdAt
+            ? typeof key.createdAt === 'string'
+              ? key.createdAt
+              : key.createdAt.toISOString()
+            : new Date().toISOString(),
+          updatedAt: key.updatedAt
+            ? typeof key.updatedAt === 'string'
+              ? key.updatedAt
+              : key.updatedAt.toISOString()
+            : new Date().toISOString(),
+          expiresAt: key.expiresAt
+            ? typeof key.expiresAt === 'string'
+              ? key.expiresAt
+              : key.expiresAt.toISOString()
+            : undefined,
         }));
 
         logInfo('API 키 목록 조회 응답 완료');
 
-        return createSuccessResponse('API 키 목록 조회 성공', result);
+        return createSuccessResponse('API 키 목록 조회 성공', { apiKeys: result });
       } catch (error) {
         return handleRouteError(error, reply, 'apiKeys', 'API 키 목록 조회 중 오류가 발생했습니다.');
       }

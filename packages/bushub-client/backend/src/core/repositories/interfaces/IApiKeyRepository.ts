@@ -3,6 +3,7 @@ import { IApiKey } from '../../../models/schemas/ApiKeySchema';
 export interface CreateApiKeyDto {
   username: string;
   type: 'internal' | 'external' | 'universal';
+  key?: string; // 옵셔널: 제공되지 않으면 자동 생성
   permissions?: string[];
   userId?: string;
   companyId?: string;

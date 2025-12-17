@@ -364,7 +364,7 @@ export default function UserManagementPage() {
           </div>
         </CardHeader>
         <CardContent className='p-0'>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4'>
             {filterUsersByRole(processedUsers, selectedFilter)
               .filter((user: User) => {
                 // apikeys 필터는 별도로 처리
@@ -381,12 +381,23 @@ export default function UserManagementPage() {
                 // API 키가 없을 경우 기본값 생성
                 const displayApiKey = userApiKey || createDefaultApiKey(user);
 
+                // 권한별 hover 색상 결정
+                const hoverBgColor =
+                  user.role === 'superuser'
+                    ? 'hover:bg-purple-200'
+                    : user.role === 'engineer'
+                    ? 'hover:bg-blue-200'
+                    : user.role === 'user'
+                    ? 'hover:bg-green-200'
+                    : 'hover:bg-orange-200';
+
                 return (
-                  <div
+                  <Card
                     key={user.id}
-                    className='bg-muted rounded-lg p-4 border hover:border-border transition-all duration-200'
+                    className={`cursor-pointer ${hoverBgColor} transition-all duration-300`}
                   >
-                    <div className='flex items-center justify-between'>
+                    <CardContent className='p-4'>
+                      <div className='flex items-center justify-between'>
                       <div className='flex items-center space-x-4'>
                         <div
                           className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -483,7 +494,8 @@ export default function UserManagementPage() {
                         )}
                       </div>
                     </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
           </div>

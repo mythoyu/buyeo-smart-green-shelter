@@ -184,7 +184,12 @@ export class ServiceContainer {
     const clientService: IClientService = new ClientService(clientRepository, webSocketService, logger);
     const apiKeyService: IApiKeyService = new ApiKeyService(apiKeyRepository, webSocketService, logger);
     const modbusService: IModbusService = new ModbusService(modbusRepository, webSocketService, logger);
-    const userConfigService: IUserConfigService = new UserConfigService(userConfigRepository, webSocketService, logger);
+    const userConfigService: IUserConfigService = new UserConfigService(
+      userConfigRepository,
+      webSocketService,
+      logger,
+      apiKeyService,
+    );
 
     const commandLogService: ICommandLogService = new CommandLogService(commandLogRepository, webSocketService, logger);
     const unifiedLogService: IUnifiedLogService = new UnifiedLogService(commandLogRepository, webSocketService, logger);
