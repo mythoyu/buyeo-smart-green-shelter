@@ -171,18 +171,20 @@ const SystemMonitoringPage = () => {
 
       {/* 상태 카드 그리드 */}
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-        <SuperiorServerStatusCard />
-        <PingTestCard />
-        {data?.server && <ServerStatusCard data={data.server} />}
-        {data?.database && <DatabaseStatusCard data={data.database} onViewData={() => setIsDatabaseModalOpen(true)} />}
-        {data?.services && <ServicesStatusCard data={data.services} />}
-        {data?.hardware && <HardwareStatusCard data={data.hardware} />}
-        {/* 🆕 새로운 모니터링 카드들 추가 */}
-        {data?.polling && <PollingStatusCard data={data.polling} />}
-        {data?.pollingRecovery && <PollingRecoveryStatusCard data={data.pollingRecovery} />}
-        {data?.ddcTimeSync && <DdcTimeSyncStatusCard data={data.ddcTimeSync} />}
-        {/* 시스템 정보 (그리드 카드 크기 맞춤) */}
-        <Card>
+        {(() => {
+          const cards = [
+            <SuperiorServerStatusCard key='superior-server' />,
+            <PingTestCard key='ping-test' />,
+            data?.server && <ServerStatusCard key='server' data={data.server} />,
+            data?.database && (
+              <DatabaseStatusCard key='database' data={data.database} onViewData={() => setIsDatabaseModalOpen(true)} />
+            ),
+            data?.services && <ServicesStatusCard key='services' data={data.services} />,
+            data?.hardware && <HardwareStatusCard key='hardware' data={data.hardware} />,
+            data?.polling && <PollingStatusCard key='polling' data={data.polling} />,
+            data?.pollingRecovery && <PollingRecoveryStatusCard key='polling-recovery' data={data.pollingRecovery} />,
+            data?.ddcTimeSync && <DdcTimeSyncStatusCard key='ddc-time-sync' data={data.ddcTimeSync} />,
+            <Card key='system-summary'>
           <CardHeader>
             <CardTitle className='text-lg'>시스템 요약</CardTitle>
           </CardHeader>
@@ -228,7 +230,21 @@ const SystemMonitoringPage = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>,
+          ].filter(Boolean);
+
+          return cards.map((card, index) => (
+            <div
+              key={card?.key || index}
+              style={{
+                animationDelay: `${index * 100}ms`,
+                animation: 'fadeInUp 0.6s ease-out forwards',
+              }}
+            >
+              {card}
+            </div>
+          ));
+        })()}
       </div>
 
       {/* 데이터베이스 탐색 모달 */}

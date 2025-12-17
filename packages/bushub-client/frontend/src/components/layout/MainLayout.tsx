@@ -228,10 +228,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigation = [
     { name: '대시보드', label: '대시\n보드', href: '/dashboard', icon: Home },
     { name: '현장 설정', label: '현장\n설정', href: '/device-registration', icon: Database },
+    { name: '사용자 관리', label: '사용자\n관리', href: '/users', icon: Users },
     { name: '로그 분석', label: '로그\n분석', href: '/log-analysis', icon: BarChart3 },
     { name: '시스템 설정', label: '시스템\n설정', href: '/system-settings', icon: Settings },
     { name: '시스템 분석', label: '시스템\n분석', href: '/system-monitoring', icon: Activity },
-    { name: '사용자 관리', label: '사용자\n관리', href: '/users', icon: Users },
     // 하드웨어 제어는 superuser, engineer만 접근 가능
     ...(user?.role === 'superuser' || user?.role === 'engineer'
       ? [{ name: '직접 제어', label: '직접\n제어', href: '/hardware-control', icon: Cpu }]
@@ -254,7 +254,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className='min-h-screen bg-background'>
       {/* 헤더 */}
-      <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 bg-card shadow-sm border-b'>
+      <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 bg-card shadow-sm border-b border-border/50'>
         {/* 왼쪽: 네비게이션 버튼과 모바일 버스 아이콘 */}
         <div className='flex items-center gap-4'>
           {/* 메뉴 버튼 */}
@@ -282,20 +282,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </Popover>
         </div>
 
-        {/* 가운데: 데스크탑 버스 이름 표시 */}
-        <div className='flex items-center gap-3 flex-1 justify-center'>
-          {/* 데스크탑: 전체 정보 표시 */}
-          <div className='hidden md:flex items-center gap-3'>
-            <Bus className='h-6 w-6 text-primary' />
-            <div className='text-center'>
-              <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
-              <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>
-            </div>
+        {/* 가운데: 데스크탑 버스 이름 표시 (화면 정중앙) */}
+        <div className='absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3'>
+          <Bus className='h-6 w-6 text-primary' />
+          <div className='text-center'>
+            <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
+            <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>
           </div>
         </div>
 
         {/* 오른쪽: 현재 시간 및 사용자 정보 */}
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-3 ml-auto'>
           {/* 현재 시간 및 사용자 정보 - 데스크탑 (1줄) */}
           <div className='hidden md:flex items-center gap-3 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50'>
             <div className='flex items-center gap-1.5'>
@@ -375,18 +372,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     }
                   }}
                   variant={isActive ? 'default' : 'ghost'}
-                  className='whitespace-nowrap text-sm font-medium duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-16 h-16 flex flex-col gap-1 items-center justify-center rounded-lg transition-colors'
+                  className={`whitespace-nowrap text-sm font-medium duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-16 h-16 flex flex-col gap-1 items-center justify-center rounded-lg transition-colors ${
+                    !isActive ? 'text-muted-foreground' : ''
+                  }`}
                   title={item.name}
                 >
-                  <Icon className='h-5 w-5 mb-0.5' aria-hidden='true' />
-                  <span className='text-xs text-center leading-tight whitespace-pre-line'>{label}</span>
+                  <Icon className={`h-5 w-5 mb-0.5 ${!isActive ? 'text-muted-foreground' : ''}`} aria-hidden='true' />
+                  <span className={`text-xs text-center leading-tight whitespace-pre-line ${!isActive ? 'text-muted-foreground' : ''}`}>
+                    {label}
+                  </span>
                 </Button>
               );
             })}
           </div>
 
           {/* 하단 버전 정보 및 로그아웃 */}
-          <div className='mt-auto pt-4 border-t flex flex-col items-center gap-2'>
+          <div className='mt-auto pt-4 border-t border-border/50 flex flex-col items-center gap-2'>
             <div className='w-16 h-16 flex flex-col items-center justify-center text-xs text-muted-foreground hover:text-foreground transition-colors duration-150 cursor-default'>
               <Info className='h-5 w-5 mb-0.5' aria-hidden='true' />
               <span className='text-center leading-tight whitespace-pre-line'>{getFormattedVersion()}</span>

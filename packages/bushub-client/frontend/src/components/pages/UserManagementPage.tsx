@@ -124,7 +124,7 @@ export default function UserManagementPage() {
   const [showEditPassword, setShowEditPassword] = useState<boolean>(false);
 
   // 필터 상태
-  const [selectedFilter] = useState<string>('all');
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
   // 로딩 및 에러 상태 통합
   const loading = usersLoading || apiKeysLoading;
@@ -342,106 +342,137 @@ export default function UserManagementPage() {
             <p className='text-muted-foreground text-sm'>시스템 사용자 및 API 키 관리</p>
           </div>
         </div>
-        <Button onClick={() => setShowCreateUser(true)}>
-          <UserPlus className='w-4 h-4 mr-2' />
-          사용자 등록
+        <div className='flex items-center gap-2'>
+          <Badge variant='secondary' className='text-base px-3 py-1.5 font-semibold'>
+            {processedUsers.length}명
+          </Badge>
+          <Button onClick={() => setShowCreateUser(true)}>
+            <UserPlus className='w-4 h-4 mr-2' />
+            사용자 등록
+          </Button>
+        </div>
+      </div>
+
+      {/* 필터 */}
+      <div className='flex flex-wrap items-center gap-2 p-3 bg-muted/30 rounded-lg border border-border/50'>
+        <Button
+          variant={selectedFilter === 'all' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setSelectedFilter('all')}
+          className={`min-w-[80px] transition-all ${
+            selectedFilter === 'all'
+              ? 'bg-primary text-primary-foreground shadow-sm border-primary'
+              : 'hover:bg-accent hover:border-primary/50 border-border/50'
+          }`}
+        >
+          전체
+        </Button>
+        <Button
+          variant={selectedFilter === 'superuser' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setSelectedFilter('superuser')}
+          className={`min-w-[120px] transition-all ${
+            selectedFilter === 'superuser'
+              ? 'bg-purple-600 text-white border-purple-600 shadow-sm hover:bg-purple-700'
+              : 'hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 border-border/50'
+          }`}
+        >
+          시스템 관리자
+        </Button>
+        <Button
+          variant={selectedFilter === 'engineer' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setSelectedFilter('engineer')}
+          className={`min-w-[80px] transition-all ${
+            selectedFilter === 'engineer'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-sm hover:bg-blue-700'
+              : 'hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 border-border/50'
+          }`}
+        >
+          엔지니어
+        </Button>
+        <Button
+          variant={selectedFilter === 'user' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setSelectedFilter('user')}
+          className={`min-w-[100px] transition-all ${
+            selectedFilter === 'user'
+              ? 'bg-green-600 text-white border-green-600 shadow-sm hover:bg-green-700'
+              : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 border-border/50'
+          }`}
+        >
+          내부사용자
+        </Button>
+        <Button
+          variant={selectedFilter === 'ex-user' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setSelectedFilter('ex-user')}
+          className={`min-w-[100px] transition-all ${
+            selectedFilter === 'ex-user'
+              ? 'bg-orange-600 text-white border-orange-600 shadow-sm hover:bg-orange-700'
+              : 'hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 border-border/50'
+          }`}
+        >
+          외부사용자
         </Button>
       </div>
 
-      {/* 사용자 목록 */}
-      <Card>
-        <CardHeader>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              <div className='w-8 h-8 flex items-center justify-center bg-muted rounded-full'>
-                <Users className='w-4 h-4 text-primary' />
-              </div>
-              <CardTitle>사용자 목록</CardTitle>
-            </div>
-            <div className='flex items-center gap-2'>
-              <Badge variant='secondary'>{processedUsers.length}명</Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className='p-0'>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4'>
-            {filterUsersByRole(processedUsers, selectedFilter)
-              .filter((user: User) => {
-                // apikeys 필터는 별도로 처리
-                if (selectedFilter === 'apikeys') {
-                  return apiKeys.some((key: ApiKey) => key.username === (user.name || user.username));
-                }
-                return true;
-              })
-              .map((user: User) => {
-                // 사용자별 API 키 찾기 (새로운 유틸리티 함수 사용)
-                const userApiKey = matchUserWithApiKey(user, apiKeys);
-                console.log(`사용자 ${user.username}의 API 키:`, userApiKey);
+      {/* 사용자 카드 목록 */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+        {filterUsersByRole(processedUsers, selectedFilter)
+          .filter((user: User) => {
+            // apikeys 필터는 별도로 처리
+            if (selectedFilter === 'apikeys') {
+              return apiKeys.some((key: ApiKey) => key.username === (user.name || user.username));
+            }
+            return true;
+          })
+          .map((user: User, index: number) => {
+            // 사용자별 API 키 찾기 (새로운 유틸리티 함수 사용)
+            const userApiKey = matchUserWithApiKey(user, apiKeys);
+            console.log(`사용자 ${user.username}의 API 키:`, userApiKey);
 
-                // API 키가 없을 경우 기본값 생성
-                const displayApiKey = userApiKey || createDefaultApiKey(user);
+            // API 키가 없을 경우 기본값 생성
+            const displayApiKey = userApiKey || createDefaultApiKey(user);
 
-                // 권한별 hover 색상 결정
-                const hoverBgColor =
-                  user.role === 'superuser'
-                    ? 'hover:bg-purple-200'
-                    : user.role === 'engineer'
-                    ? 'hover:bg-blue-200'
-                    : user.role === 'user'
-                    ? 'hover:bg-green-200'
-                    : 'hover:bg-orange-200';
+            // 권한별 hover 색상 결정
+            const hoverBgColor =
+              user.role === 'superuser'
+                ? 'hover:bg-purple-200'
+                : user.role === 'engineer'
+                ? 'hover:bg-blue-200'
+                : user.role === 'user'
+                ? 'hover:bg-green-200'
+                : 'hover:bg-orange-200';
 
-                return (
-                  <Card
-                    key={user.id}
-                    className={`cursor-pointer ${hoverBgColor} transition-all duration-300`}
-                  >
-                    <CardContent className='p-4'>
-                      <div className='flex items-center justify-between'>
-                      <div className='flex items-center space-x-4'>
-                        <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            user.role === 'superuser'
-                              ? 'bg-purple-100'
-                              : user.role === 'engineer'
-                              ? 'bg-blue-100'
-                              : user.role === 'user'
-                              ? 'bg-green-100'
-                              : 'bg-orange-100'
-                          }`}
-                        >
-                          {getRoleIcon(user.role)}
-                        </div>
-                        <div className='flex-1'>
-                          <div className='flex items-center space-x-3'>
-                            <h3 className='font-semibold text-foreground'>{user.name || user.username}</h3>
-                            {getRoleBadge(user.role)}
-                          </div>
-                          <div className='flex items-center space-x-4 mt-1 text-sm text-muted-foreground'>
-                            <span className='flex items-center gap-1'>
-                              <Key className='h-3 w-3' />
-                              <div className='flex items-center gap-1'>
-                                <span className='text-xs font-mono bg-background px-2 py-1 rounded border max-w-64 truncate'>
-                                  {displayApiKey.key}
-                                </span>
-                                <Button
-                                  size='sm'
-                                  variant='ghost'
-                                  onClick={() => {
-                                    handleCopy(displayApiKey.key);
-                                    toast.success('API 키가 클립보드에 복사되었습니다');
-                                  }}
-                                  className='hover:bg-accent text-xs px-1 py-1'
-                                  title='복사'
-                                >
-                                  <CopyIcon className='h-3 w-3' />
-                                </Button>
-                              </div>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className='flex items-center gap-2'>
+            return (
+              <Card
+                key={user.id}
+                className={`cursor-pointer ${hoverBgColor} transition-all duration-300`}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animation: 'fadeInUp 0.6s ease-out forwards',
+                }}
+              >
+                <CardHeader className='pb-3'>
+                  <div className='flex items-center space-x-3'>
+                    <div
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        user.role === 'superuser'
+                          ? 'bg-purple-100'
+                          : user.role === 'engineer'
+                          ? 'bg-blue-100'
+                          : user.role === 'user'
+                          ? 'bg-green-100'
+                          : 'bg-orange-100'
+                      }`}
+                    >
+                      {getRoleIcon(user.role)}
+                    </div>
+                    <CardTitle className='flex items-center space-x-3 flex-1 min-w-0'>
+                      <span className='font-semibold text-foreground truncate'>{user.name || user.username}</span>
+                      {getRoleBadge(user.role)}
+                      <div className='flex items-center gap-2 ml-auto shrink-0'>
                         {editingUser?.id === user.id ? (
                           <>
                             <Button
@@ -493,14 +524,35 @@ export default function UserManagementPage() {
                           </>
                         )}
                       </div>
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className='pt-0'>
+                  <div className='flex items-center gap-1 flex-1 min-w-0 text-sm text-muted-foreground'>
+                    <Key className='h-3 w-3 shrink-0' />
+                    <div className='flex items-center gap-1 flex-1 min-w-0'>
+                      <span className='text-xs font-mono bg-background px-2 py-1 rounded border truncate flex-1 min-w-0'>
+                        {displayApiKey.key}
+                      </span>
+                      <Button
+                        size='sm'
+                        variant='ghost'
+                        onClick={() => {
+                          handleCopy(displayApiKey.key);
+                          toast.success('API 키가 클립보드에 복사되었습니다');
+                        }}
+                        className='hover:bg-accent text-xs px-1 py-1 shrink-0'
+                        title='복사'
+                      >
+                        <CopyIcon className='h-3 w-3' />
+                      </Button>
                     </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-          </div>
-        </CardContent>
-      </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+      </div>
 
       {/* 사용자 등록 모달 */}
       {showCreateUser && (

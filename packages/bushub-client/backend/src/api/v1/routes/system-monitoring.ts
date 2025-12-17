@@ -565,11 +565,13 @@ async function checkExternalServer(url: string) {
         timestamp: new Date().toISOString(),
       };
     } else {
+      // 실제 에러 메시지 사용 (없으면 기본 메시지)
+      const errorMessage = result.error || `HTTP ${result.status} - 연결 실패`;
       return {
         success: false,
         status: result.status,
         responseTime,
-        error: `HTTP ${result.status} - 연결 실패`,
+        error: errorMessage,
         timestamp: new Date().toISOString(),
       };
     }

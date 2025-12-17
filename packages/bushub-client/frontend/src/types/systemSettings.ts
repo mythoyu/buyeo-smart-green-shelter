@@ -57,6 +57,7 @@ export interface NetworkInterface {
   state: 'connected' | 'disconnected' | 'unavailable' | 'unmanaged';
   connection?: string; // connection name
   mac?: string; // MAC address
+  dhcp4?: boolean; // DHCP 사용 여부
 }
 
 export interface WifiInterface {

@@ -718,29 +718,35 @@ function parsePingOutput(
         };
       }
 
-      // 패킷 통계 추출
-      const transmittedMatch = statsLine.match(/(\d+) packets transmitted|(\d+) 패킷 전송/);
-      const receivedMatch = statsLine.match(/(\d+) received|(\d+) 받음/);
-      const lossMatch = statsLine.match(/(\d+)% packet loss|(\d+)% 패킷 손실/);
+      // 패킷 통계 추출 (더 유연한 정규식 사용)
+      const transmittedMatch = statsLine.match(/(\d+)\s+packets?\s+transmitted|(\d+)\s+패킷\s+전송/);
+      const receivedMatch = statsLine.match(/(\d+)\s+packets?\s+received|(\d+)\s+받음|(\d+)\s+received/);
+      const lossMatch = statsLine.match(/(\d+)%\s+packet\s+loss|(\d+)%\s+패킷\s+손실/);
 
-      const transmitted = transmittedMatch ? parseInt(transmittedMatch[1] || transmittedMatch[2]) : 4;
-      const received = receivedMatch ? parseInt(receivedMatch[1] || receivedMatch[2]) : 0;
-      const loss = lossMatch ? parseInt(lossMatch[1] || lossMatch[2]) : 100;
+      const transmitted = transmittedMatch ? parseInt(transmittedMatch[1] || transmittedMatch[2] || '1') : 1;
+      const received = receivedMatch ? parseInt(receivedMatch[1] || receivedMatch[2] || receivedMatch[3] || '0') : 0;
+      const loss = lossMatch ? parseInt(lossMatch[1] || lossMatch[2] || '100') : 100;
 
-      // 응답 시간 통계 추출
-      const timeStatsLine = lines.find((line) => line.includes('rtt min/avg/max') || line.includes('시간 min/avg/max'));
+      // 응답 시간 통계 추출 (rtt와 round-trip 모두 지원, mdev는 선택적)
+      const timeStatsLine = lines.find(
+        (line) =>
+          line.includes('rtt min/avg/max') ||
+          line.includes('round-trip min/avg/max') ||
+          line.includes('시간 min/avg/max'),
+      );
       let minTime = 0,
         maxTime = 0,
         avgTime = 0;
 
       if (timeStatsLine) {
+        // rtt 또는 round-trip 형식 지원, mdev는 선택적
         const timeMatch = timeStatsLine.match(
-          /rtt min\/avg\/max\/mdev = ([\d.]+)\/([\d.]+)\/([\d.]+)\/([\d.]+) ms|시간 min\/avg\/max\/mdev = ([\d.]+)\/([\d.]+)\/([\d.]+)\/([\d.]+) ms/,
+          /(?:rtt|round-trip|시간)\s+min\/avg\/max(?:\/mdev)?\s*=\s*([\d.]+)\/([\d.]+)\/([\d.]+)(?:\/([\d.]+))?\s*ms/,
         );
         if (timeMatch) {
-          minTime = parseFloat(timeMatch[1] || timeMatch[5]);
-          avgTime = parseFloat(timeMatch[2] || timeMatch[6]);
-          maxTime = parseFloat(timeMatch[3] || timeMatch[7]);
+          minTime = parseFloat(timeMatch[1]);
+          avgTime = parseFloat(timeMatch[2]);
+          maxTime = parseFloat(timeMatch[3]);
         }
       }
 

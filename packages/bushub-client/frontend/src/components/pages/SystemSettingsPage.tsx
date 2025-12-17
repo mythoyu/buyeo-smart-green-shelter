@@ -37,6 +37,7 @@ import SettingsCard from '../common/SettingsCard';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Button } from '../ui/button';
 import { SelectItem } from '../ui/select';
+import { Badge } from '../ui/badge';
 import type { NtpSettings, NetworkSettings, SoftapSettings } from '../../types/systemSettings';
 
 // 월별 이름 매핑
@@ -565,7 +566,13 @@ const SystemSettingsPage: React.FC = () => {
 
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'>
         {/* SoftAP 설정 */}
-        <SettingsCard
+        <div
+          style={{
+            animationDelay: '0ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
           icon={Wifi}
           title='SoftAP 설정'
           description='WiFi 핫스팟 설정'
@@ -646,9 +653,16 @@ const SystemSettingsPage: React.FC = () => {
             disabled={true}
           />
         </SettingsCard>
+        </div>
 
         {/* 유선 네트워크 설정 */}
-        <SettingsCard
+        <div
+          style={{
+            animationDelay: '100ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
           icon={Network}
           title='유선 네트워크 설정'
           description='Ethernet 전용 IP/DHCP 설정'
@@ -735,9 +749,16 @@ const SystemSettingsPage: React.FC = () => {
             defaultValue='8.8.8.8'
           />
         </SettingsCard>
+        </div>
 
         {/* NTP 설정 */}
-        <SettingsCard
+        <div
+          style={{
+            animationDelay: '200ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
           icon={Clock}
           title='NTP 설정'
           description='시스템 시간 동기화 설정'
@@ -761,7 +782,41 @@ const SystemSettingsPage: React.FC = () => {
               labelOff='OFF'
             />
           </div>
+          {/* NTP 상태 정보 */}
+          {ntpStatus?.data && (
+            <div className='p-3 bg-muted rounded-lg space-y-2'>
+              {/* 동기화 상태 */}
+              <div className='flex justify-between items-center'>
+                <span className='text-sm font-medium'>동기화 상태</span>
+                <Badge
+                  variant={ntpStatus.data.synchronized ? 'default' : 'destructive'}
+                  className={`text-xs ${
+                    ntpStatus.data.synchronized
+                      ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
+                      : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
+                  }`}
+                >
+                  {ntpStatus.data.synchronized ? '✅ 동기화됨' : '❌ 동기화 안됨'}
+                </Badge>
+              </div>
+              {/* 현재 시간 */}
+              {ntpStatus.data.currentTime && (
+                <div className='flex justify-between items-center'>
+                  <span className='text-sm font-medium'>현재 시간</span>
+                  <span className='text-sm text-muted-foreground'>{ntpStatus.data.currentTime}</span>
+                </div>
+              )}
+              {/* 마지막 동기화 시간 */}
+              {ntpStatus.data.lastSync && (
+                <div className='flex justify-between items-center'>
+                  <span className='text-sm font-medium'>마지막 동기화</span>
+                  <span className='text-sm text-muted-foreground'>{ntpStatus.data.lastSync}</span>
+                </div>
+              )}
+            </div>
+          )}
           {/* NTP 입력들 */}
+          <div>
           <InputWithLabel
             label='주 NTP 서버'
             value={ntpInput?.primaryServer || ''}
@@ -773,7 +828,8 @@ const SystemSettingsPage: React.FC = () => {
             showDefaultValueButton={true}
             defaultValue='time.google.com'
           />
-          <div className='flex gap-2'>
+            {/* 주 NTP 서버 연결 확인 버튼 */}
+            <div className='mb-3'>
             <Button
               variant='secondary'
               size='sm'
@@ -817,7 +873,7 @@ const SystemSettingsPage: React.FC = () => {
                   }
                 }
               }}
-              disabled={!ntpInput?.enabled || checkNtpMutation.isPending}
+                disabled={!ntpInput?.enabled || checkNtpMutation.isPending || !ntpInput?.primaryServer}
             >
               {checkNtpMutation.isPending ? (
                 <span className='inline-flex items-center gap-2'>
@@ -829,6 +885,84 @@ const SystemSettingsPage: React.FC = () => {
                 </span>
               )}
             </Button>
+            </div>
+          </div>
+          {/* Secondary NTP 서버 (읽기 전용) */}
+          <div>
+            <InputWithLabel
+              label='백업 NTP 서버'
+              value={ntpStatus?.data?.fallbackServer || ''}
+              onChange={() => {}} // 읽기 전용
+              placeholder='백업 NTP 서버가 설정되지 않았습니다'
+              description='현재 설정된 백업 NTP 서버 (읽기 전용)'
+              disabled={true}
+            />
+            {/* 백업 NTP 서버 연결 확인 버튼 */}
+            <div className='mb-3'>
+              <Button
+                variant='secondary'
+                size='sm'
+                className='gap-2'
+                onClick={async () => {
+                  try {
+                    const fallbackServer = (ntpStatus?.data?.fallbackServer || '').trim();
+                    if (!fallbackServer) {
+                      toast.error('백업 NTP 서버가 설정되지 않았습니다.', { id: 'ntp-fallback-check-error' });
+                      return;
+                    }
+                    const res = await checkNtpMutation.mutateAsync(fallbackServer);
+
+                    // 백엔드에서 이미 성공/실패를 판단하여 응답
+                    if (res.success) {
+                      // 성공: 백엔드에서 200 상태 코드로 응답
+                      const p = res.data?.primary;
+                      const server = p?.timesync?.server || p?.ip || 'unknown';
+                      const offset = p?.timesync?.offsetMs;
+                      const stratum = p?.timesync?.stratum;
+                      const link = res.data?.ifaceLink;
+
+                      toast.success(
+                        `✅ 백업 NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
+                        { id: 'ntp-fallback-check-success' }
+                      );
+                    } else {
+                      // 실패: 백엔드에서 에러 정보 제공
+                      const errorCode = res.error?.code || 'UNKNOWN';
+                      const errorMessage = res.error?.message || '알 수 없는 오류';
+
+                      toast.error(`❌ 백업 NTP 확인 실패 (${errorCode}) - ${errorMessage}`, {
+                        id: 'ntp-fallback-check-failure',
+                      });
+                    }
+                  } catch (e: any) {
+                    // 네트워크 오류나 기타 예외
+                    const errorData = e?.response?.data;
+                    if (errorData?.error) {
+                      toast.error(
+                        `❌ 백업 NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${
+                          errorData.error.message
+                        }`,
+                        { id: 'ntp-fallback-check-error' }
+                      );
+                    } else {
+                      const msg = e?.message || '백업 NTP 확인 실패';
+                      toast.error(msg, { id: 'ntp-fallback-check-error' });
+                    }
+                  }
+                }}
+                disabled={!ntpStatus?.data?.fallbackServer || checkNtpMutation.isPending}
+              >
+                {checkNtpMutation.isPending ? (
+                  <span className='inline-flex items-center gap-2'>
+                    <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
+                  </span>
+                ) : (
+                  <span className='inline-flex items-center gap-2'>
+                    <Network className='h-4 w-4' /> 연결 확인
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
           <InputWithLabel
             label='타임존'
@@ -842,9 +976,16 @@ const SystemSettingsPage: React.FC = () => {
             defaultValue='Asia/Seoul'
           />
         </SettingsCard>
+        </div>
 
         {/* 절기 설정 - DDCConfigurationPage 스타일로 교체 */}
-        <SettingsCard
+        <div
+          style={{
+            animationDelay: '300ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
           icon={Sun}
           title='절기 설정'
           description='월별 여름/겨울 설정을 관리합니다.'
@@ -931,10 +1072,9 @@ const SystemSettingsPage: React.FC = () => {
                 const value = (seasonInput as any)[monthKey] || 0;
 
                 return (
-                  <div key={month} className='flex items-center space-x-2'>
-                    <span className='text-sm text-gray-600 w-8'>{name}</span>
+                  <div key={month} className='flex items-center justify-center'>
                     <button
-                      className={`min-w-[72px] px-3 py-1 rounded-md font-semibold text-xs shadow-sm transition-all ${
+                      className={`min-w-[80px] px-3 py-2 rounded-md font-semibold text-xs shadow-sm transition-all flex flex-col items-center justify-center gap-1.5 ${
                         value === 1
                           ? 'bg-orange-500 hover:bg-orange-600 text-white' // 여름: 주황색
                           : 'bg-blue-500 hover:bg-blue-600 text-white' // 겨울: 파란색
@@ -942,7 +1082,8 @@ const SystemSettingsPage: React.FC = () => {
                       onClick={() => handleSeasonalChange(monthKey as keyof SeasonalData, value === 1 ? 0 : 1)}
                       type='button'
                     >
-                      {value === 1 ? '여름' : '겨울'}
+                      <span className='leading-none'>{name}</span>
+                      <span className='leading-none text-[10px]'>{value === 1 ? '여름' : '겨울'}</span>
                     </button>
                   </div>
                 );
@@ -950,9 +1091,16 @@ const SystemSettingsPage: React.FC = () => {
             </div>
           </div>
         </SettingsCard>
+        </div>
 
         {/* DDC 시간 설정 */}
-        <SettingsCard
+        <div
+          style={{
+            animationDelay: '400ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
           icon={Clock}
           title='DDC 시간 설정'
           description='DDC 시간 동기화 설정'
@@ -1025,9 +1173,16 @@ const SystemSettingsPage: React.FC = () => {
             </div>
           </div>
         </SettingsCard>
+        </div>
 
         {/* DDC 폴링 간격 설정 */}
-        <SettingsCard
+        <div
+          style={{
+            animationDelay: '500ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
           icon={Cpu}
           title='DDC 폴링 간격'
           description='데이터 수집 주기 설정'
@@ -1064,9 +1219,16 @@ const SystemSettingsPage: React.FC = () => {
             <SelectItem value='120000'>2분</SelectItem>
           </SelectWithLabel>
         </SettingsCard>
+        </div>
 
         {/* 시스템 재기동 카드 */}
-        <SettingsCard icon={Cpu} title='시스템 재기동' description='호스트 PC 또는 백엔드 서비스를 재시작합니다'>
+        <div
+          style={{
+            animationDelay: '600ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard icon={Cpu} title='시스템 재기동' description='호스트 PC 또는 백엔드 서비스를 재시작합니다'>
           <div className='space-y-4'>
             {/* 호스트 PC 재기동 */}
             <div className='flex flex-col gap-2'>
@@ -1135,6 +1297,7 @@ const SystemSettingsPage: React.FC = () => {
             </div>
           </div>
         </SettingsCard>
+        </div>
       </div>
     </div>
   );

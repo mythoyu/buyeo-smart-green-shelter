@@ -425,7 +425,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
           filteredClients.map((client, index) => (
             <Card
               key={client.id}
-              className={`cursor-pointer hover:bg-blue-200 transition-all duration-300 animate-in slide-in-from-bottom-4
+              className={`cursor-pointer hover:bg-blue-200 transition-all duration-300
                   ${
                     selectedClient && selectedClient.id === client.id
                       ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
@@ -437,8 +437,8 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
               data-client-id={client.id}
               data-selected-id={selectedClient?.id}
               style={{
-                animationDelay: `${index * 50}ms`,
-                animationFillMode: 'both',
+                animationDelay: `${index * 100}ms`,
+                animation: 'fadeInUp 0.6s ease-out forwards',
               }}
               onClick={() => handleClientSelect(client)}
             >

@@ -16,6 +16,7 @@ export interface NetworkInterface {
   subnetmask?: string;
   gateway?: string;
   dns?: string[];
+  dhcp4?: boolean;
 }
 
 export interface NetworkConfig {
@@ -139,9 +140,10 @@ export class NetworkControlService {
             logger.info(`IPv4 without CIDR: ${ipAddress}`);
           }
 
-          // Get gateway and DNS information for this interface
+          // Get gateway, DNS, and DHCP information for this interface
           let gateway = "";
           let dnsServers: string[] = [];
+          let dhcp4 = true; // 기본값: DHCP 사용
 
           try {
             // Get gateway for this interface
@@ -154,7 +156,7 @@ export class NetworkControlService {
           }
 
           try {
-            // Get DNS servers for this interface
+            // Get DNS servers from nmcli device show output (이미 실행 중인 명령어 활용)
             const dnsResult = await execAsync(
               `nmcli device show ${device} | grep "IP4.DNS" | awk '{print $2}'`
             );
@@ -165,6 +167,20 @@ export class NetworkControlService {
             dnsServers = dnsList;
           } catch (error) {
             // DNS not available for this interface
+          }
+
+          // Get DHCP method (connection이 있을 때만 조회)
+          if (connection) {
+            try {
+              const methodResult = await execAsync(
+                `nmcli -t connection show "${connection}" | grep "ipv4.method" | cut -d: -f2`
+              );
+              const method = methodResult.stdout.trim();
+              dhcp4 = method === "auto";
+            } catch (error) {
+              // connection show 실패 시 기본값 유지
+              logger.info(`Failed to get dhcp4 method for connection ${connection}, using default`);
+            }
           }
 
           interfaces.push({
@@ -178,6 +194,7 @@ export class NetworkControlService {
             ...(ipv6 && { ipv6 }),
             ...(gateway && { gateway }),
             ...(dnsServers.length > 0 && { dns: dnsServers }),
+            dhcp4, // DHCP 사용 여부 추가
           });
         }
       }

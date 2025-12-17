@@ -285,37 +285,67 @@ export class NtpService {
       let fallbackServer = "";
 
       try {
-        // timesyncd.conf NTP 라인 파싱
+        // timesyncd.conf NTP 라인 파싱 (주석 제외)
         const tsd = await execAsync(
-          "grep -E '^[ ]*NTP=' /etc/systemd/timesyncd.conf | tail -1 | awk -F= '{print $2}' || true"
+          "grep -E '^[^#]*NTP=' /etc/systemd/timesyncd.conf | tail -1 | awk -F= '{print $2}' || true"
         );
         const raw = (tsd.stdout || "").trim();
         if (raw) {
-          ntpServers = raw
+          const primaryServers = raw
             .split(/[\s,]+/)
             .map((s) => s.trim())
             .filter((s) => s);
+          if (primaryServers.length > 0 && primaryServers[0]) {
+            primaryServer = primaryServers[0];
+            ntpServers.push(primaryServer);
+          }
         }
-        // timedatectl에서 설정/동작 서버 목록 보조 수집
+
+        // timesyncd.conf FallbackNTP 라인 파싱 (주석 제외)
         try {
-          const tc = await execAsync(
-            "timedatectl show --property=NTP --value; timedatectl show --property=NTPServers --value"
+          const fallbackResult = await execAsync(
+            "grep -E '^[^#]*FallbackNTP=' /etc/systemd/timesyncd.conf | tail -1 | awk -F= '{print $2}' || true"
           );
-          const lines = tc.stdout
-            .split("\n")
-            .map((s) => s.trim())
-            .filter((s) => s);
-          for (const line of lines) {
-            const parts = line
+          const fallbackRaw = (fallbackResult.stdout || "").trim();
+          if (fallbackRaw) {
+            const fallbackServers = fallbackRaw
               .split(/[\s,]+/)
               .map((s) => s.trim())
               .filter((s) => s);
-            ntpServers.push(...parts);
+            if (fallbackServers.length > 0 && fallbackServers[0]) {
+              fallbackServer = fallbackServers[0];
+              ntpServers.push(fallbackServer);
+            }
           }
-        } catch {}
+        } catch (error) {
+          logger.warn("FallbackNTP 파싱 실패:", error);
+        }
+
+        // timedatectl timesync-status에서 실제 사용 중인 primary 서버 확인
+        try {
+          const timesync = await this.getTimesyncStatusSummary();
+          if (timesync?.server) {
+            // Server: 10.0.0.30 (dlp.srv.world) 형식에서 호스트명 또는 IP 추출
+            const serverValue = timesync.server.trim();
+            // 괄호 안의 호스트명 우선, 없으면 전체 값 사용
+            const hostnameMatch = serverValue.match(/\(([^)]+)\)/);
+            const actualServer = hostnameMatch ? (hostnameMatch[1] || '') : (serverValue.split(/\s+/)[0] || '');
+            // 이미 설정된 primaryServer와 다르면 업데이트 (실제 동작 중인 서버 우선)
+            if (actualServer && actualServer !== primaryServer) {
+              primaryServer = actualServer;
+              // ntpServers 배열 업데이트
+              if (ntpServers.length > 0) {
+                ntpServers[0] = primaryServer;
+              } else {
+                ntpServers.push(primaryServer);
+              }
+            }
+          }
+        } catch (error) {
+          logger.warn("timesync-status 조회 실패:", error);
+        }
+
         ntpServers = [...new Set(ntpServers)];
-        primaryServer = ntpServers[0] || "";
-        fallbackServer = ntpServers[1] || "";
         if (!primaryServer) primaryServer = "8.8.8.8";
       } catch (error) {
         logger.warn("timesyncd 설정을 읽을 수 없습니다:", error);
@@ -365,27 +395,44 @@ export class NtpService {
     try {
       logger.info("NTP 설정 적용 시작", { config });
 
-      if (config.enabled) {
         // 시간대 설정
         await execAsync(`timedatectl set-timezone ${config.timezone}`);
 
-        // timesyncd.conf에 NTP 서버 기록(주 NTP만)
+      // timesyncd.conf에 NTP 서버 기록 (주석 처리/해제 방식)
         try {
           await execAsync(
             "cp -a /etc/systemd/timesyncd.conf /etc/systemd/timesyncd.conf.bak-$(date +%s) || true"
           );
+
+        if (config.enabled && config.primaryServer && config.primaryServer.trim()) {
+          // NTP 활성화 + primaryServer 있음: 주석 해제 또는 설정
+          const primaryServerValue = config.primaryServer.trim();
+          
+          // 기존 NTP= 라인 제거 (주석 포함)
           await execAsync("sed -i '/^[# ]*NTP=/d' /etc/systemd/timesyncd.conf");
+          // 활성화된 NTP= 라인 추가
           await execAsync(
-            `bash -lc "echo NTP=${config.primaryServer} >> /etc/systemd/timesyncd.conf"`
+            `bash -lc "echo NTP=${primaryServerValue} >> /etc/systemd/timesyncd.conf"`
           );
-          logger.info("timesyncd.conf NTP 갱신 완료", {
-            ntp: config.primaryServer,
+          
+          logger.info("timesyncd.conf NTP 활성화 완료", {
+            ntp: primaryServerValue,
           });
+        } else {
+          // NTP 비활성화 또는 빈값: 주석 처리
+          // 기존 NTP= 라인 제거 (주석 포함)
+          await execAsync("sed -i '/^[# ]*NTP=/d' /etc/systemd/timesyncd.conf");
+          // 주석 처리된 NTP= 라인 추가
+          await execAsync('bash -lc "echo #NTP= >> /etc/systemd/timesyncd.conf"');
+          
+          logger.info("timesyncd.conf NTP 비활성화 (주석 처리) 완료");
+        }
         } catch (e) {
           logger.warn("timesyncd.conf 갱신 실패:", e);
           throw new Error("timesyncd.conf 갱신 실패");
         }
 
+      if (config.enabled) {
         // systemd-timesyncd 재시작 및 활성화, NTP 활성화
         await execAsync("systemctl enable systemd-timesyncd || true");
         await execAsync("systemctl restart systemd-timesyncd");

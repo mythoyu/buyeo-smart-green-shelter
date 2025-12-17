@@ -18,6 +18,7 @@ const NetworkInterfaceSchema = z.object({
   subnetmask: z.string().optional(),
   gateway: z.string().optional(),
   dns: z.array(z.string()).optional(),
+  dhcp4: z.boolean().optional(),
 });
 
 const NetworkConfigSchema = z.object({
@@ -357,8 +358,7 @@ export async function networkRoutes(fastify: FastifyInstance) {
           properties: {
             ip: {
               type: "string",
-              pattern:
-                "^(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$",
+              // IP 주소 또는 도메인명 허용 (패턴 검증 제거)
             },
           },
         },

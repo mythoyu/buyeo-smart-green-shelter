@@ -164,7 +164,7 @@ jobs:
             1. 파일 다운로드: `bushub-smartcity-${{ github.ref_name }}.tar.gz`
             2. USB에 복사 후 리눅스 PC에서 압축 해제: `tar -xzf bushub-smartcity-${{ github.ref_name }}.tar.gz`
             3. 설치 실행: `sudo ./usb-installer.sh`
-               - 비밀번호 입력 시: `jecs` (JECS-N100B 제품 기본 비밀번호)
+               - 비밀번호 입력 시: `jecs` (miniBoo-1203GB-i7 기본 비밀번호)
             4. 웹 접속: http://localhost
 
             ### 설치 과정
@@ -173,7 +173,7 @@ jobs:
                # USB에 파일 복사 후 리눅스 PC에서
                tar -xzf bushub-smartcity-${{ github.ref_name }}.tar.gz
                sudo ./usb-installer.sh
-               # 비밀번호 입력 시: jecs (JECS-N100B 기본 비밀번호)
+               # 비밀번호 입력 시: jecs (miniBoo-1203GB-i7 기본 비밀번호)
                ```
 
             2. **자동 설치 과정** (`usb-installer.sh`가 처리):
@@ -194,14 +194,14 @@ jobs:
                ```
 
             ### 포함된 구성요소
-            - **애플리케이션 이미지**: backend:${{ github.ref_name }}, frontend:${{ github.ref_name }}, mongo:6.0.15, nginx:1.28.0
+            - **애플리케이션 이미지**: bushub-backend:${{ github.ref_name }}, bushub-frontend:${{ github.ref_name }}, mongo:6.0.15, nginx:1.28.0
             - **Network Control API**: 완전한 오프라인 번들 (dist + node_modules)
             - **설치 스크립트**: usb-installer.sh, deploy-hybrid.sh
             - **설정 파일**: docker-compose.integrated.yml, nginx.conf, mime.types, systemd service
 
             ### 시스템 요구사항
-            - **하드웨어**: JECS-N100B 제품 (기본 비밀번호: `jecs`)
-            - **OS**: Linux (Ubuntu 20.04+)
+            - **하드웨어**: miniBoo-1203GB-i7 (기본 비밀번호: `jecs`)
+            - **OS**: Linux (Ubuntu 22.04)
             - **메모리**: 2GB RAM 이상
             - **저장공간**: 5GB 디스크 공간
             - **네트워크**: **초기 설치 시 인터넷 연결 필요** (Docker, Node.js 설치용)
