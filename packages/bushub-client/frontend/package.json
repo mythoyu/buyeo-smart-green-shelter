@@ -1,6 +1,6 @@
 {
   "name": "@bushub-client/frontend",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Bushub Client Frontend",
   "type": "module",
   "scripts": {
