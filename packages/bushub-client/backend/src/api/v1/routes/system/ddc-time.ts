@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { ServiceContainer } from '../../../../core/container/ServiceContainer';
+import { getKstNowParts } from '../../../../utils/time';
 import { logError } from '../../../../logger';
 import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
 
@@ -83,19 +84,19 @@ export default async function systemDdcTimeRoutes(fastify: FastifyInstance) {
           return reply.send(createSuccessResponse('DDC 시간 설정 조회 성공', { ddcTime }));
         }
 
-        // 🆕 DDC 시간 설정이 없으면 기본값 생성 후 반환
+        // 🆕 DDC 시간 설정이 없으면 기본값 생성 후 반환 (KST 기준)
         fastify.log.warn(`DDC 시간 설정이 없어 기본값 생성: ${clientId}`);
 
-        // 현재 시간으로 기본값 생성
-        const now = new Date();
+        // 현재 시간(KST)으로 기본값 생성
+        const kst = getKstNowParts();
         const defaultDdcTime = {
-          year: now.getFullYear(),
-          month: now.getMonth() + 1,
-          day: now.getDate(),
-          dow: now.getDay(),
-          hour: now.getHours(),
-          minute: now.getMinutes(),
-          second: now.getSeconds(),
+          year: kst.year,
+          month: kst.month,
+          day: kst.day,
+          dow: kst.dow,
+          hour: kst.hour,
+          minute: kst.minute,
+          second: kst.second,
         };
 
         // 기본값 저장

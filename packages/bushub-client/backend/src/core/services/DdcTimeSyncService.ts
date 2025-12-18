@@ -1,4 +1,5 @@
 import { ILogger } from '../../shared/interfaces/ILogger';
+import { getKstNowParts } from '../../utils/time';
 import { ServiceContainer } from '../container/ServiceContainer';
 
 import { IDdcTimeSyncService } from './interfaces/IDdcTimeSyncService';
@@ -97,42 +98,7 @@ export class DdcTimeSyncService implements IDdcTimeSyncService {
   private async syncDdcTimeForClient(clientId: string): Promise<void> {
     try {
       // KST(Asia/Seoul) 기준으로 현재 시각의 구성 요소를 분해하여 사용
-      const getKstParts = () => {
-        const dtf = new Intl.DateTimeFormat('en-US', {
-          timeZone: 'Asia/Seoul',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          weekday: 'short',
-          hour12: false,
-        });
-        const parts = Object.fromEntries(dtf.formatToParts(new Date()).map((p) => [p.type, p.value])) as Record<
-          string,
-          string
-        >;
-        const dowMap: Record<string, number> = {
-          Sun: 0,
-          Mon: 1,
-          Tue: 2,
-          Wed: 3,
-          Thu: 4,
-          Fri: 5,
-          Sat: 6,
-        };
-        return {
-          year: Number(parts.year),
-          month: Number(parts.month),
-          day: Number(parts.day),
-          dow: dowMap[parts.weekday] ?? 0,
-          hour: Number(parts.hour),
-          minute: Number(parts.minute),
-          second: Number(parts.second),
-        };
-      };
-      const kst = getKstParts();
+      const kst = getKstNowParts();
       const { CLIENT_PORT_MAPPINGS } = await import('../../data/clientPortMappings');
       const clientMapping = (CLIENT_PORT_MAPPINGS as any)[clientId];
 

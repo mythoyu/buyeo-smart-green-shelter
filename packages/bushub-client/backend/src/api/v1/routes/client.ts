@@ -8,6 +8,7 @@ const CLIENT_ENDPOINTS = {
 } as const;
 
 import { ServiceContainer } from '../../../core/container/ServiceContainer';
+import { getKstNowParts } from '../../../utils/time';
 import { clients, clientUnits } from '../../../data/clients';
 import { deviceMappingHelpers } from '../../../data/mappings/deviceMapping';
 import { logInfo, logError, logDebug } from '../../../logger';
@@ -128,16 +129,16 @@ async function initializeDdcSettings(clientId: string) {
     const serviceContainer = ServiceContainer.getInstance();
     const systemService = serviceContainer.getSystemService();
 
-    // 현재 시간 기반 DDC 시간 초기값
-    const now = new Date();
+    // 현재 시간(KST) 기반 DDC 시간 초기값
+    const now = getKstNowParts();
     const ddcTimeData = {
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      day: now.getDate(),
-      dow: now.getDay(), // 0=일요일, 6=토요일
-      hour: now.getHours(),
-      minute: now.getMinutes(),
-      second: now.getSeconds(),
+      year: now.year,
+      month: now.month,
+      day: now.day,
+      dow: now.dow, // 0=일요일, 6=토요일
+      hour: now.hour,
+      minute: now.minute,
+      second: now.second,
     };
 
     // 기본 절기 설정 (6-8월만 여름, 나머지는 겨울)
