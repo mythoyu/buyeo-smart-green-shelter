@@ -154,7 +154,7 @@ export const getModbusConfig = () => {
   return {
     mockEnabled: mockStatus.enabled,
     port: process.env.MODBUS_PORT || '/dev/ttyS0',
-    baudRate: Number(process.env.MODBUS_BAUD_RATE) || 38400,
+    baudRate: Number(process.env.MODBUS_BAUD_RATE) || 9600,
     dataBits: Number(process.env.MODBUS_DATA_BITS) || 8,
     stopBits: Number(process.env.MODBUS_STOP_BITS) || 1,
     parity: process.env.MODBUS_PARITY || 'none',

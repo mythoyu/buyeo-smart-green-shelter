@@ -46,6 +46,7 @@ services:
       - MONGODB_URI=mongodb://db:27017/bushub_client
       - LOG_LEVEL=info
       - MODBUS_MOCK_ENABLED=false
+      - MODBUS_BAUD_RATE=9600
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:
       - db

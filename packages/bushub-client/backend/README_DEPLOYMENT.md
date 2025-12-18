@@ -157,7 +157,7 @@ cp env.production.example .env.production
 | 환경변수                  | 기본값       | 설명                  | 예시               |
 | ------------------------- | ------------ | --------------------- | ------------------ |
 | MODBUS_MOCK_ENABLED       | true         | Mock 모드 활성화 여부 | true/false         |
-| MODBUS_BAUD_RATE          | 38400        | 통신 속도 (bps)       | 9600, 19200, 38400 |
+| MODBUS_BAUD_RATE          | 9600         | 통신 속도 (bps)       | 9600, 19200, 38400 |
 | MODBUS_PORT               | /dev/ttyUSB0 | 통신 포트             | /dev/ttyUSB0, COM1 |
 | MODBUS_DATA_BITS          | 8            | 데이터 비트           | 8                  |
 | MODBUS_STOP_BITS          | 1            | 정지 비트             | 1                  |
@@ -173,13 +173,13 @@ cp env.production.example .env.production
 ```bash
 # 개발 환경 (Mock 모드)
 MODBUS_MOCK_ENABLED=true
-MODBUS_BAUD_RATE=38400
+MODBUS_BAUD_RATE=9600
 MODBUS_PORT=/dev/ttyUSB0
 MODBUS_TIMEOUT=1000
 
 # 운영 환경 (실제 하드웨어)
 MODBUS_MOCK_ENABLED=false
-MODBUS_BAUD_RATE=38400
+MODBUS_BAUD_RATE=9600
 MODBUS_PORT=/dev/ttyS0
 MODBUS_TIMEOUT=1000
 MODBUS_MAX_RETRIES=1
@@ -265,7 +265,7 @@ services:
       - CORS_ORIGIN=https://smartcity-frontend-uzjw.vercel.app
       # Modbus 설정
       - MODBUS_MOCK_ENABLED=false
-      - MODBUS_BAUD_RATE=38400
+      - MODBUS_BAUD_RATE=9600
       - MODBUS_PORT=/dev/ttyS0
       - MODBUS_TIMEOUT=500
     ports:
@@ -316,7 +316,7 @@ volumes:
 
 🔧 Modbus Configuration: {
   mockEnabled: true,
-  baudRate: 38400,
+  baudRate: 9600,
   port: '/dev/ttyUSB0',
   timeout: 5000,
   maxRetries: 3

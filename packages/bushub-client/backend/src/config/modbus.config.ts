@@ -13,7 +13,7 @@ export interface ModbusConfig {
 // 기본 Modbus 설정
 export const MODBUS_CONFIG: ModbusConfig = {
   port: '/dev/ttyS0', // Linux 기본 RS485 포트
-  baudRate: 38400, // 기본 보드레이트
+  baudRate: 9600, // 기본 보드레이트
   slaveId: 1, // 기본 슬레이브 ID
   timeout: 1000, // 기본 타임아웃 (300ms) - 개발/테스트용으로 단축
 };
