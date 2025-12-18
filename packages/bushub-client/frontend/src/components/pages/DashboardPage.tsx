@@ -8,9 +8,7 @@ import { useDashboardData } from '../../hooks/useDashboardData';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { getDeviceActions, getActionInfo, type ActionKey } from '../../meta/actions/deviceActions';
 import { DashboardFilterBar } from '../common/DashboardFilterBar';
-import DataApplyCard from '../common/DataApplyCard';
 import DeviceListShowDetail from '../common/DeviceListShowDetail/index';
-import ModeControlCard from '../common/ModeControlCard';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Alert, AlertDescription } from '../ui';
 
@@ -158,10 +156,10 @@ const DashboardPage: React.FC = () => {
       {/* 로그 패널 - 항상 렌더링하되 CSS로 애니메이션 처리 */}
       <TopLogPanel isConnected={isConnected} />
 
-      {/* Data 적용 카드 */}
-      <DataApplyCard />
-      {/* 🆕 Mode Switch 카드 */}
-      <ModeControlCard />
+      {/* Data 적용 카드 - 현재 버전에서는 대시보드에서 숨김 처리 */}
+      {/* <DataApplyCard /> */}
+      {/* 🆕 Mode Switch 카드 - 현재 버전에서는 대시보드에서 숨김 처리 */}
+      {/* <ModeControlCard /> */}
 
       {/* 필터바 - devices prop 추가 */}
       <DashboardFilterBar
