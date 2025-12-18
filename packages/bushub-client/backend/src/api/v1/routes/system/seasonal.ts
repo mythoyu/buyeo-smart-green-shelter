@@ -22,7 +22,6 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
             seasonal: {
               type: 'object',
               required: [
-                'season',
                 'january',
                 'february',
                 'march',
@@ -37,7 +36,6 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
                 'december',
               ],
               properties: {
-                season: { type: 'number' },
                 january: { type: 'number' },
                 february: { type: 'number' },
                 march: { type: 'number' },

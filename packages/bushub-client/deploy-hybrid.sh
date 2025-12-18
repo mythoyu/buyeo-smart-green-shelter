@@ -97,41 +97,31 @@ if [ -n "$MISSING_COMMANDS" ]; then
                     echo "🔄 패키지 인덱스 업데이트 중..."
                     sudo apt update || { echo "❌ 패키지 인덱스 업데이트 실패"; exit 1; }
                     
-                    # 고정 Docker 버전 설정 (Ubuntu 22.04 Jammy 전용 식별자 포함)
-                    DOCKER_VERSION="28.4.0-1~ubuntu.22.04~jammy"
-                    DOCKER_COMPOSE_VERSION="2.39.3-0~ubuntu.22.04~jammy"
-                    
                     # 기존 Docker Compose V1 완전 제거
                     echo "🧹 기존 Docker Compose V1 제거 중..."
                     sudo apt remove -y docker-compose || true
                     sudo apt purge -y docker-compose || true
                     
-                    # Docker 설치 (고정 버전)
-                    echo "📦 Docker 설치 중... (버전: $DOCKER_VERSION, compose: $DOCKER_COMPOSE_VERSION)"
-                    sudo apt install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io docker-buildx-plugin docker-compose-plugin=$DOCKER_COMPOSE_VERSION
+                    # Docker 설치 (최신 버전)
+                    echo "📦 Docker 설치 중... (최신 버전)"
+                    sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
                     echo "✅ Docker 및 Docker Compose V2 설치 완료"
                     sudo systemctl enable docker
                     sudo systemctl start docker
                     sudo usermod -aG docker "$USER"
-                    # 자동 업데이트 방지 (버전 고정)
-                    sudo apt-mark hold docker-ce docker-ce-cli docker-compose-plugin containerd.io docker-buildx-plugin || true
                 fi
                 ;;
             "docker-compose")
                 echo "🐳 Docker Compose V2 설치 중..."
                 if [ "$PKG_MANAGER" = "apt" ]; then
-                    # 고정 버전 설정 (Ubuntu 22.04 Jammy 전용 식별자 포함)
-                    DOCKER_COMPOSE_VERSION="2.39.3-0~ubuntu.22.04~jammy"
-                    
                     # 기존 Docker Compose V1 완전 제거
                     echo "🧹 기존 Docker Compose V1 제거 중..."
                     sudo apt remove -y docker-compose || true
                     sudo apt purge -y docker-compose || true
                     
-                    # Docker Compose V2 플러그인 설치 (고정 버전)
-                    echo "📦 Docker Compose V2 플러그인 설치 중... (버전: $DOCKER_COMPOSE_VERSION)"
-                    sudo apt install -y docker-compose-plugin=$DOCKER_COMPOSE_VERSION
-                    sudo apt-mark hold docker-compose-plugin || true
+                    # Docker Compose V2 플러그인 설치 (최신 버전)
+                    echo "📦 Docker Compose V2 플러그인 설치 중... (최신 버전)"
+                    sudo apt install -y docker-compose-plugin
                     echo "✅ Docker Compose V2 플러그인 설치 완료"
                 fi
                 ;;

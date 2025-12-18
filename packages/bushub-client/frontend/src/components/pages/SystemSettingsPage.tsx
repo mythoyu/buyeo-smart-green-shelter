@@ -514,7 +514,9 @@ const SystemSettingsPage: React.FC = () => {
   const handleSeasonApply = async () => {
     if (seasonInput) {
       try {
-        const result = await saveSeasonalMutation.mutateAsync(seasonInput);
+        // season 필드는 readonly이므로 저장 시 제외
+        const { season, ...seasonalToSave } = seasonInput;
+        const result = await saveSeasonalMutation.mutateAsync(seasonalToSave);
         if (result.success) {
           const message = result.message || '절기 설정이 성공적으로 적용되었습니다.';
           toast.success(message, { id: 'system-season-save-success' });

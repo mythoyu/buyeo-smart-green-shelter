@@ -141,8 +141,8 @@ const restartBackend = async (): Promise<any> => {
   return internalApi.post('/system', { action: 'restart-backend' }).then(res => res.data);
 };
 
-// 절기 설정 저장
-const saveSeasonal = async (seasonal: SeasonalData): Promise<SeasonalResponse> => {
+// 절기 설정 저장 (season 필드 제외 - readonly)
+const saveSeasonal = async (seasonal: Omit<SeasonalData, 'season'>): Promise<SeasonalResponse> => {
   return internalApi
     .post<SeasonalResponse>('/system/seasonal', {
       seasonal,
@@ -235,9 +235,9 @@ export const useSetDdcTimeSync = () =>
     mutationFn: setDdcTimeSync,
   });
 
-// 절기 설정 저장 훅
+// 절기 설정 저장 훅 (season 필드 제외 - readonly)
 export const useSaveSeasonal = () =>
-  useMutation({
+  useMutation<SeasonalResponse, Error, Omit<SeasonalData, 'season'>>({
     mutationFn: saveSeasonal,
     onSuccess: () => {
       console.log('절기 설정이 성공적으로 저장되었습니다.');
