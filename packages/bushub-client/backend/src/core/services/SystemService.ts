@@ -607,7 +607,9 @@ export class SystemService implements ISystemService {
 
       if (modbusSuccess) {
         this.logger?.info(`✅ ${clientId} 절기 설정 저장 완료`);
-        return createSuccessResponse('절기 설정이 성공적으로 저장되었습니다.', { seasonal });
+        // season 필드는 readonly이므로 응답에서 제외
+        const { season, ...seasonalWithoutSeason } = seasonal;
+        return createSuccessResponse('절기 설정이 성공적으로 저장되었습니다.', { seasonal: seasonalWithoutSeason });
       }
       throw new Error('모드버스 설정 반영 실패');
     } catch (error) {
@@ -628,7 +630,7 @@ export class SystemService implements ISystemService {
 
       this.logger?.info(`✅ ${clientId} 절기 설정 조회 완료`);
 
-      // 기본값 제공으로 타입 안전성 확보
+      // 기본값 제공으로 타입 안전성 확보 (GET 조회 시에는 season 필드 포함)
       if (seasonal) {
         return {
           season: seasonal.season ?? 0,
@@ -647,7 +649,7 @@ export class SystemService implements ISystemService {
         };
       }
 
-      // 기본 절기 설정 반환
+      // 기본 절기 설정 반환 (GET 조회 시에는 season 필드 포함)
       return {
         season: 0, // 겨울
         january: 0, // 겨울
@@ -784,6 +786,11 @@ export class SystemService implements ISystemService {
     for (const [field, actionKey] of Object.entries(seasonalGetMapping)) {
       const actionConfig = this.findSeasonalActionConfig(clientMapping, actionKey);
       if (!actionConfig) {
+        // season 필드는 장비에서 지원하지 않을 수 있으므로 건너뜀
+        if (field === 'season') {
+          this.logger?.info(`ℹ️ ${clientId} ${field} 설정은 장비에서 지원하지 않아 건너뜁니다.`);
+          continue;
+        }
         throw new Error(`절기 설정 읽기 매핑 누락: ${clientId} - ${actionKey}`);
       }
 
@@ -815,7 +822,8 @@ export class SystemService implements ISystemService {
       }
 
       const rawValue = Number(result.data[0]);
-      const normalizedValue = field === 'season' ? rawValue : rawValue <= 0 ? 0 : rawValue >= 1 ? 1 : rawValue; // 기본적으로 0/1만 사용하지만 예외 허용
+      // season 필드는 원래 값 그대로 사용, 나머지는 0/1로 정규화
+      const normalizedValue = field === 'season' ? rawValue : rawValue <= 0 ? 0 : rawValue >= 1 ? 1 : rawValue;
 
       refreshedSeasonal[field] = normalizedValue;
     }
@@ -826,6 +834,7 @@ export class SystemService implements ISystemService {
 
     this.logger?.info(`✅ ${clientId} 절기 설정 새로고침 완료`);
 
+    // refresh 응답에는 season 필드 포함
     return createSuccessResponse('절기 설정을 다시 불러왔습니다.', { seasonal: refreshedSeasonal });
   }
 

@@ -207,7 +207,7 @@ export default async function systemSeasonalRoutes(fastify: FastifyInstance) {
         // 🆕 절기 설정이 없으면 기본값 생성 후 반환
         fastify.log.warn(`절기 설정이 없어 기본값 생성: ${clientId}`);
 
-        // 기본 절기 설정 (6-8월만 여름, 나머지는 겨울)
+        // 기본 절기 설정 (6-8월만 여름, 나머지는 겨울) - GET 조회 시에는 season 필드 포함
         const defaultSeasonal = {
           season: 0, // 현재 계절: 겨울
           january: 0,

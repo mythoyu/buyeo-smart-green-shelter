@@ -17,7 +17,23 @@ export const SeasonalDataSchema = Type.Object({
   december: Type.Number({ description: '12월 절기 설정 (0: 겨울, 1: 여름)' }),
 });
 
-// 절기 설정 조회 응답 스키마
+// 절기 설정 응답용 스키마 (season 필드 제외 - readonly)
+export const SeasonalResponseDataSchema = Type.Object({
+  january: Type.Number({ description: '1월 절기 설정 (0: 겨울, 1: 여름)' }),
+  february: Type.Number({ description: '2월 절기 설정 (0: 겨울, 1: 여름)' }),
+  march: Type.Number({ description: '3월 절기 설정 (0: 겨울, 1: 여름)' }),
+  april: Type.Number({ description: '4월 절기 설정 (0: 겨울, 1: 여름)' }),
+  may: Type.Number({ description: '5월 절기 설정 (0: 겨울, 1: 여름)' }),
+  june: Type.Number({ description: '6월 절기 설정 (0: 겨울, 1: 여름)' }),
+  july: Type.Number({ description: '7월 절기 설정 (0: 겨울, 1: 여름)' }),
+  august: Type.Number({ description: '8월 절기 설정 (0: 겨울, 1: 여름)' }),
+  september: Type.Number({ description: '9월 절기 설정 (0: 겨울, 1: 여름)' }),
+  october: Type.Number({ description: '10월 절기 설정 (0: 겨울, 1: 여름)' }),
+  november: Type.Number({ description: '11월 절기 설정 (0: 겨울, 1: 여름)' }),
+  december: Type.Number({ description: '12월 절기 설정 (0: 겨울, 1: 여름)' }),
+});
+
+// 절기 설정 조회 응답 스키마 (GET 조회 시에는 season 필드 포함)
 export const SeasonalResponseSchema = Type.Object({
   success: Type.Boolean(),
   message: Type.String(),
@@ -44,7 +60,7 @@ export const SeasonalRequestSchema = Type.Object({
   }),
 });
 
-// 절기 설정 조회 응답 예시
+// 절기 설정 조회 응답 예시 (GET 조회 시에는 season 필드 포함)
 export const SEASONAL_RESPONSE_EXAMPLE = {
   success: true,
   message: '절기 설정 조회 성공',
