@@ -607,7 +607,13 @@ export class SystemService implements ISystemService {
 
       if (modbusSuccess) {
         this.logger?.info(`✅ ${clientId} 절기 설정 저장 완료`);
-        // season 필드는 readonly이므로 응답에서 제외
+        // 저장 후 DB에서 조회하여 응답 생성 (season 필드는 readonly이므로 제외)
+        const savedSeasonal = await this.getSeasonal(clientId);
+        if (savedSeasonal) {
+          const { season, ...seasonalWithoutSeason } = savedSeasonal;
+          return createSuccessResponse('절기 설정이 성공적으로 저장되었습니다.', { seasonal: seasonalWithoutSeason });
+        }
+        // 조회 실패 시 입력받은 데이터에서 season 필드만 제외하여 반환
         const { season, ...seasonalWithoutSeason } = seasonal;
         return createSuccessResponse('절기 설정이 성공적으로 저장되었습니다.', { seasonal: seasonalWithoutSeason });
       }
