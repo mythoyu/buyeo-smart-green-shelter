@@ -160,6 +160,7 @@ export const getModbusConfig = () => {
     parity: process.env.MODBUS_PARITY || 'none',
     timeout: Number(process.env.MODBUS_TIMEOUT) || 1000,
     retries: Number(process.env.MODBUS_RETRIES) || 1,
+    rtscts: process.env.MODBUS_RTSCTS === 'true' || false, // RTS/CTS 흐름 제어
     // 🆕 Mock 상태 정보 추가
     mockStatus,
   };

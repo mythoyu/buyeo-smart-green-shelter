@@ -47,6 +47,7 @@ services:
       - LOG_LEVEL=info
       - MODBUS_MOCK_ENABLED=false
       - MODBUS_BAUD_RATE=9600
+      - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:
       - db

@@ -19,6 +19,7 @@ interface IModbusConfig {
   port: string;
   baudRate: number;
   timeout: number;
+  rtscts?: boolean; // RTS/CTS 흐름 제어
   packetLogging?: boolean;
   enablePortTest?: boolean;
 }
@@ -130,9 +131,14 @@ export class RealModbusService implements IModbusCommunication {
 
         try {
           // 연결 시도 (기본값 사용)
-          testClient.connectRTUBuffered(this.config.port, {
+          const testConnectOptions: any = {
             baudRate: this.config.baudRate,
-          });
+          };
+          // RTS/CTS 흐름 제어 설정 (옵션)
+          if (this.config.rtscts) {
+            testConnectOptions.rtscts = true;
+          }
+          testClient.connectRTUBuffered(this.config.port, testConnectOptions);
 
           // 연결 성공 시 (1초 후 확인)
           setTimeout(() => {
@@ -188,9 +194,14 @@ export class RealModbusService implements IModbusCommunication {
       }
 
       // RTU Buffered 연결 설정
-      await this.modbusClient.connectRTUBuffered(this.config.port, {
+      const connectOptions: any = {
         baudRate: this.config.baudRate,
-      });
+      };
+      // RTS/CTS 흐름 제어 설정 (옵션)
+      if (this.config.rtscts) {
+        connectOptions.rtscts = true;
+      }
+      await this.modbusClient.connectRTUBuffered(this.config.port, connectOptions);
 
       this.modbusClient.setTimeout(this.config.timeout);
       this._isConnected = true;

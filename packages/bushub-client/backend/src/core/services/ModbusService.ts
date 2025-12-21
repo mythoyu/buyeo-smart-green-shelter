@@ -76,12 +76,18 @@ export class ModbusService implements IModbusService {
       const { port } = modbusConfig;
       const { baudRate } = modbusConfig;
       const { slaveId } = modbusConfig;
+      const { rtscts } = modbusConfig;
 
-      this.logger?.info(`RS485 모드 연결 시도: Port: ${port}, BaudRate: ${baudRate}, SlaveId: ${slaveId}`);
+      this.logger?.info(`RS485 모드 연결 시도: Port: ${port}, BaudRate: ${baudRate}, SlaveId: ${slaveId}, RTSCTS: ${rtscts || false}`);
 
-      await client.connectRTUBuffered(port, {
+      const connectOptions: any = {
         baudRate,
-      });
+      };
+      // RTS/CTS 흐름 제어 설정 (옵션)
+      if (rtscts) {
+        connectOptions.rtscts = true;
+      }
+      await client.connectRTUBuffered(port, connectOptions);
 
       client.setID(slaveId);
       client.setTimeout(this.config.timeout);

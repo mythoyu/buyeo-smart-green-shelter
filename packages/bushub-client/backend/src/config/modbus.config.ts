@@ -8,6 +8,7 @@ export interface ModbusConfig {
   baudRate: number;
   slaveId: number;
   timeout: number;
+  rtscts?: boolean; // RTS/CTS 흐름 제어
 }
 
 // 기본 Modbus 설정
@@ -31,6 +32,7 @@ export const getModbusConfig = (): ModbusConfig => {
     baudRate: parseInt(process.env.MODBUS_BAUDRATE || MODBUS_CONFIG.baudRate.toString()),
     slaveId: parseInt(process.env.MODBUS_SLAVE_ID || MODBUS_CONFIG.slaveId.toString()),
     timeout: parseInt(process.env.MODBUS_TIMEOUT || defaultTimeout.toString()),
+    rtscts: process.env.MODBUS_RTSCTS === 'true' || false, // RTS/CTS 흐름 제어
   };
 };
 
