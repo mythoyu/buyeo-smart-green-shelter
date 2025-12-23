@@ -1,6 +1,6 @@
 {
   "name": "@bushub-client/backend",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "main": "dist/index.js",
   "scripts": {
     "start:dev": "cross-env APP_MODE=development node dist/index.js",
