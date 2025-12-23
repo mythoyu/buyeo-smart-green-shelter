@@ -29,7 +29,7 @@ export const clientUnits = {
   c0101: {
     lighting: [
       { id: 'u001', name: 'LED 조명' },
-      { id: 'u003', name: '캐릭터구조물' },
+      { id: 'u003', name: '간판등' },
       { id: 'u004', name: '버스사각등' },
     ],
     cooler: [{ id: 'u001', name: '냉난방기' }],

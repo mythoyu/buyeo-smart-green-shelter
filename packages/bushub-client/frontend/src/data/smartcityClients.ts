@@ -45,7 +45,7 @@ export const deviceUnits = [
     deviceId: 'd011',
     deviceName: '조명',
     unitId: 'u003',
-    unitName: '캐릭터구조물',
+    unitName: '간판등',
     clients: ['c0101'],
     defaultConfig: { power: true, brightness: 50 },
     unitType: 'lighting',

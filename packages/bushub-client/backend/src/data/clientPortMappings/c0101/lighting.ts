@@ -275,7 +275,7 @@ export const lighting = {
       type: 'number',
     },
   },
-  // 캐릭터구조물 (DO3)
+  // 간판등 (DO3)
   u003: {
     SET_AUTO: {
       port: HW_PORTS.DO3.AUTO.set,
