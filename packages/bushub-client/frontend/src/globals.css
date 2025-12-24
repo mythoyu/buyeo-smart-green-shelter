@@ -377,14 +377,14 @@ body {
   --gradient-accent: none;
   --gradient-card: none;
 
-  /* 기본 색상 - 깔끔한 블루 계열 */
+  /* 기본 색상 - 깔끔한 그린 계열 */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.15 240); /* blue-600 */
+  --primary: oklch(0.5 0.15 150); /* green-600 */
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -395,7 +395,7 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.55 0.15 240); /* primary와 동일 */
+  --ring: oklch(0.5 0.15 150); /* primary와 동일 */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -403,24 +403,24 @@ body {
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.55 0.15 240); /* primary와 동일 */
+  --sidebar-primary: oklch(0.5 0.15 150); /* primary와 동일 */
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.55 0.15 240); /* primary와 동일 */
+  --sidebar-ring: oklch(0.5 0.15 150); /* primary와 동일 */
 
-  /* Primary 색상 팔레트 - Blue 계열 */
-  --primary-50: oklch(0.98 0.005 240); /* blue-50 */
-  --primary-100: oklch(0.95 0.01 240); /* blue-100 */
-  --primary-200: oklch(0.9 0.015 240); /* blue-200 */
-  --primary-300: oklch(0.85 0.02 240); /* blue-300 */
-  --primary-400: oklch(0.8 0.025 240); /* blue-400 */
-  --primary-500: oklch(0.75 0.03 240); /* blue-500 */
-  --primary-600: oklch(0.7 0.035 240); /* blue-600 */
-  --primary-700: oklch(0.65 0.04 240); /* blue-700 */
-  --primary-800: oklch(0.6 0.045 240); /* blue-800 */
-  --primary-900: oklch(0.55 0.05 240); /* blue-900 */
+  /* Primary 색상 팔레트 - Green 계열 */
+  --primary-50: oklch(0.98 0.005 150); /* green-50 */
+  --primary-100: oklch(0.95 0.01 150); /* green-100 */
+  --primary-200: oklch(0.9 0.015 150); /* green-200 */
+  --primary-300: oklch(0.85 0.02 150); /* green-300 */
+  --primary-400: oklch(0.8 0.025 150); /* green-400 */
+  --primary-500: oklch(0.75 0.03 150); /* green-500 */
+  --primary-600: oklch(0.7 0.035 150); /* green-600 */
+  --primary-700: oklch(0.65 0.04 150); /* green-700 */
+  --primary-800: oklch(0.6 0.045 150); /* green-800 */
+  --primary-900: oklch(0.55 0.05 150); /* green-900 */
 
   /* Secondary 색상 팔레트 */
   --secondary-50: oklch(0.98 0.005 200);
@@ -478,7 +478,7 @@ body {
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.15 240); /* blue-600 */
+  --primary: oklch(0.5 0.15 150); /* green-600 */
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -489,7 +489,7 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.55 0.15 240); /* primary와 동일 */
+  --ring: oklch(0.5 0.15 150); /* primary와 동일 */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -497,24 +497,24 @@ body {
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.55 0.15 240); /* primary와 동일 */
+  --sidebar-primary: oklch(0.5 0.15 150); /* primary와 동일 */
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.55 0.15 240); /* primary와 동일 */
+  --sidebar-ring: oklch(0.5 0.15 150); /* primary와 동일 */
 
   /* 다크 테마용 색상 팔레트 */
-  --primary-50: oklch(0.2 0.005 240);
-  --primary-100: oklch(0.25 0.01 240);
-  --primary-200: oklch(0.3 0.015 240);
-  --primary-300: oklch(0.35 0.02 240);
-  --primary-400: oklch(0.4 0.025 240);
-  --primary-500: oklch(0.45 0.03 240);
-  --primary-600: oklch(0.5 0.035 240);
-  --primary-700: oklch(0.55 0.04 240);
-  --primary-800: oklch(0.6 0.045 240);
-  --primary-900: oklch(0.65 0.05 240);
+  --primary-50: oklch(0.2 0.005 150);
+  --primary-100: oklch(0.25 0.01 150);
+  --primary-200: oklch(0.3 0.015 150);
+  --primary-300: oklch(0.35 0.02 150);
+  --primary-400: oklch(0.4 0.025 150);
+  --primary-500: oklch(0.45 0.03 150);
+  --primary-600: oklch(0.5 0.035 150);
+  --primary-700: oklch(0.55 0.04 150);
+  --primary-800: oklch(0.6 0.045 150);
+  --primary-900: oklch(0.65 0.05 150);
 
   --secondary-50: oklch(0.2 0.005 200);
   --secondary-100: oklch(0.25 0.01 200);

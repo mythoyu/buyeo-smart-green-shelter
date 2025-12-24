@@ -1,4 +1,4 @@
-import { Eye, EyeOff, User, AlertCircle, Info, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, User, AlertCircle, Leaf } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -34,38 +34,6 @@ interface LoginPageProps {
   onLoginSuccess: () => void;
 }
 
-// 테스트 계정 데이터
-const testAccounts = {
-  users: [
-    {
-      username: 'admin',
-      password: 'youjobsA1!S',
-      role: 'superuser',
-      description: '시스템 관리자 계정',
-    },
-    {
-      username: 'testuser',
-      password: 'youjobsA1!',
-      role: 'user',
-      description: '테스트용 내부 사용자 계정',
-    },
-  ],
-  externalUsers: [
-    {
-      username: 'youjobs',
-      password: 'youjobsA1!',
-      role: 'ex-user',
-      description: 'youjobs 외부 사용자',
-    },
-    {
-      username: 'nzero',
-      password: 'nzero_password_2025',
-      role: 'ex-user',
-      description: 'nzero 외부 사용자',
-    },
-  ],
-};
-
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
@@ -73,7 +41,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [passwordFocused, setPasswordFocused] = useState(false);
   const { setIsLoggedIn, setUser } = useAuth();
   const { setApiKey } = useApiKey();
-  const [showMore, setShowMore] = useState(false);
 
   // React Query mutation 최적화
   const loginMutation = useLogin({
@@ -186,57 +153,62 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             {/* 배경 그라데이션 */}
             <defs>
               <radialGradient id='bgGradient' cx='50%' cy='50%' r='50%'>
-                <stop offset='0%' stopColor='rgba(59, 130, 246, 0.1)' />
-                <stop offset='100%' stopColor='rgba(59, 130, 246, 0.05)' />
+                <stop offset='0%' stopColor='rgba(34, 197, 94, 0.1)' />
+                <stop offset='100%' stopColor='rgba(34, 197, 94, 0.05)' />
               </radialGradient>
             </defs>
             <rect width='100%' height='100%' fill='url(#bgGradient)' />
 
-            {/* 버스 아이콘들 */}
-            <g fill='rgba(59, 130, 246, 0.1)'>
-              {/* 버스 1 - 애니메이션 적용 */}
-              <g className='bus-animation'>
-                <rect x='50' y='100' width='80' height='40' rx='8' fill='rgba(59, 130, 246, 0.15)' />
-                <rect x='60' y='110' width='60' height='20' rx='4' fill='rgba(255, 255, 255, 0.3)' />
-                <circle cx='70' cy='140' r='6' fill='rgba(59, 130, 246, 0.2)' />
-                <circle cx='110' cy='140' r='6' fill='rgba(59, 130, 246, 0.2)' />
+            {/* 자연/그린 쉼터 아이콘들 */}
+            <g fill='rgba(34, 197, 94, 0.1)'>
+              {/* 나무 1 */}
+              <g className='shelter-animation'>
+                <path
+                  d='M100 200 L120 200 L110 160 Z'
+                  fill='rgba(34, 197, 94, 0.3)'
+                  stroke='rgba(34, 197, 94, 0.5)'
+                  strokeWidth='2'
+                />
+                <rect x='108' y='200' width='4' height='20' fill='rgba(139, 69, 19, 0.4)' />
               </g>
 
-              {/* 버스 2 - 지연된 애니메이션 */}
-              <g className='bus-animation' style={{ animationDelay: '2s' }}>
-                <rect x='200' y='200' width='80' height='40' rx='8' fill='rgba(59, 130, 246, 0.15)' />
-                <rect x='210' y='210' width='60' height='20' rx='4' fill='rgba(255, 255, 255, 0.3)' />
-                <circle cx='220' cy='240' r='6' fill='rgba(59, 130, 246, 0.2)' />
-                <circle cx='260' cy='240' r='6' fill='rgba(59, 130, 246, 0.2)' />
+              {/* 나무 2 */}
+              <g className='shelter-animation' style={{ animationDelay: '2s' }}>
+                <path
+                  d='M250 250 L270 250 L260 210 Z'
+                  fill='rgba(34, 197, 94, 0.3)'
+                  stroke='rgba(34, 197, 94, 0.5)'
+                  strokeWidth='2'
+                />
+                <rect x='258' y='250' width='4' height='20' fill='rgba(139, 69, 19, 0.4)' />
               </g>
 
-              {/* 버스 3 - 더 지연된 애니메이션 */}
-              <g className='bus-animation' style={{ animationDelay: '4s' }}>
-                <rect x='350' y='150' width='80' height='40' rx='8' fill='rgba(59, 130, 246, 0.15)' />
-                <rect x='360' y='160' width='60' height='20' rx='4' fill='rgba(255, 255, 255, 0.3)' />
-                <circle cx='370' cy='190' r='6' fill='rgba(59, 130, 246, 0.2)' />
-                <circle cx='410' cy='190' r='6' fill='rgba(59, 130, 246, 0.2)' />
+              {/* 나무 3 */}
+              <g className='shelter-animation' style={{ animationDelay: '4s' }}>
+                <path
+                  d='M400 180 L420 180 L410 140 Z'
+                  fill='rgba(34, 197, 94, 0.3)'
+                  stroke='rgba(34, 197, 94, 0.5)'
+                  strokeWidth='2'
+                />
+                <rect x='408' y='180' width='4' height='20' fill='rgba(139, 69, 19, 0.4)' />
               </g>
 
-              {/* 환승센터 건물 - 호버 효과 */}
+              {/* 그린 쉼터 건물 */}
               <g className='building-hover'>
-                <rect x='300' y='300' width='120' height='80' rx='12' fill='rgba(59, 130, 246, 0.2)' />
+                <rect x='300' y='300' width='120' height='80' rx='12' fill='rgba(34, 197, 94, 0.2)' />
                 <rect x='310' y='310' width='100' height='60' rx='8' fill='rgba(255, 255, 255, 0.4)' />
-                <rect x='320' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
-                <rect x='350' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
-                <rect x='380' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
-                <rect x='410' y='320' width='20' height='40' rx='2' fill='rgba(59, 130, 246, 0.3)' />
+                <rect x='320' y='320' width='20' height='40' rx='2' fill='rgba(34, 197, 94, 0.3)' />
+                <rect x='350' y='320' width='20' height='40' rx='2' fill='rgba(34, 197, 94, 0.3)' />
+                <rect x='380' y='320' width='20' height='40' rx='2' fill='rgba(34, 197, 94, 0.3)' />
+                <rect x='410' y='320' width='20' height='40' rx='2' fill='rgba(34, 197, 94, 0.3)' />
+                {/* 지붕 - 그린 */}
+                <path d='M290 300 L420 300 L355 280 Z' fill='rgba(34, 197, 94, 0.4)' />
               </g>
 
-              {/* 도로 */}
-              <rect x='0' y='400' width='800' height='40' fill='rgba(59, 130, 246, 0.1)' />
-              <rect x='0' y='410' width='800' height='20' fill='rgba(255, 255, 255, 0.2)' />
-
-              {/* 신호등 */}
-              <rect x='150' y='350' width='12' height='30' rx='6' fill='rgba(59, 130, 246, 0.3)' />
-              <circle cx='156' cy='360' r='4' fill='rgba(255, 255, 255, 0.8)' />
-              <circle cx='156' cy='370' r='4' fill='rgba(255, 255, 255, 0.4)' />
-              <circle cx='156' cy='380' r='4' fill='rgba(255, 255, 255, 0.4)' />
+              {/* 잔디/땅 */}
+              <rect x='0' y='400' width='800' height='40' fill='rgba(34, 197, 94, 0.1)' />
+              <rect x='0' y='410' width='800' height='20' fill='rgba(34, 197, 94, 0.2)' />
             </g>
           </svg>
         </div>
@@ -244,8 +216,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* 텍스트 오버레이 */}
         <div className='absolute inset-0 flex items-center justify-center z-20 text-white'>
           <div className='text-center fade-in-up w-full max-w-lg px-12'>
-            {/* 전문적인 버스환승센터 로고 */}
-            <div className='mb-8 bus-icon-pulse flex justify-center'>
+            {/* 스마트 그린 쉼터 로고 */}
+            <div className='mb-8 shelter-icon-pulse flex justify-center'>
               <svg
                 width='80'
                 height='80'
@@ -254,100 +226,90 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 xmlns='http://www.w3.org/2000/svg'
                 className='logo-svg logo-glow'
               >
-                {/* 버스 본체 */}
+                {/* 그린 쉼터 건물 */}
                 <rect
-                  x='10'
-                  y='25'
-                  width='60'
+                  x='20'
+                  y='30'
+                  width='40'
                   height='35'
-                  rx='8'
+                  rx='4'
                   fill='rgba(255, 255, 255, 0.9)'
-                  stroke='rgba(59, 130, 246, 0.8)'
+                  stroke='rgba(34, 197, 94, 0.8)'
                   strokeWidth='2'
                 />
-                {/* 버스 창문들 */}
-                <rect
-                  x='15'
-                  y='30'
-                  width='8'
-                  height='12'
-                  rx='2'
-                  fill='rgba(59, 130, 246, 0.6)'
-                  className='window-shine'
+                {/* 지붕 - 그린 */}
+                <path
+                  d='M15 30 L65 30 L40 15 Z'
+                  fill='rgba(34, 197, 94, 0.8)'
+                  stroke='rgba(34, 197, 94, 1)'
+                  strokeWidth='2'
                 />
+                {/* 창문들 */}
                 <rect
                   x='25'
-                  y='30'
+                  y='40'
                   width='8'
-                  height='12'
+                  height='10'
                   rx='2'
-                  fill='rgba(59, 130, 246, 0.6)'
+                  fill='rgba(34, 197, 94, 0.6)'
                   className='window-shine'
                 />
                 <rect
                   x='35'
-                  y='30'
+                  y='40'
                   width='8'
-                  height='12'
+                  height='10'
                   rx='2'
-                  fill='rgba(59, 130, 246, 0.6)'
+                  fill='rgba(34, 197, 94, 0.6)'
                   className='window-shine'
                 />
                 <rect
-                  x='45'
-                  y='30'
+                  x='47'
+                  y='40'
                   width='8'
-                  height='12'
+                  height='10'
                   rx='2'
-                  fill='rgba(59, 130, 246, 0.6)'
+                  fill='rgba(34, 197, 94, 0.6)'
                   className='window-shine'
                 />
+                {/* 문 */}
                 <rect
-                  x='55'
-                  y='30'
-                  width='8'
-                  height='12'
+                  x='32'
+                  y='50'
+                  width='16'
+                  height='15'
                   rx='2'
-                  fill='rgba(59, 130, 246, 0.6)'
-                  className='window-shine'
+                  fill='rgba(34, 197, 94, 0.7)'
                 />
-                {/* 버스 바퀴 */}
-                <circle
-                  cx='20'
-                  cy='65'
-                  r='6'
-                  fill='rgba(59, 130, 246, 0.8)'
-                  stroke='rgba(255, 255, 255, 0.9)'
-                  strokeWidth='2'
-                  className='wheel-rotate'
+                {/* 나무 */}
+                <path
+                  d='M10 50 L15 50 L12.5 40 Z'
+                  fill='rgba(34, 197, 94, 0.6)'
+                  stroke='rgba(34, 197, 94, 0.8)'
+                  strokeWidth='1.5'
                 />
-                <circle
-                  cx='60'
-                  cy='65'
-                  r='6'
-                  fill='rgba(59, 130, 246, 0.8)'
-                  stroke='rgba(255, 255, 255, 0.9)'
-                  strokeWidth='2'
-                  className='wheel-rotate'
+                <rect x='12' y='50' width='2' height='8' fill='rgba(139, 69, 19, 0.6)' />
+                <path
+                  d='M65 50 L70 50 L67.5 40 Z'
+                  fill='rgba(34, 197, 94, 0.6)'
+                  stroke='rgba(34, 197, 94, 0.8)'
+                  strokeWidth='1.5'
                 />
-                {/* 환승센터 건물 실루엣 */}
-                <rect x='25' y='15' width='30' height='15' rx='3' fill='rgba(255, 255, 255, 0.7)' />
-                <rect x='30' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
-                <rect x='37' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
-                <rect x='44' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
-                {/* 도로 */}
-                <rect x='5' y='70' width='70' height='8' fill='rgba(255, 255, 255, 0.3)' />
-                <rect x='5' y='73' width='70' height='2' fill='rgba(59, 130, 246, 0.5)' />
+                <rect x='67' y='50' width='2' height='8' fill='rgba(139, 69, 19, 0.6)' />
+                {/* 잔디 */}
+                <rect x='5' y='65' width='70' height='8' fill='rgba(34, 197, 94, 0.3)' />
               </svg>
             </div>
 
             {/* 메인 타이틀 */}
             <div className='mb-8'>
               <h1 className='text-4xl font-bold mb-3 text-white drop-shadow-lg gradient-text'>
-                버스환승센터 클라이언트(S-BMS)
+                스마트 그린 쉼터
+                <br />
+                관리 시스템
               </h1>
-              <div className='w-24 h-1 bg-blue-300 mx-auto rounded-full mb-4 animate-pulse'></div>
-              <p className='text-xl text-blue-100 font-medium'>관리 시스템</p>
+              <div className='w-24 h-1 bg-green-300 mx-auto rounded-full mb-4 animate-pulse'></div>
+              <p className='text-xl text-green-100 font-medium'>통합 제어 시스템</p>
             </div>
 
             {/* 기능 카드들 */}
@@ -369,7 +331,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     <h3 className='text-white font-semibold text-sm group-hover:text-green-200 transition-colors'>
                       디바이스 관리
                     </h3>
-                    <p className='text-blue-200 text-xs group-hover:text-blue-100 transition-colors'>
+                    <p className='text-green-200 text-xs group-hover:text-green-100 transition-colors'>
                       조명, 냉난방기, 센서 등 통합 제어
                     </p>
                   </div>
@@ -393,7 +355,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     <h3 className='text-white font-semibold text-sm group-hover:text-purple-200 transition-colors'>
                       로그 분석
                     </h3>
-                    <p className='text-blue-200 text-xs group-hover:text-blue-100 transition-colors'>
+                    <p className='text-green-200 text-xs group-hover:text-green-100 transition-colors'>
                       오류 로그 및 시스템 상태 모니터링
                     </p>
                   </div>
@@ -423,7 +385,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     <h3 className='text-white font-semibold text-sm group-hover:text-orange-200 transition-colors'>
                       시스템 설정
                     </h3>
-                    <p className='text-blue-200 text-xs group-hover:text-blue-100 transition-colors'>
+                    <p className='text-green-200 text-xs group-hover:text-green-100 transition-colors'>
                       환경 설정 및 시스템 구성
                     </p>
                   </div>
@@ -439,101 +401,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         <div className='w-full max-w-md fade-in-up'>
           {/* 모바일용 헤더 */}
           <div className='lg:hidden text-center m-6'>
-            <div className='flex items-center justify-center gap-2 bus-icon-pulse'>
-              <svg
-                width='32'
-                height='32'
-                viewBox='0 0 80 80'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
-                className='logo-svg logo-glow w-8 h-8'
-              >
-                {/* 버스 본체 */}
-                <rect
-                  x='10'
-                  y='25'
-                  width='60'
-                  height='35'
-                  rx='8'
-                  fill='rgba(59, 130, 246, 0.9)'
-                  stroke='rgba(59, 130, 246, 1)'
-                  strokeWidth='2'
-                />
-                {/* 버스 창문들 */}
-                <rect
-                  x='15'
-                  y='30'
-                  width='8'
-                  height='12'
-                  rx='2'
-                  fill='rgba(255, 255, 255, 0.8)'
-                  className='window-shine'
-                />
-                <rect
-                  x='25'
-                  y='30'
-                  width='8'
-                  height='12'
-                  rx='2'
-                  fill='rgba(255, 255, 255, 0.8)'
-                  className='window-shine'
-                />
-                <rect
-                  x='35'
-                  y='30'
-                  width='8'
-                  height='12'
-                  rx='2'
-                  fill='rgba(255, 255, 255, 0.8)'
-                  className='window-shine'
-                />
-                <rect
-                  x='45'
-                  y='30'
-                  width='8'
-                  height='12'
-                  rx='2'
-                  fill='rgba(255, 255, 255, 0.8)'
-                  className='window-shine'
-                />
-                <rect
-                  x='55'
-                  y='30'
-                  width='8'
-                  height='12'
-                  rx='2'
-                  fill='rgba(255, 255, 255, 0.8)'
-                  className='window-shine'
-                />
-                {/* 버스 바퀴 */}
-                <circle
-                  cx='20'
-                  cy='65'
-                  r='6'
-                  fill='rgba(59, 130, 246, 0.8)'
-                  stroke='rgba(255, 255, 255, 0.9)'
-                  strokeWidth='2'
-                  className='wheel-rotate'
-                />
-                <circle
-                  cx='60'
-                  cy='65'
-                  r='6'
-                  fill='rgba(59, 130, 246, 0.8)'
-                  stroke='rgba(255, 255, 255, 0.9)'
-                  strokeWidth='2'
-                  className='wheel-rotate'
-                />
-                {/* 환승센터 건물 실루엣 */}
-                <rect x='25' y='15' width='30' height='15' rx='3' fill='rgba(255, 255, 255, 0.9)' />
-                <rect x='30' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
-                <rect x='37' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
-                <rect x='44' y='18' width='5' height='10' rx='1' fill='rgba(59, 130, 246, 0.6)' />
-                {/* 도로 */}
-                <rect x='5' y='70' width='70' height='8' fill='rgba(59, 130, 246, 0.3)' />
-                <rect x='5' y='73' width='70' height='2' fill='rgba(255, 255, 255, 0.5)' />
-              </svg>
-              <span className='text-2xl font-bold text-gray-900'>S-BMS 클라이언트</span>
+            <div className='flex items-center justify-center gap-2 shelter-icon-pulse'>
+              <Leaf className='w-8 h-8 text-green-600' />
+              <span className='text-2xl font-bold text-gray-900'>스마트 그린 쉼터</span>
             </div>
           </div>
 
@@ -702,54 +572,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </Button>
               </form>
 
-              {/* 테스트 계정 정보 */}
-              <Alert>
-                <Info className='h-4 w-4' />
-                <AlertDescription className='text-xs'>
-                  <div className='space-y-1'>
-                    {/* 항상 보이는 admin */}
-                    <p className='flex items-center'>
-                      <span className='w-2 h-2 bg-red-500 rounded-full mr-2'></span>
-                      시스템 관리자: {testAccounts.users[0].username} / {testAccounts.users[0].password}
-                    </p>
-                    {/* 나머지 계정은 hover/touch 시만 노출 */}
-                    <div
-                      className='relative inline-block group select-none'
-                      tabIndex={0}
-                      onMouseEnter={() => setShowMore(true)}
-                      onMouseLeave={() => setShowMore(false)}
-                      onTouchStart={() => setShowMore(v => !v)}
-                      onBlur={() => setShowMore(false)}
-                    >
-                      <span className='flex items-center cursor-pointer'>
-                        <span className='w-2 h-2 bg-blue-500 rounded-full mr-2'></span>
-                        <span>기타 테스트 계정 보기</span>
-                        <ChevronDown className='ml-1 h-3 w-3' />
-                      </span>
-                      {showMore && (
-                        <div className='absolute left-0 z-10 bg-background border rounded-lg shadow-lg p-3 mt-2 w-max animate-fade-in'>
-                          {testAccounts.users.slice(1).map(u => (
-                            <div key={u.username} className='mb-2 last:mb-0'>
-                              <div className='font-semibold whitespace-nowrap'>
-                                {u.username} / {u.password}
-                              </div>
-                              <div className='text-muted-foreground text-xs'>{u.description}</div>
-                            </div>
-                          ))}
-                          {testAccounts.externalUsers.map(u => (
-                            <div key={u.username} className='mb-2 last:mb-0'>
-                              <div className='font-semibold whitespace-nowrap'>
-                                {u.username} / {u.password}
-                              </div>
-                              <div className='text-muted-foreground text-xs'>{u.description}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
             </CardContent>
           </Card>
         </div>

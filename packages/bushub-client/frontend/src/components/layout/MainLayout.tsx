@@ -7,7 +7,7 @@ import {
   LogOut,
   MessageSquare,
   Menu,
-  Bus,
+  Leaf,
   Activity,
   Cpu,
   AlertTriangle,
@@ -262,17 +262,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <Menu size={20} />
           </Button>
 
-          {/* 모바일: 버스 아이콘 (메뉴 버튼 바로 오른쪽) */}
+          {/* 모바일: 그린 쉼터 아이콘 (메뉴 버튼 바로 오른쪽) */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant='ghost' size='icon' className='md:hidden'>
-                <Bus className='h-6 w-6 text-primary' />
+                <Leaf className='h-6 w-6 text-primary' />
               </Button>
             </PopoverTrigger>
             <PopoverContent className='w-64 p-3' align='start'>
               <div className='text-center space-y-2'>
                 <div className='flex items-center justify-center gap-2 mb-2'>
-                  <Bus className='h-5 w-5 text-primary' />
+                  <Leaf className='h-5 w-5 text-primary' />
                   <span className='text-sm font-medium text-muted-foreground'>클라이언트 정보</span>
                 </div>
                 <h3 className='font-bold text-lg'>{client?.name || '스마트 그린 쉼터'}</h3>
@@ -282,9 +282,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </Popover>
         </div>
 
-        {/* 가운데: 데스크탑 버스 이름 표시 (화면 정중앙) */}
+        {/* 가운데: 데스크탑 그린 쉼터 이름 표시 (화면 정중앙) */}
         <div className='absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3'>
-          <Bus className='h-6 w-6 text-primary' />
+          <Leaf className='h-6 w-6 text-primary' />
           <div className='text-center'>
             <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
             <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>
