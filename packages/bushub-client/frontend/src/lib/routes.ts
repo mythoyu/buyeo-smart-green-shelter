@@ -25,7 +25,7 @@ export const ROUTES = {
     TEST_SPACING: '/test-spacing',
   },
 
-  // Bushub Client 라우트
+  // 스마트 그린 쉼터 라우트 (미사용)
   BUS_HUB: {
     HOME: '/',
     SCHEDULE: '/schedule',

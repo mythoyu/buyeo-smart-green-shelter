@@ -2,13 +2,13 @@
 export const clientStyles: Record<string, any> = {
   c0101: {
     color: '#1976d2', // 파랑
-    marker: 'bus',
-    icon: 'Bus',
+    marker: 'shelter',
+    icon: 'Leaf',
   },
   c0102: {
     color: '#388e3c', // 초록
-    marker: 'bus',
-    icon: 'Bus',
+    marker: 'shelter',
+    icon: 'Leaf',
   },
   // ...다른 클라이언트들 (필요 시 확장)
 };

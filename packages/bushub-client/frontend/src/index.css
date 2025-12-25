@@ -279,10 +279,6 @@ body {
   animation: pulse 2s ease-in-out infinite;
 }
 
-.bus-icon-pulse {
-  animation: pulse 2s ease-in-out infinite;
-}
-
 @keyframes pulse {
   0%,
   100% {

@@ -21,6 +21,7 @@ interface DeviceTypeOption {
   label: string;
   icon?: React.ReactNode;
   colorClass?: string;
+  count?: number;
 }
 
 interface DashboardFilterBarProps {
@@ -34,7 +35,7 @@ interface DashboardFilterBarProps {
 
 export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
   ({ selectedStatus, onSelectStatus, selectedType, onSelectType, className = '', devices = [] }) => {
-    const { deviceTypeOptions } = useApi().client.catalog();
+    const { deviceTypeOptions: allDeviceTypeOptions } = useApi().client.catalog();
     const [openCardIdx, setOpenCardIdx] = useState<number | null>(null);
 
     // 🎯 실제 장비 데이터를 기반으로 status 카운트 계산
@@ -69,6 +70,33 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
         })),
       [statusCounts]
     );
+
+    // 🎯 실제 장비 데이터를 기반으로 장비 타입별 카운트 계산
+    const deviceTypeCounts = useMemo(() => {
+      const counts: Record<string, number> = {};
+
+      devices.forEach((device: any) => {
+        const deviceType = device.type || '';
+        if (deviceType) {
+          counts[deviceType] = (counts[deviceType] || 0) + 1;
+        }
+      });
+
+      return counts;
+    }, [devices]);
+
+    // 🎯 실제 존재하는 장비 타입만 필터 옵션으로 생성
+    const deviceTypeOptions = useMemo(() => {
+      // 실제 장비 데이터에 존재하는 타입만 필터링
+      const existingTypes = new Set(devices.map((device: any) => device.type).filter(Boolean));
+
+      return allDeviceTypeOptions
+        .filter((opt: DeviceTypeOption) => existingTypes.has(opt.type))
+        .map((opt: DeviceTypeOption) => ({
+          ...opt,
+          count: deviceTypeCounts[opt.type] || 0,
+        }));
+    }, [allDeviceTypeOptions, devices, deviceTypeCounts]);
 
     const handleSelectType = useMemo(
       () => (type: string) => {
@@ -114,7 +142,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
               </CardContent>
             </Card>
 
-            {deviceTypeOptions.map((opt: DeviceTypeOption, idx: number) => (
+            {deviceTypeOptions.map((opt: DeviceTypeOption & { count?: number }, idx: number) => (
               <Card
                 key={opt.type}
                 className={`flex-shrink-0 cursor-pointer select-none min-w-[120px] transition-all ${

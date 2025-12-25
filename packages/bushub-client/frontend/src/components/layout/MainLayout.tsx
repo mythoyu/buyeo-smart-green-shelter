@@ -255,7 +255,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     <div className='min-h-screen bg-background'>
       {/* 헤더 */}
       <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 bg-card shadow-sm border-b border-border/50'>
-        {/* 왼쪽: 네비게이션 버튼과 모바일 버스 아이콘 */}
+        {/* 왼쪽: 네비게이션 버튼과 모바일 그린 쉼터 아이콘 */}
         <div className='flex items-center gap-4'>
           {/* 메뉴 버튼 */}
           <Button onClick={() => setSidebarOpen(!sidebarOpen)} size='icon' variant='ghost'>

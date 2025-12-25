@@ -1,4 +1,4 @@
-import { Bus, Gauge, Thermometer, DoorOpen, Activity, ToggleLeft, Fan, RotateCcw, Wind } from 'lucide-react';
+import { Leaf, Gauge, Thermometer, DoorOpen, Activity, ToggleLeft, Fan, RotateCcw, Wind } from 'lucide-react';
 import React from 'react';
 
 import { UnitValue } from '../types/database';
@@ -60,13 +60,13 @@ export const smartcityMetaHelpers = {
   // 클라이언트별 스타일 정보 가져오기 (lucide 아이콘 컴포넌트 변환)
   getClientStyle: (clientId: string) => {
     const style = clientStyles[clientId] || {
-      icon: 'Bus',
+      icon: 'Leaf',
       color: '#888',
-      marker: 'bus',
+      marker: 'shelter',
     };
     // lucide 아이콘 매핑
-    let IconComponent = Bus;
-    if (style.icon === 'Bus') IconComponent = Bus;
+    let IconComponent = Leaf;
+    if (style.icon === 'Leaf') IconComponent = Leaf;
     // 필요시 다른 아이콘 추가 매핑
     return {
       ...style,
