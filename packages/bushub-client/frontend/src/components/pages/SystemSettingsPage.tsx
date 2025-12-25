@@ -1114,7 +1114,7 @@ const SystemSettingsPage: React.FC = () => {
                   className={`text-sm font-medium px-3 py-1 rounded ${
                     currentMonthSeasonValue === 1
                       ? 'bg-orange-100 text-orange-800 border border-orange-300'
-                      : 'bg-blue-100 text-blue-800 border border-blue-300'
+                      : 'bg-primary/10 text-primary border border-primary/30'
                   }`}
                 >
                   {currentMonthSeasonValue === 1 ? '하절기' : '동절기'}
@@ -1122,8 +1122,8 @@ const SystemSettingsPage: React.FC = () => {
               </div>
 
               {/* 월별 설정 */}
-              <div className='grid grid-cols-3 gap-2'>
-                {Object.entries(monthNames).map(([month, name]) => {
+              <div className='grid grid-cols-3 border border-gray-200 rounded-md overflow-hidden'>
+                {Object.entries(monthNames).map(([month, name], index) => {
                   const monthKey =
                     month === '1'
                       ? 'january'
@@ -1149,21 +1149,31 @@ const SystemSettingsPage: React.FC = () => {
                       ? 'november'
                       : 'december';
                   const value = (seasonInput as any)[monthKey] || 0;
+                  const colIndex = index % 3;
+                  const rowIndex = Math.floor(index / 3);
+                  const isLastCol = colIndex === 2;
+                  const isLastRow = rowIndex === 3;
 
                   return (
-                    <div key={month} className='flex items-center justify-center'>
-                      <button
-                        className={`min-w-[80px] px-3 py-2 rounded-md font-semibold text-xs shadow-sm transition-all flex flex-col items-center justify-center gap-1.5 ${
+                    <div
+                      key={month}
+                      className={`flex items-center justify-center p-1 ${
+                        !isLastCol ? 'border-r border-gray-200' : ''
+                      } ${!isLastRow ? 'border-b border-gray-200' : ''}`}
+                    >
+                      <Button
+                        variant={value === 1 ? 'default' : 'default'}
+                        className={`w-full h-auto px-3 py-2 font-semibold text-xs flex flex-col items-center justify-center gap-1.5 ${
                           value === 1
                             ? 'bg-orange-500 hover:bg-orange-600 text-white' // 여름: 주황색
-                            : 'bg-blue-500 hover:bg-blue-600 text-white' // 겨울: 파란색
+                            : 'bg-primary hover:bg-primary/90 text-white' // 겨울: 그린 계열
                         }`}
                         onClick={() => handleSeasonalChange(monthKey as keyof SeasonalData, value === 1 ? 0 : 1)}
                         type='button'
                       >
                         <span className='leading-none'>{name}</span>
                         <span className='leading-none text-[10px]'>{value === 1 ? '여름' : '겨울'}</span>
-                      </button>
+                      </Button>
                     </div>
                   );
                 })}

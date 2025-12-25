@@ -30,7 +30,7 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
           disabled
             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
             : value
-            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+            ? 'bg-primary hover:bg-primary/90 text-white'
             : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
         }`}
       >

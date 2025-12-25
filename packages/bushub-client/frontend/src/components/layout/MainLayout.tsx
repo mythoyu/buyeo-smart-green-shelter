@@ -16,6 +16,8 @@ import {
   ChevronUp,
   Clock,
   User,
+  Train,
+  MapPin,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -65,6 +67,32 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const { isAdmin, user } = useAuth();
   const { client } = useLayoutData();
+
+  // 현장 타입에 따라 아이콘 반환
+  const getClientIcon = () => {
+    if (!client?.type) return <MapPin className='h-6 w-6 text-primary' />;
+
+    if (client.type === 'sm-shelter') {
+      return <Train className='h-6 w-6 text-primary' />;
+    }
+    if (client.type === 'sm-restplace') {
+      return <Leaf className='h-6 w-6 text-primary' />;
+    }
+    return <MapPin className='h-6 w-6 text-primary' />; // 기본값
+  };
+
+  // 현장 타입에 따라 작은 아이콘 반환 (Popover 내부용)
+  const getClientIconSmall = () => {
+    if (!client?.type) return <MapPin className='h-5 w-5 text-primary' />;
+
+    if (client.type === 'sm-shelter') {
+      return <Train className='h-5 w-5 text-primary' />;
+    }
+    if (client.type === 'sm-restplace') {
+      return <Leaf className='h-5 w-5 text-primary' />;
+    }
+    return <MapPin className='h-5 w-5 text-primary' />; // 기본값
+  };
 
   // React Query로 현재 모드 상태 관리 (제거됨)
   // const { data: currentModeStatus } = useGetCurrentModeStatus();
@@ -262,13 +290,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <Popover>
             <PopoverTrigger asChild>
               <Button variant='ghost' size='icon' className='md:hidden'>
-                <Leaf className='h-6 w-6 text-primary' />
+                {getClientIcon()}
               </Button>
             </PopoverTrigger>
             <PopoverContent className='w-64 p-3' align='start'>
               <div className='text-center space-y-2'>
                 <div className='flex items-center justify-center gap-2 mb-2'>
-                  <Leaf className='h-5 w-5 text-primary' />
+                  {getClientIconSmall()}
                   <span className='text-sm font-medium text-muted-foreground'>클라이언트 정보</span>
                 </div>
                 <h3 className='font-bold text-lg'>{client?.name || '스마트 그린 쉼터'}</h3>
@@ -280,7 +308,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         {/* 가운데: 데스크탑 그린 쉼터 이름 표시 (화면 정중앙) */}
         <div className='absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3'>
-          <Leaf className='h-6 w-6 text-primary' />
+          {getClientIcon()}
           <div className='text-center'>
             <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
             <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>

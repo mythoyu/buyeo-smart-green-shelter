@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { MapPin, Building, Lightbulb, Fan, Thermometer, DoorOpen, Activity, Gauge } from 'lucide-react';
+import { MapPin, Building, Lightbulb, Fan, Thermometer, DoorOpen, Activity, Gauge, Train, Leaf } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -221,6 +221,17 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
     }));
   }, []);
 
+  // 현장 타입에 따라 아이콘을 다르게 반환
+  const getSiteIcon = useCallback((client: ClientInfoDto) => {
+    if (client.type === 'sm-shelter') {
+      return <Train className='h-7 w-7 text-primary' />;
+    }
+    if (client.type === 'sm-restplace') {
+      return <Leaf className='h-7 w-7 text-primary' />;
+    }
+    return <MapPin className='h-7 w-7 text-primary' />; // 기본값 (나머지 타입)
+  }, []);
+
   // 장비명에 따라 아이콘을 다르게 반환
   const getDeviceIcon = useCallback((deviceName: string) => {
     if (deviceName.includes('조명')) return <Lightbulb className='h-5 w-5 text-yellow-400' />;
@@ -425,7 +436,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
           filteredClients.map((client, index) => (
             <Card
               key={client.id}
-              className={`cursor-pointer hover:bg-blue-200 transition-all duration-300
+              className={`cursor-pointer hover:bg-primary/10 transition-all duration-300
                   ${
                     selectedClient && selectedClient.id === client.id
                       ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
@@ -453,7 +464,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
                 )}
 
                 <div className='w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3'>
-                  <MapPin className='h-7 w-7 text-primary' />
+                  {getSiteIcon(client)}
                 </div>
                 <div className='text-xl font-bold text-center'>{client.name}</div>
                 <div className='text-xs text-muted-foreground font-semibold mt-2'>{client.city}</div>
