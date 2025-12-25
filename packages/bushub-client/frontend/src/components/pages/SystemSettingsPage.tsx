@@ -1072,7 +1072,7 @@ const SystemSettingsPage: React.FC = () => {
             applyDisabled={false}
             currentSettings={null}
             isLoading={false}
-            applyExtra={
+            headerExtra={
               <Button
                 variant='ghost'
                 size='icon'
@@ -1198,7 +1198,7 @@ const SystemSettingsPage: React.FC = () => {
             currentSettings={null}
             isLoading={syncDdcTimeMutation.isPending}
             applyButtonText='동기화'
-            applyExtra={
+            headerExtra={
               <Button
                 variant='ghost'
                 size='icon'

@@ -16,6 +16,7 @@ interface SettingsCardProps {
   isLoading?: boolean;
   applyButtonText?: string;
   applyExtra?: React.ReactNode;
+  headerExtra?: React.ReactNode;
 }
 
 const SettingsCard: React.FC<SettingsCardProps> = ({
@@ -31,6 +32,7 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
   isLoading = false,
   applyButtonText = '적용',
   applyExtra,
+  headerExtra,
 }) => {
   return (
     <div className='p-6 space-y-4 border border-gray-200 rounded-lg'>
@@ -43,6 +45,7 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
           <h2 className='text-lg font-semibold'>{title}</h2>
           <p className='text-sm text-muted-foreground'>{description}</p>
         </div>
+        {headerExtra && <div className='flex-shrink-0'>{headerExtra}</div>}
       </div>
 
       {/* 버튼 영역 */}
