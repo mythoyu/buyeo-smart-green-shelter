@@ -31,6 +31,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   bulkStatus,
   onAutoModeChange,
   onPowerChange,
+  devices = [],
 }) => {
   // 디바이스 관련 데이터 준비
   const deviceIcon = getDeviceIcon(device.type);
@@ -89,7 +90,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             {device.units.map((unit, unitIndex) => {
               const isSelected = selectedUnit?.unit.id === unit.id && selectedUnit?.device.id === device.id;
 
-              // 유닛별 폼 상태 가져오기
+              // 유닛별 폼 상태 가져오기 (getUnitForm prop 사용 - unitForms 상태 변경 시 자동 업데이트)
               const currentUnitForm = (() => {
                 try {
                   return typeof getUnitForm === 'function' ? getUnitForm(device.id, unit.id) : {};
@@ -105,19 +106,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 
               // 설정 표시 가능 여부: 선택되면 항상 표시 (auto 값과 무관)
               const canShowSettings = isSelected;
-
-              // DeviceCard 디버깅
-              if (isSelected) {
-                console.log('🔍 DeviceCard 선택된 유닛:', {
-                  deviceId: device.id,
-                  unitId: unit.id,
-                  isSelected,
-                  currentUnitForm,
-                  autoValue,
-                  canShowSettings,
-                  unitData: unit.data,
-                });
-              }
 
               return (
                 <div key={unit.id || unitIndex}>
@@ -141,6 +129,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                     bulkStatus={bulkStatus}
                     handleCopy={handleCopy}
                     handlePaste={handlePaste}
+                    devices={devices}
+                    deviceSpecs={deviceSpecs}
                   />
                 </div>
               );

@@ -66,10 +66,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isAdmin, user } = useAuth();
   const { client } = useLayoutData();
 
-  // 디버깅용 로그
-  console.log('[MainLayout] isAdmin:', isAdmin);
-  console.log('[MainLayout] user:', user);
-
   // React Query로 현재 모드 상태 관리 (제거됨)
   // const { data: currentModeStatus } = useGetCurrentModeStatus();
 
@@ -378,7 +374,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   title={item.name}
                 >
                   <Icon className={`h-5 w-5 mb-0.5 ${!isActive ? 'text-muted-foreground' : ''}`} aria-hidden='true' />
-                  <span className={`text-xs text-center leading-tight whitespace-pre-line ${!isActive ? 'text-muted-foreground' : ''}`}>
+                  <span
+                    className={`text-xs text-center leading-tight whitespace-pre-line ${
+                      !isActive ? 'text-muted-foreground' : ''
+                    }`}
+                  >
                     {label}
                   </span>
                 </Button>

@@ -9,8 +9,6 @@ export const SYSTEM_GENERAL_ENDPOINTS = {
   SYSTEM_MODE: '/system/mode',
   SYSTEM_POLLING_INTERVAL: '/system/polling/interval',
   SYSTEM_SCHEMA: '/system/schema',
-  SYSTEM_AUTO_MODE: '/system/auto-mode',
-  SYSTEM_MANUAL_MODE: '/system/manual-mode',
   SYSTEM_DOMAIN_STATUS: '/system/domain/status',
   SYSTEM_PING_TEST: '/system/ping-test',
   // SYSTEM_CURRENT_MODE_STATUS: '/system/current-mode-status', // 제거됨
@@ -397,61 +395,6 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
     }
   });
 
-  // 자동모드 활성화 - 모든 유닛의 DO 모드를 스케줄로 변경
-  app.post(
-    SYSTEM_GENERAL_ENDPOINTS.SYSTEM_AUTO_MODE,
-    {
-      preHandler: [app.requireAuth],
-    },
-    async (request, reply) => {
-      try {
-        logInfo('[POST /system/auto-mode] 자동모드 활성화 요청');
-
-        // 현재 클라이언트의 모든 유닛들의 DO 모드를 스케줄로 변경
-        const result = await systemService.setAllUnitsToScheduleMode();
-
-        logInfo('[POST /system/auto-mode] 자동모드 활성화 완료');
-
-        return reply.send(
-          createSuccessResponse('자동모드가 활성화되었습니다. 모든 유닛의 DO 모드가 스케줄로 변경되었습니다.', {
-            unitsUpdated: result.unitsUpdated,
-            timestamp: new Date().toISOString(),
-          }),
-        );
-      } catch (error) {
-        logInfo('[POST /system/auto-mode] 에러 발생');
-        return handleHttpError(new HttpSystemError('자동모드 활성화 중 오류가 발생했습니다.'), reply);
-      }
-    },
-  );
-
-  // 수동모드 활성화 - 모든 유닛의 DO 모드를 수동으로 변경
-  app.post(
-    SYSTEM_GENERAL_ENDPOINTS.SYSTEM_MANUAL_MODE,
-    {
-      preHandler: [app.requireAuth],
-    },
-    async (request, reply) => {
-      try {
-        logInfo('[POST /system/manual-mode] 수동모드 활성화 요청');
-
-        // 현재 클라이언트의 모든 유닛들의 DO 모드를 수동으로 변경
-        const result = await systemService.setAllUnitsToManualMode();
-
-        logInfo('[POST /system/manual-mode] 수동모드 활성화 완료');
-
-        return reply.send(
-          createSuccessResponse('수동모드가 활성화되었습니다. 모든 유닛의 DO 모드가 수동으로 변경되었습니다.', {
-            unitsUpdated: result.unitsUpdated,
-            timestamp: new Date().toISOString(),
-          }),
-        );
-      } catch (error) {
-        logInfo('[POST /system/manual-mode] 에러 발생');
-        return handleHttpError(new HttpSystemError('수동모드 활성화 중 오류가 발생했습니다.'), reply);
-      }
-    },
-  );
 
   // GET /system/domain/status (System 도메인 서비스 상태 조회)
   app.get(SYSTEM_GENERAL_ENDPOINTS.SYSTEM_DOMAIN_STATUS, { preHandler: [app.requireAuth] }, async (request, reply) => {

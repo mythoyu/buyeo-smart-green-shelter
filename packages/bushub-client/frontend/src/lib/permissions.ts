@@ -37,14 +37,6 @@ export const canAccessPage = (userRole: string, path: string): boolean => {
   const permission = PAGE_PERMISSIONS[path as keyof typeof PAGE_PERMISSIONS];
   const hasAccess = hasPermission(userRole, permission);
 
-  console.log('🔍 canAccessPage 디버그:', {
-    userRole,
-    path,
-    permission,
-    hasAccess,
-    rolePermissions: ROLE_PERMISSIONS[userRole as keyof typeof ROLE_PERMISSIONS],
-  });
-
   if (!permission) return true; // 권한이 정의되지 않은 페이지는 접근 허용
   return hasAccess;
 };

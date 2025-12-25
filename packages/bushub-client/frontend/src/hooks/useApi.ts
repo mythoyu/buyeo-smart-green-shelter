@@ -10,8 +10,6 @@ import {
   useGetApiKeys,
   useCreateApiKey, // UseMutationResult를 반환할 수 있음
   useDeleteApiKey, // UseMutationResult를 반환할 수 있음
-  useSetAllUnitsToScheduleMode, // UseMutationResult를 반환할 수 있음
-  useSetAllUnitsToManualMode, // UseMutationResult를 반환할 수 있음
   useGetLogs,
   useGetLogFiles,
   useGetLogContent,
@@ -114,8 +112,6 @@ export const useApi = () => {
       apiKeys: useGetApiKeys,
       createApiKey: useCreateApiKey,
       deleteApiKey: useDeleteApiKey,
-      setAllUnitsToScheduleMode: useSetAllUnitsToScheduleMode,
-      setAllUnitsToManualMode: useSetAllUnitsToManualMode,
       // 새로운 시스템 API
       settings: useGetSystemSettings,
       getPollingStatus: usePollingStatus,
@@ -257,8 +253,6 @@ export {
   useGetApiKeys,
   useCreateApiKey,
   useDeleteApiKey,
-  useSetAllUnitsToScheduleMode,
-  useSetAllUnitsToManualMode,
   useGetLogs,
   useGetLogFiles,
   useGetLogContent,

@@ -26,11 +26,6 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
   const [pageInput, setPageInput] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
 
-  // 디버깅용 콘솔 출력
-  console.log('collections:', collections);
-  console.log('collections type:', typeof collections);
-  console.log('collections isArray:', Array.isArray(collections));
-
   const handleCollectionChange = (collectionName: string) => {
     setSelectedCollection(collectionName);
     setCurrentPage(1);

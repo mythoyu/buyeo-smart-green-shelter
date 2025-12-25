@@ -19,8 +19,8 @@ interface DeviceTypeOption {
 
 // DeviceWithStatus는 DeviceInfoDto를 확장하고 status를 추가한 타입
 interface DeviceWithStatus extends DeviceInfoDto {
-  status?: number;
-  units: Array<DeviceInfoDto['units'][number] & { status?: number }>;
+  status: number | undefined; // exactOptionalPropertyTypes: true 때문에 명시적으로 undefined 허용
+  units: Array<DeviceInfoDto['units'][number] & { status: number | undefined }>;
 }
 
 interface DashboardFilterBarProps {

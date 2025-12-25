@@ -107,6 +107,10 @@ export interface BulkCommandsMutation {
 
 import React from 'react';
 
+export interface DeviceListShowDetailHandle {
+  handleFormChange: (key: string, value: any, deviceId?: string, unitId?: string) => void;
+}
+
 export interface DeviceListShowDetailProps {
   devices: Device[];
   deviceSpecs: Record<string, DeviceSpec>;
@@ -122,7 +126,7 @@ export interface DeviceCardProps {
   deviceStyles: Record<string, DeviceStyle>;
   selectedUnit: SelectedUnit | null;
   onUnitClick: (device: Device, unit: Unit) => void;
-  onFormChange: (key: string, value: any) => void;
+  onFormChange: (key: string, value: any, deviceId?: string, unitId?: string) => void;
   onCancel: () => void;
   getUnitForm: (deviceId: string, unitId: string) => UnitForm;
   unitForm: UnitForm;
@@ -137,6 +141,7 @@ export interface DeviceCardProps {
   bulkStatus: string | null;
   onAutoModeChange: (device: Device, unit: Unit, autoMode: boolean) => void;
   onPowerChange: (device: Device, unit: Unit, powerMode: boolean) => void;
+  devices?: Device[]; // 모든 장비 목록
 }
 
 export interface UnitCardProps {
@@ -153,11 +158,13 @@ export interface UnitCardProps {
   onAutoModeChange: (device: Device, unit: Unit, autoMode: boolean) => void;
   onPowerChange: (device: Device, unit: Unit, powerMode: boolean) => void;
   unitForm: Record<string, any>;
-  onFormChange: (key: string, value: any) => void;
+  onFormChange: (key: string, value: any, deviceId?: string, unitId?: string) => void;
   onCancel: () => void;
   bulkStatus: string | null;
   handleCopy: (text: string) => void;
   handlePaste: (key: string) => void;
+  devices?: Device[]; // 모든 장비 목록
+  deviceSpecs?: Record<string, DeviceSpec>; // 장비 스펙
 }
 
 export interface UnitSettingsProps {
@@ -165,13 +172,15 @@ export interface UnitSettingsProps {
   device: Device;
   deviceSpec: DeviceSpec;
   unitForm: UnitForm;
-  onFormChange: (key: string, value: any) => void;
-  onSave: () => void;
+  onFormChange: (key: string, value: any, deviceId?: string, unitId?: string) => void;
+  onSave: (selectedUnits?: Set<string>) => void; // 선택된 유닛 목록 추가
   onCancel: () => void;
   bulkCommandsMutation?: BulkCommandsMutation | null; // optional로 변경
   bulkStatus: string | null;
   handleCopy: (text: string) => void;
   handlePaste: (key: string) => void;
+  devices?: Device[]; // 모든 장비 목록
+  deviceSpecs?: Record<string, DeviceSpec>; // 장비 스펙 (필드 지원 여부 확인용)
 }
 
 export interface CommandRendererProps {

@@ -25,8 +25,8 @@ interface DeviceStyle {
 
 // 상태 정보가 추가된 디바이스 타입
 interface DeviceWithStatus extends DeviceInfoDto {
-  status?: number;
-  units: (UnitInfoDto & { status?: number })[];
+  status: number | undefined; // exactOptionalPropertyTypes: true 때문에 명시적으로 undefined 허용
+  units: (UnitInfoDto & { status: number | undefined })[];
 }
 
 /**
@@ -135,19 +135,6 @@ export const useClientDataBase = (clientInfo: any, clientStatus: any, clientData
 
   // 상태 데이터와 병합
   const devicesWithStatus = useMemo(() => {
-    console.log('devicesWithStatus 재계산:', {
-      mergedDevicesLength: mergedDevices?.length,
-      clientStatusDevicesLength: clientStatus.data?.devices?.length,
-      clientStatusData: clientStatus.data,
-      // 디바이스 이름 정보 추가
-      mergedDevicesNames:
-        (mergedDevices as any[])?.map((d: any) => ({
-          id: d.id,
-          name: 'name' in d ? d.name : d.id,
-          deviceId: 'deviceId' in d ? d.deviceId : d.id,
-        })) || [],
-    });
-
     if (!mergedDevices) {
       console.log('devicesWithStatus: mergedDevices 없음');
       return [];
@@ -168,7 +155,6 @@ export const useClientDataBase = (clientInfo: any, clientStatus: any, clientData
     }
 
     // clientStatus가 있으면 상태 정보와 병합
-    console.log('useClientDataBase: 상태 정보와 병합');
     const result: DeviceWithStatus[] = mergedDevices.map((device: DeviceInfoDto) => {
       const statusDevice = clientStatus.data.devices.find((d: DeviceStatusDto) => d.id === device.id);
       // status를 number 타입으로 변환하여 타입 안전성 보장
@@ -176,29 +162,17 @@ export const useClientDataBase = (clientInfo: any, clientStatus: any, clientData
       const unitsWithStatus =
         device.units?.map((unit: UnitInfoDto) => {
           const statusUnit = statusDevice?.units?.find((u: UnitStatusDto) => u.id === unit.id);
-          // statusUnit의 status를 number 타입으로 변환
-          return statusUnit
-            ? {
-                ...unit,
-                status: Number(statusUnit.status),
-              }
-            : unit;
+          // statusUnit의 status를 number 타입으로 변환, 없으면 undefined
+          return {
+            ...unit,
+            status: statusUnit ? (Number(statusUnit.status) as number | undefined) : undefined,
+          };
         }) || [];
       return {
         ...device,
         status, // status를 명시적으로 추가 (number 타입)
         units: unitsWithStatus,
       };
-    });
-
-    console.log('devicesWithStatus 결과:', {
-      resultLength: result?.length,
-      resultNames:
-        (result as any[])?.map((d: any) => ({
-          id: d.id,
-          name: 'name' in d ? d.name : d.id,
-          deviceId: 'deviceId' in d ? d.deviceId : d.id,
-        })) || [],
     });
 
     return result;

@@ -49,17 +49,20 @@ export const useUnitState = (
   // Get 가능한 데이터 명령어들 (읽기 전용)
   const getCommands = deviceSpec?.commands?.filter((cmd: any) => cmd.get === true) || [];
 
-  // Power 및 Auto 모드 상태 (API 응답 최우선, unitForm은 fallback)
+  // Power 및 Auto 모드 상태 (unitForm 우선, 없으면 unit.data 사용)
   const { powerValue, autoValue } = useMemo(() => {
     // 유닛별 폼 상태 가져오기 (디바이스별 키 기반)
     const currentUnitForm = unitForm || {};
 
-    // 최종 상태 우선순위: unit.data > unitForm (API 응답을 항상 우선)
-    // 이렇게 하면 cross-device state pollution 방지
+    // 최종 상태 우선순위: unitForm > unit.data (unitForm이 있으면 우선 - 즉시 UI 반영을 위해)
+    // unitForm이 변경되면 즉시 반영되고, 폴링 데이터로 자동 동기화됨
     const power =
-      unit.data?.power !== undefined && unit.data?.power !== null ? unit.data.power : currentUnitForm?.power;
+      currentUnitForm?.power !== undefined && currentUnitForm?.power !== null
+        ? currentUnitForm.power
+        : unit.data?.power;
 
-    const auto = unit.data?.auto !== undefined && unit.data?.auto !== null ? unit.data.auto : currentUnitForm?.auto;
+    const auto =
+      currentUnitForm?.auto !== undefined && currentUnitForm?.auto !== null ? currentUnitForm.auto : unit.data?.auto;
 
     // Power/Auto 값 디버깅
     console.log('🔋 Power/Auto 값 계산:', {

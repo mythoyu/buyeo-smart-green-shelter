@@ -26,8 +26,8 @@ export const getUnitCardStyles = (isSelected: boolean) => ({
 
 // 설정 폼 스타일링
 export const getSettingsFormStyles = () => ({
-  container: 'mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg flex-shrink-0 animate-slide-down',
-  animation: 'slideDown 0.4s ease-out forwards',
+  container: 'space-y-4 flex-shrink-0', // 다이얼로그 내부에서 사용하므로 간소화, 간격 확대
+  animation: 'fadeIn 0.3s ease-out forwards',
 });
 
 // 명령어별 기본값 설정
@@ -90,17 +90,17 @@ export const groupCommands = (commands: Command[]) => {
   // auto 명령어는 단순한 boolean이므로 간단하게 처리
   const autoCommand = commands.find(cmd => cmd.key === 'auto') || null;
 
-  console.log('groupCommands Debug:', {
-    commands,
-    commandsLength: commands.length,
-    commandKeys: commands.map(cmd => cmd.key),
-    timeCommands: timeCommands.length,
-    otherCommands: otherCommands.length,
-    autoCommand: autoCommand || 'null',
-    // auto 명령어가 있는지 직접 확인
-    hasAutoCommand: commands.some(cmd => cmd.key === 'auto'),
-    autoCommandIndex: commands.findIndex(cmd => cmd.key === 'auto'),
-  });
+  // console.log('groupCommands Debug:', {
+  //   commands,
+  //   commandsLength: commands.length,
+  //   commandKeys: commands.map(cmd => cmd.key),
+  //   timeCommands: timeCommands.length,
+  //   otherCommands: otherCommands.length,
+  //   autoCommand: autoCommand || 'null',
+  //   // auto 명령어가 있는지 직접 확인
+  //   hasAutoCommand: commands.some(cmd => cmd.key === 'auto'),
+  //   autoCommandIndex: commands.findIndex(cmd => cmd.key === 'auto'),
+  // });
 
   return {
     timeCommands,

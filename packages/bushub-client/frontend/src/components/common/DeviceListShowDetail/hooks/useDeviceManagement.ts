@@ -11,26 +11,6 @@ export const useDeviceManagement = (
   // 디바이스 표시 로직
   const displayDevices = useMemo(() => (devices && devices.length > 0 ? devices : sampleClient.devices), [devices]);
 
-  // 디버깅 로그
-  const logDebugInfo = useCallback(() => {
-    console.log('DeviceListShowDetail Debug:', {
-      devicesLength: devices?.length,
-      displayDevicesLength: displayDevices?.length,
-      devices,
-      displayDevices,
-      isUsingSampleData: !devices || devices.length === 0,
-      sessionStorage: {
-        user: sessionStorage.getItem('user'),
-        accessToken: sessionStorage.getItem('accessToken'),
-      },
-      deviceNames: displayDevices?.map(d => ({
-        id: d.id,
-        name: d.name,
-        deviceId: (d as any).deviceId || d.id,
-      })),
-    });
-  }, [devices, displayDevices]);
-
   // 디바이스 타입별 아이콘 및 색상 매핑
   const getDeviceIcon = useCallback(() => {
     // smartcityMetaHelpers에서 가져오는 로직은 나중에 분리

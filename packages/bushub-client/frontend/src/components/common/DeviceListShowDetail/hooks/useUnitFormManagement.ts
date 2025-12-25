@@ -10,7 +10,7 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
   // 디바이스별 유닛별 설정 폼 상태 (deviceId_unitId 키로 관리)
   const [unitForms, setUnitForms] = useState<Record<string, UnitForm>>({});
 
-  // selectedUnit의 unit.data 변경 시 unitForm 동기화
+  // selectedUnit의 unit.data 변경 시 unitForm 동기화 (단, 사용자가 변경한 값은 보존)
   useEffect(() => {
     if (selectedUnit?.unit?.data) {
       const unitKey = `${selectedUnit.device.id}_${selectedUnit.unit.id}`;
@@ -21,14 +21,28 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
         newUnitData: selectedUnit.unit.data,
       });
 
-      // 모든 폴링 데이터를 unitForm에 동기화
-      setUnitForms(prev => ({
-        ...prev,
-        [unitKey]: {
-          ...prev[unitKey],
-          ...selectedUnit.unit.data, // 모든 폴링 데이터 반영
-        },
-      }));
+      // 폴링 데이터를 unitForm에 동기화하되, 사용자가 명시적으로 변경한 값(power, auto 등)은 보존
+      setUnitForms(prev => {
+        const existingForm = prev[unitKey] || {};
+
+        // 사용자가 변경한 값들을 보존할 필드 목록 (power, auto는 사용자 입력이 우선)
+        const userChangedFields = ['power', 'auto'];
+        const preservedValues: Record<string, any> = {};
+
+        userChangedFields.forEach(field => {
+          if (existingForm[field] !== undefined && existingForm[field] !== null) {
+            preservedValues[field] = existingForm[field];
+          }
+        });
+
+        return {
+          ...prev,
+          [unitKey]: {
+            ...selectedUnit.unit.data, // 폴링 데이터 먼저 반영
+            ...preservedValues, // 사용자가 변경한 값은 나중에 덮어써서 보존
+          },
+        };
+      });
     }
   }, [
     selectedUnit?.unit?.data,
@@ -91,16 +105,31 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
     [deviceSpecs]
   );
 
-  // 폼 변경 핸들러 (선택된 유닛의 폼만 변경)
+  // 폼 변경 핸들러 (선택된 유닛 또는 deviceId/unitId를 받아서 폼 변경)
   const handleFormChange = useCallback(
-    (key: string, value: any) => {
-      if (!selectedUnit) {
-        console.warn('⚠️ selectedUnit이 없어서 handleFormChange 무시:', { key, value });
+    (key: string, value: any, deviceId?: string, unitId?: string) => {
+      // deviceId와 unitId가 제공되면 사용, 없으면 selectedUnit 사용
+      let targetDeviceId: string | undefined;
+      let targetUnitId: string | undefined;
+
+      if (deviceId && unitId) {
+        // 직접 제공된 deviceId/unitId 사용 (선택되지 않은 유닛도 지원)
+        targetDeviceId = deviceId;
+        targetUnitId = unitId;
+      } else if (selectedUnit) {
+        // selectedUnit이 있으면 사용
+        targetDeviceId = selectedUnit.device.id;
+        targetUnitId = selectedUnit.unit.id;
+      } else {
+        console.warn('⚠️ selectedUnit이 없고 deviceId/unitId도 제공되지 않아 handleFormChange 무시:', {
+          key,
+          value,
+        });
         return;
       }
 
-      const unitKey = `${selectedUnit.device.id}_${selectedUnit.unit.id}`;
-      console.log('📝 폼 데이터 변경:', { unitKey, key, value });
+      const unitKey = `${targetDeviceId}_${targetUnitId}`;
+      console.log('📝 폼 데이터 변경:', { unitKey, key, value, deviceId, unitId });
 
       setUnitForms(prev => ({
         ...prev,
@@ -202,15 +231,6 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
       const unitKey = `${deviceId}_${unitId}`;
       const unitForm = unitForms[unitKey] || {};
 
-      console.log('🔍 getUnitForm 호출:', {
-        deviceId,
-        unitId,
-        unitKey,
-        hasForm: !!unitForms[unitKey],
-        unitForm,
-        unitFormKeys: Object.keys(unitForm),
-      });
-
       return unitForm;
     },
     [unitForms]
@@ -234,16 +254,6 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
 
   // 현재 선택된 유닛의 폼 가져오기
   const currentUnitForm = selectedUnit ? unitForms[`${selectedUnit.device.id}_${selectedUnit.unit.id}`] || {} : {};
-
-  // 반환값 디버깅
-  console.log('🔍 useUnitFormManagement return:', {
-    selectedUnit: selectedUnit?.unit?.id,
-    currentUnitForm,
-    unitFormsKeys: Object.keys(unitForms),
-    updateSelectedUnit,
-    type: typeof updateSelectedUnit,
-    isFunction: typeof updateSelectedUnit === 'function',
-  });
 
   return {
     selectedUnit,

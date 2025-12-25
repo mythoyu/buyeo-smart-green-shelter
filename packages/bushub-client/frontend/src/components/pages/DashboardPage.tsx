@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { useExecuteDeviceAction } from '../../api/queries/device';
@@ -9,8 +9,10 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import { getDeviceActions, getActionInfo, type ActionKey } from '../../meta/actions/deviceActions';
 import { DashboardFilterBar } from '../common/DashboardFilterBar';
 import DeviceListShowDetail from '../common/DeviceListShowDetail/index';
+import { DeviceListShowDetailHandle } from '../common/DeviceListShowDetail/types';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Alert, AlertDescription } from '../ui';
+import ModeControlCard from '../common/ModeControlCard';
 
 // 🆕 deviceTypeMap을 컴포넌트 외부로 이동하여 재생성 방지
 const DEVICE_TYPE_MAP: Record<string, string> = {
@@ -26,6 +28,7 @@ const DEVICE_TYPE_MAP: Record<string, string> = {
 
 const DashboardPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const deviceListRef = useRef<DeviceListShowDetailHandle>(null);
 
   // 🆕 실제 사용되는 데이터만 가져오기 (불필요한 데이터 제거)
   const { devices = [], deviceSpecs = {}, deviceStyles = {}, error } = useDashboardData();
@@ -37,7 +40,6 @@ const DashboardPage: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const { isConnected } = useWebSocket({});
-
 
   // 🆕 필터링 로직 최적화 - 의존성 배열 최소화
   const filteredDevices = useMemo(() => {
@@ -53,7 +55,7 @@ const DashboardPage: React.FC = () => {
     }
 
     // 🆕 필터링 로직 최적화 - 타입 안전한 비교
-    return devices.filter((device) => {
+    return devices.filter(device => {
       const typeMatch = isAllType || device.type === selectedType;
       // status를 number로 변환하여 타입 안전한 비교
       const deviceStatus = Number(device.status ?? 0);
@@ -155,17 +157,27 @@ const DashboardPage: React.FC = () => {
 
       {/* Data 적용 카드 - 현재 버전에서는 대시보드에서 숨김 처리 */}
       {/* <DataApplyCard /> */}
-      {/* 🆕 Mode Switch 카드 - 현재 버전에서는 대시보드에서 숨김 처리 */}
-      {/* <ModeControlCard /> */}
+      {/* 모드 제어 카드와 필터바 - 2열 레이아웃 (모바일: 2행) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {/* 필터바 - devices prop 추가 */}
+        <DashboardFilterBar
+          selectedType={selectedType}
+          onSelectType={handleSelectType}
+          selectedStatus={selectedStatus}
+          onSelectStatus={handleSelectStatus}
+          devices={devices}
+        />
 
-      {/* 필터바 - devices prop 추가 */}
-      <DashboardFilterBar
-        selectedType={selectedType}
-        onSelectType={handleSelectType}
-        selectedStatus={selectedStatus}
-        onSelectStatus={handleSelectStatus}
-        devices={devices}
-      />
+        {/* 🆕 Mode Switch 카드 */}
+        <ModeControlCard
+          devices={devices}
+          deviceSpecs={deviceSpecs}
+          deviceStyles={deviceStyles}
+          onFormChange={(key, value, deviceId, unitId) => {
+            deviceListRef.current?.handleFormChange(key, value, deviceId, unitId);
+          }}
+        />
+      </div>
 
       {/* 장비 목록 - 타입 안전성을 위해 any 타입 사용 */}
       {filteredDevices.length === 0 && devices.length > 0 ? (
@@ -175,6 +187,7 @@ const DashboardPage: React.FC = () => {
         </div>
       ) : (
         <DeviceListShowDetail
+          ref={deviceListRef}
           devices={filteredDevices as any[]}
           deviceSpecs={deviceSpecs}
           deviceStyles={deviceStyles}

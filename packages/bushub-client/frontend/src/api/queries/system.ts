@@ -74,15 +74,6 @@ interface DdcTimeSyncParams {
 //   return internalApi.post('/system/mode', { mode }).then(res => res.data.data);
 // };
 
-// 모든 유닛의 DO 모드를 스케줄로 변경
-const setAllUnitsToScheduleMode = async (): Promise<any> => {
-  return internalApi.post('/system/auto-mode', {}).then(res => res.data);
-};
-
-// 모든 유닛의 DO 모드를 수동으로 변경
-const setAllUnitsToManualMode = async (): Promise<any> => {
-  return internalApi.post('/system/manual-mode', {}).then(res => res.data);
-};
 
 // 폴링 간격 조회
 const getPollingInterval = async (): Promise<any> => {
@@ -174,17 +165,6 @@ const syncDdcTime = async (): Promise<any> => {
 const refreshDdcTime = async (): Promise<any> => {
   return internalApi.post('/system/ddc-time/refresh').then(res => res.data);
 };
-
-// 기존 훅들
-export const useSetAllUnitsToScheduleMode = () =>
-  useMutation({
-    mutationFn: setAllUnitsToScheduleMode,
-  });
-
-export const useSetAllUnitsToManualMode = () =>
-  useMutation({
-    mutationFn: setAllUnitsToManualMode,
-  });
 
 // 새로운 훅들
 export const useGetSystemSettings = () =>

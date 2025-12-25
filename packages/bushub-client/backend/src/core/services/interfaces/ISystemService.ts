@@ -43,8 +43,6 @@ export interface ISystemService {
   exportSettings(): Promise<SystemSettings | null>;
   importSettings(settings: SystemSettings): Promise<SystemSettings | null>;
   resetToDefaults(): Promise<SystemSettings | null>;
-  setAllUnitsToScheduleMode(): Promise<{ unitsUpdated: number }>;
-  setAllUnitsToManualMode(): Promise<{ unitsUpdated: number }>;
   saveSeasonal(clientId: string, seasonal: SeasonalData): Promise<SuccessResponse>;
   getSeasonal(clientId: string): Promise<SeasonalData | null>;
   applySeasonalToModbus(clientId: string, seasonal: SeasonalData): Promise<boolean>;

@@ -1,8 +1,19 @@
 import { Settings } from 'lucide-react';
 import React, { useCallback } from 'react';
 
+import { useSendUnitBulkCommands } from '../../../api/queries/device';
 import { smartcityMetaHelpers } from '../../../meta/smartcityMetaHelpers';
-import { Badge, Card, CardHeader, CardContent } from '../../ui';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  CardContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '../../ui';
 
 import { CommandProcessingDialog } from './CommandProcessingDialog';
 import { UnitControls } from './components/UnitControls';
@@ -34,6 +45,8 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   bulkStatus,
   handleCopy,
   handlePaste,
+  devices = [],
+  deviceSpecs = {},
 }) => {
   // 상태 관리 Hook 사용
   const {
@@ -51,6 +64,9 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     statusProps,
   } = useUnitState(unit, device, deviceSpec, unitForm, isSelected, deviceIndex, unitIndex, getStatusConfig);
 
+  // 다른 유닛에 명령 전송을 위한 mutation
+  const sendCommandMutation = useSendUnitBulkCommands();
+
   // 직접 명령 실행 핸들러
   const handleDirectPowerChange = async (checked: boolean) => {
     console.log('🎯 UnitCard에서 직접 Power 명령 실행:', {
@@ -60,6 +76,10 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     });
 
     try {
+      // 즉시 unitForm 상태 업데이트 (UI 즉시 반영) - UnitSettings와 동일한 방식
+      // device와 unit 정보를 전달하여 선택되지 않은 유닛에서도 동작하도록 함
+      onFormChange('power', checked, device.id, unit.id);
+
       // deviceSpec에서 power 명령어 찾기
       const powerCommand = deviceSpec?.commands?.find((cmd: any) => cmd.key === 'power' && cmd.set === true);
 
@@ -78,6 +98,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
       }
     } catch (error) {
       console.error('❌ Power 모드 변경 실패:', error);
+      // 롤백하지 않음 - UnitSettings와 동일 (폴링 데이터로 자연스럽게 복원)
     }
   };
 
@@ -89,6 +110,10 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     });
 
     try {
+      // 즉시 unitForm 상태 업데이트 (UI 즉시 반영) - UnitSettings와 동일한 방식
+      // device와 unit 정보를 전달하여 선택되지 않은 유닛에서도 동작하도록 함
+      onFormChange('auto', checked, device.id, unit.id);
+
       // deviceSpec에서 auto 명령어 찾기
       const autoCommand = deviceSpec?.commands?.find((cmd: any) => cmd.key === 'auto' && cmd.set === true);
 
@@ -107,40 +132,78 @@ export const UnitCard: React.FC<UnitCardProps> = ({
       }
     } catch (error) {
       console.error('❌ Auto 모드 변경 실패:', error);
+      // 롤백하지 않음 - UnitSettings와 동일 (폴링 데이터로 자연스럽게 복원)
     }
   };
 
   // 저장 버튼 핸들러 (CommandManager 사용)
-  const handleSaveWithCommandManager = useCallback(async () => {
-    if (!deviceSpec?.commands) return;
+  const handleSaveWithCommandManager = useCallback(
+    async (selectedUnits?: Set<string>) => {
+      if (!deviceSpec?.commands) return;
 
-    try {
-      console.log('💾 UnitCard에서 저장 명령 실행:', { device: device.id, unit: unit.id, unitForm });
+      try {
+        console.log('💾 UnitCard에서 저장 명령 실행:', {
+          device: device.id,
+          unit: unit.id,
+          unitForm,
+          selectedUnitsCount: selectedUnits?.size || 0,
+        });
 
-      // 폼 값에 해당하는 명령어들 생성
-      const commands = deviceSpec.commands
-        .filter(cmd => cmd.set && cmd.action?.set && unitForm[cmd.key] !== undefined)
-        .map(cmd => ({
-          action: cmd.action!.set!,
-          value: unitForm[cmd.key],
-        }))
-        .filter(cmd => cmd.action && typeof cmd.action === 'string');
+        // 폼 값에 해당하는 명령어들 생성
+        const commands = deviceSpec.commands
+          .filter(cmd => cmd.set && cmd.action?.set && unitForm[cmd.key] !== undefined)
+          .map(cmd => ({
+            action: cmd.action!.set!,
+            value: unitForm[cmd.key],
+          }))
+          .filter(cmd => cmd.action && typeof cmd.action === 'string');
 
-      if (commands.length === 0) {
-        console.log('⚠️ 실행할 명령어가 없습니다.');
-        return;
+        if (commands.length === 0) {
+          console.log('⚠️ 실행할 명령어가 없습니다.');
+          return;
+        }
+
+        console.log('🚀 저장 명령어들:', commands);
+
+        // 1. 현재 유닛에 명령 실행
+        await commandManager.executeCommand(commands);
+        console.log('✅ 현재 유닛 저장 명령이 성공적으로 전송되었습니다.');
+
+        // 2. 선택된 다른 유닛들에도 명령 실행
+        if (selectedUnits && selectedUnits.size > 0) {
+          const commandPromises = Array.from(selectedUnits).map(async unitKey => {
+            const [targetDeviceId, targetUnitId] = unitKey.split('_');
+            try {
+              console.log(`🚀 다른 유닛에 명령 전송: ${targetDeviceId}/${targetUnitId}`);
+              const result = await sendCommandMutation.mutateAsync({
+                deviceId: targetDeviceId,
+                unitId: targetUnitId,
+                commands,
+              });
+              console.log(`✅ 다른 유닛 명령 전송 성공: ${targetDeviceId}/${targetUnitId}`, result);
+              return { success: true, unitKey, result };
+            } catch (error) {
+              console.error(`❌ 다른 유닛 명령 전송 실패: ${targetDeviceId}/${targetUnitId}`, error);
+              return { success: false, unitKey, error };
+            }
+          });
+
+          const results = await Promise.allSettled(commandPromises);
+          const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+          const failCount = results.length - successCount;
+
+          console.log(`📊 다른 유닛 명령 실행 결과: 성공 ${successCount}개, 실패 ${failCount}개`);
+
+          if (failCount > 0) {
+            console.warn(`⚠️ 일부 유닛에 명령 전송 실패: ${failCount}개`);
+          }
+        }
+      } catch (error) {
+        console.error('❌ 저장 명령 실행 실패:', error);
       }
-
-      console.log('🚀 저장 명령어들:', commands);
-
-      // CommandManager를 통해 명령 실행
-      await commandManager.executeCommand(commands);
-
-      console.log('✅ 저장 명령이 성공적으로 전송되었습니다.');
-    } catch (error) {
-      console.error('❌ 저장 명령 실행 실패:', error);
-    }
-  }, [deviceSpec, unitForm, unit.id, device.id, commandManager]);
+    },
+    [deviceSpec, unitForm, unit.id, device.id, commandManager, sendCommandMutation]
+  );
 
   return (
     <>
@@ -237,26 +300,65 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                 })}
               </div>
             )}
-
-            {/* 선택된 유닛의 설정 폼 - auto=true일 때만 표시 */}
-            {canShowSettings && deviceSpec?.commands && (
-              <div className='mt-4 pt-4 border-t border-gray-200' onClick={e => e.stopPropagation()}>
-                <UnitSettings
-                  unit={unit}
-                  device={device}
-                  deviceSpec={deviceSpec}
-                  unitForm={unitForm}
-                  onFormChange={onFormChange}
-                  onSave={handleSaveWithCommandManager}
-                  onCancel={onCancel}
-                  bulkCommandsMutation={null}
-                  bulkStatus={bulkStatus}
-                  handleCopy={handleCopy}
-                  handlePaste={handlePaste}
-                />
-              </div>
-            )}
           </CardContent>
+
+          {/* 유닛 설정 다이얼로그 */}
+          {canShowSettings && deviceSpec?.commands && (
+            <Dialog
+              open={isSelected}
+              onOpenChange={open => {
+                if (!open) {
+                  onCancel();
+                }
+              }}
+            >
+              <DialogContent
+                className='max-w-[calc(100%-2rem)] sm:max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden border-gray-200/50 shadow-xl'
+                onClick={e => e.stopPropagation()}
+                showCloseButton={false}
+              >
+                {/* 헤더 */}
+                <DialogHeader className='px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-primary/5 via-primary/5 to-transparent'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-4'>
+                      <div className='w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm'>
+                        <Settings className='w-6 h-6 text-primary' />
+                      </div>
+                      <div>
+                        <DialogTitle className='text-xl font-bold text-gray-900 flex items-center gap-2'>
+                          {device.name || device.id}
+                        </DialogTitle>
+                        <DialogDescription className='text-sm text-gray-600 mt-1 flex items-center gap-2'>
+                          <span className='font-medium'>{unit.name || unit.id}</span>
+                          <span className='text-gray-400'>·</span>
+                          <span>{deviceSpec?.deviceName || device.type}</span>
+                        </DialogDescription>
+                      </div>
+                    </div>
+                  </div>
+                </DialogHeader>
+
+                {/* 컨텐츠 영역 - 스크롤 가능 */}
+                <div className='flex-1 overflow-y-auto px-6 py-6 min-h-0 custom-scrollbar'>
+                  <UnitSettings
+                    unit={unit}
+                    device={device}
+                    deviceSpec={deviceSpec}
+                    unitForm={unitForm}
+                    onFormChange={onFormChange}
+                    onSave={handleSaveWithCommandManager}
+                    onCancel={onCancel}
+                    bulkCommandsMutation={null}
+                    bulkStatus={bulkStatus}
+                    handleCopy={handleCopy}
+                    handlePaste={handlePaste}
+                    devices={devices}
+                    deviceSpecs={deviceSpecs}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </Card>
       </div>
 

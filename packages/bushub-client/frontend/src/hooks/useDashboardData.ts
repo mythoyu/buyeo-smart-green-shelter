@@ -37,39 +37,6 @@ export const useDashboardData = () => {
     refetchOnWindowFocus: false,
   });
 
-  // 🎯 디버깅: API 호출 상태 확인
-  console.log('useDashboardData Debug:', {
-    // 인증 상태 확인
-    auth: {
-      accessToken: sessionStorage.getItem('accessToken'),
-      user: sessionStorage.getItem('user'),
-    },
-    clientInfo: {
-      isLoading: clientInfo.isLoading,
-      isError: clientInfo.isError,
-      error: clientInfo.error,
-      data: clientInfo.data,
-    },
-    clientStatus: {
-      isLoading: clientStatus.isLoading,
-      isError: clientStatus.isError,
-      error: clientStatus.error,
-      data: clientStatus.data,
-    },
-    clientData: {
-      isLoading: clientData.isLoading,
-      isError: clientData.isError,
-      error: clientData.error,
-      data: clientData.data,
-    },
-    clientErrors: {
-      isLoading: clientErrors.isLoading,
-      isError: clientErrors.isError,
-      error: clientErrors.error,
-      data: clientErrors.data,
-    },
-  });
-
   // 공통 데이터 병합 로직 사용
   return useClientDataBase(clientInfo, clientStatus, clientData, clientErrors);
 };
