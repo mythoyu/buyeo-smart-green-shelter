@@ -1,20 +1,13 @@
 import { BarChart3 } from 'lucide-react';
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+
+import type { DeviceInfoDto } from '../../api/dto/Client.dto';
 
 import { STATUS_OPTIONS } from '../../constants/statusOptions';
 import { useApi } from '../../hooks/useApi';
 import { Card, CardContent } from '../ui';
 
 import { FilterBar } from './FilterBar';
-// 예시: useClientCatalog로 deviceTypeOptions 생성
-// import { useClientCatalog } from '@/hooks/useClientCatalog';
-// const catalog = useClientCatalog();
-// const deviceTypeOptions = catalog.map(meta => ({
-//   type: meta.deviceId,
-//   label: meta.deviceName,
-//   icon: meta.iconComponent || meta.icon,
-//   colorClass: meta.color,
-// }));
 
 interface DeviceTypeOption {
   type: string;
@@ -24,19 +17,24 @@ interface DeviceTypeOption {
   count?: number;
 }
 
+// DeviceWithStatus는 DeviceInfoDto를 확장하고 status를 추가한 타입
+interface DeviceWithStatus extends DeviceInfoDto {
+  status?: number;
+  units: Array<DeviceInfoDto['units'][number] & { status?: number }>;
+}
+
 interface DashboardFilterBarProps {
   selectedStatus: string;
   onSelectStatus: (key: string) => void;
   selectedType: string;
   onSelectType: (type: string) => void;
   className?: string;
-  devices?: any[]; // 🎯 장비 데이터 추가
+  devices?: DeviceWithStatus[];
 }
 
 export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
   ({ selectedStatus, onSelectStatus, selectedType, onSelectType, className = '', devices = [] }) => {
     const { deviceTypeOptions: allDeviceTypeOptions } = useApi().client.catalog();
-    const [openCardIdx, setOpenCardIdx] = useState<number | null>(null);
 
     // 🎯 실제 장비 데이터를 기반으로 status 카운트 계산
     const statusCounts = useMemo(() => {
@@ -47,7 +45,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
         '2': 0,
       };
 
-      devices.forEach((device: any) => {
+      devices.forEach(device => {
         // device.status를 number로 변환하여 타입 안전성 보장
         const status = Number(device.status ?? 0);
         const statusKey = String(status);
@@ -71,47 +69,28 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
       [statusCounts]
     );
 
-    // 🎯 실제 장비 데이터를 기반으로 장비 타입별 카운트 계산
-    const deviceTypeCounts = useMemo(() => {
+    // 🎯 실제 존재하는 장비 타입만 필터 옵션으로 생성 (카운트 포함)
+    const deviceTypeOptions = useMemo(() => {
       const counts: Record<string, number> = {};
+      const existingTypes = new Set<string>();
 
-      devices.forEach((device: any) => {
+      // 한 번의 순회로 카운트 계산 및 존재하는 타입 수집
+      devices.forEach(device => {
         const deviceType = device.type || '';
         if (deviceType) {
+          existingTypes.add(deviceType);
           counts[deviceType] = (counts[deviceType] || 0) + 1;
         }
       });
 
-      return counts;
-    }, [devices]);
-
-    // 🎯 실제 존재하는 장비 타입만 필터 옵션으로 생성
-    const deviceTypeOptions = useMemo(() => {
-      // 실제 장비 데이터에 존재하는 타입만 필터링
-      const existingTypes = new Set(devices.map((device: any) => device.type).filter(Boolean));
-
+      // 실제 존재하는 타입만 필터링하고 카운트 추가
       return allDeviceTypeOptions
         .filter((opt: DeviceTypeOption) => existingTypes.has(opt.type))
         .map((opt: DeviceTypeOption) => ({
           ...opt,
-          count: deviceTypeCounts[opt.type] || 0,
+          count: counts[opt.type] || 0,
         }));
-    }, [allDeviceTypeOptions, devices, deviceTypeCounts]);
-
-    const handleSelectType = useMemo(
-      () => (type: string) => {
-        onSelectType(type);
-        setOpenCardIdx(null);
-      },
-      [onSelectType]
-    );
-
-    const handleCardBlur = useMemo(
-      () => () => {
-        setTimeout(() => setOpenCardIdx(null), 150);
-      },
-      []
-    );
+    }, [allDeviceTypeOptions, devices]);
 
     return (
       <Card className={`w-full ${className}`}>
@@ -128,9 +107,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
               tabIndex={0}
               onClick={() => {
                 onSelectType('all');
-                setOpenCardIdx(null);
               }}
-              onBlur={() => setTimeout(() => setOpenCardIdx(null), 150)}
             >
               <CardContent className='flex flex-col items-center justify-center'>
                 {/* 1행: 아이콘 */}
@@ -142,7 +119,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
               </CardContent>
             </Card>
 
-            {deviceTypeOptions.map((opt: DeviceTypeOption & { count?: number }, idx: number) => (
+            {deviceTypeOptions.map((opt: DeviceTypeOption & { count?: number }) => (
               <Card
                 key={opt.type}
                 className={`flex-shrink-0 cursor-pointer select-none min-w-[120px] transition-all ${
@@ -153,9 +130,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
                 tabIndex={0}
                 onClick={() => {
                   onSelectType(opt.type);
-                  setOpenCardIdx(openCardIdx === idx ? null : idx);
                 }}
-                onBlur={() => setTimeout(() => setOpenCardIdx(null), 150)}
               >
                 <CardContent className='flex flex-col items-center justify-center'>
                   {/* 1행: 아이콘 */}

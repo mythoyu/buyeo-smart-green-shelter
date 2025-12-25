@@ -38,9 +38,6 @@ const DashboardPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const { isConnected } = useWebSocket({});
 
-  // 🆕 카드 접기/펼치기 상태
-  const [isDataApplyExpanded, setIsDataApplyExpanded] = useState(false);
-  const [isModeControlExpanded, setIsModeControlExpanded] = useState(false);
 
   // 🆕 필터링 로직 최적화 - 의존성 배열 최소화
   const filteredDevices = useMemo(() => {
@@ -56,7 +53,7 @@ const DashboardPage: React.FC = () => {
     }
 
     // 🆕 필터링 로직 최적화 - 타입 안전한 비교
-    return devices.filter((device: any) => {
+    return devices.filter((device) => {
       const typeMatch = isAllType || device.type === selectedType;
       // status를 number로 변환하여 타입 안전한 비교
       const deviceStatus = Number(device.status ?? 0);
@@ -171,13 +168,20 @@ const DashboardPage: React.FC = () => {
       />
 
       {/* 장비 목록 - 타입 안전성을 위해 any 타입 사용 */}
-      <DeviceListShowDetail
-        devices={filteredDevices as any[]}
-        deviceSpecs={deviceSpecs}
-        deviceStyles={deviceStyles}
-        onExecuteAction={executeDeviceAction}
-        getAvailableActions={getAvailableActions}
-      />
+      {filteredDevices.length === 0 && devices.length > 0 ? (
+        <div className='text-center py-12 space-y-2'>
+          <p className='text-gray-500 font-medium'>선택한 필터 조건에 맞는 장비가 없습니다.</p>
+          <p className='text-sm text-gray-400'>필터를 변경해보세요.</p>
+        </div>
+      ) : (
+        <DeviceListShowDetail
+          devices={filteredDevices as any[]}
+          deviceSpecs={deviceSpecs}
+          deviceStyles={deviceStyles}
+          onExecuteAction={executeDeviceAction}
+          getAvailableActions={getAvailableActions}
+        />
+      )}
 
       {/* Toast 알림 */}
     </div>

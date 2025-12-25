@@ -125,7 +125,9 @@ const DeviceListShowDetail: React.FC<DeviceListShowDetailProps> = ({ devices, de
 
   if (displayDevices.length === 0) {
     return (
-      <div className='text-gray-400 text-center py-8 font-medium animate-fade-in'>표시할 디바이스가 없습니다.</div>
+      <div className='text-gray-400 text-center py-8 font-medium animate-fade-in'>
+        표시할 디바이스가 없습니다.
+      </div>
     );
   }
 
