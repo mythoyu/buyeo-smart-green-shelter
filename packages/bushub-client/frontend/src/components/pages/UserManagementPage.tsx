@@ -14,6 +14,7 @@ import {
   Building,
   Edit,
   X,
+  CheckSquare2,
 } from 'lucide-react';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -52,6 +53,7 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  Checkbox,
 } from '../ui';
 
 // 새로운 커스텀 훅들 import
@@ -331,91 +333,136 @@ export default function UserManagementPage() {
       {/* 로그 패널 */}
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 헤더 */}
-      <div className='flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 flex items-center justify-center bg-muted rounded-full'>
-            <Users className='w-5 h-5 text-primary' />
-          </div>
-          <div>
-            <h1 className='text-xl font-bold'>사용자 관리</h1>
-            <p className='text-muted-foreground text-sm'>시스템 사용자 및 API 키 관리</p>
-          </div>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Badge variant='secondary' className='text-base px-3 py-1.5 font-semibold'>
-            {processedUsers.length}명
-          </Badge>
-          <Button onClick={() => setShowCreateUser(true)}>
-            <UserPlus className='w-4 h-4 mr-2' />
-            사용자 등록
-          </Button>
-        </div>
-      </div>
+      {/* 컨트롤 패널 */}
+      <Card>
+        <CardContent className='py-0'>
+          <div className='grid grid-cols-2 gap-4 items-center'>
+            {/* 왼쪽: 필터 */}
+            <div className='flex flex-wrap items-center gap-2'>
+              {/* 전체 */}
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                  selectedFilter === 'all'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-muted/50 hover:border-primary/50 hover:bg-muted'
+                }`}
+                onClick={() => setSelectedFilter('all')}
+              >
+                <Checkbox
+                  checked={selectedFilter === 'all'}
+                  onCheckedChange={() => setSelectedFilter('all')}
+                  onClick={e => e.stopPropagation()}
+                />
+                <div className='flex items-center gap-2'>
+                  <div className='flex items-center justify-center w-4 h-4 rounded bg-muted [&>svg]:w-full [&>svg]:h-full text-gray-600'>
+                    <CheckSquare2 className='w-full h-full' />
+                  </div>
+                  <span className='text-xs text-muted-foreground font-medium'>전체</span>
+                </div>
+              </div>
 
-      {/* 필터 */}
-      <div className='flex flex-wrap items-center gap-2 p-3 bg-muted/30 rounded-lg border border-border/50'>
-        <Button
-          variant={selectedFilter === 'all' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => setSelectedFilter('all')}
-          className={`min-w-[80px] transition-all ${
-            selectedFilter === 'all'
-              ? 'bg-primary text-primary-foreground shadow-sm border-primary'
-              : 'hover:bg-accent hover:border-primary/50 border-border/50'
-          }`}
-        >
-          전체
-        </Button>
-        <Button
-          variant={selectedFilter === 'superuser' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => setSelectedFilter('superuser')}
-          className={`min-w-[120px] transition-all ${
-            selectedFilter === 'superuser'
-              ? 'bg-purple-600 text-white border-purple-600 shadow-sm hover:bg-purple-700'
-              : 'hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 border-border/50'
-          }`}
-        >
-          시스템 관리자
-        </Button>
-        <Button
-          variant={selectedFilter === 'engineer' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => setSelectedFilter('engineer')}
-          className={`min-w-[80px] transition-all ${
-            selectedFilter === 'engineer'
-              ? 'bg-blue-600 text-white border-blue-600 shadow-sm hover:bg-blue-700'
-              : 'hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 border-border/50'
-          }`}
-        >
-          엔지니어
-        </Button>
-        <Button
-          variant={selectedFilter === 'user' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => setSelectedFilter('user')}
-          className={`min-w-[100px] transition-all ${
-            selectedFilter === 'user'
-              ? 'bg-green-600 text-white border-green-600 shadow-sm hover:bg-green-700'
-              : 'hover:bg-green-50 hover:border-green-300 hover:text-green-700 border-border/50'
-          }`}
-        >
-          내부사용자
-        </Button>
-        <Button
-          variant={selectedFilter === 'ex-user' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => setSelectedFilter('ex-user')}
-          className={`min-w-[100px] transition-all ${
-            selectedFilter === 'ex-user'
-              ? 'bg-orange-600 text-white border-orange-600 shadow-sm hover:bg-orange-700'
-              : 'hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 border-border/50'
-          }`}
-        >
-          외부사용자
-        </Button>
-      </div>
+              {/* 시스템 관리자 */}
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                  selectedFilter === 'superuser'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-purple-50/50 hover:border-primary/50 hover:bg-purple-100/50'
+                }`}
+                onClick={() => setSelectedFilter('superuser')}
+              >
+                <Checkbox
+                  checked={selectedFilter === 'superuser'}
+                  onCheckedChange={() => setSelectedFilter('superuser')}
+                  onClick={e => e.stopPropagation()}
+                />
+                <div className='flex items-center gap-2'>
+                  <div className='flex items-center justify-center w-4 h-4 rounded bg-purple-100 [&>svg]:w-full [&>svg]:h-full text-purple-600'>
+                    <Crown className='w-full h-full' />
+                  </div>
+                  <span className='text-xs text-muted-foreground'>시스템 관리자</span>
+                </div>
+              </div>
+
+              {/* 엔지니어 */}
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                  selectedFilter === 'engineer'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-blue-50/50 hover:border-primary/50 hover:bg-blue-100/50'
+                }`}
+                onClick={() => setSelectedFilter('engineer')}
+              >
+                <Checkbox
+                  checked={selectedFilter === 'engineer'}
+                  onCheckedChange={() => setSelectedFilter('engineer')}
+                  onClick={e => e.stopPropagation()}
+                />
+                <div className='flex items-center gap-2'>
+                  <div className='flex items-center justify-center w-4 h-4 rounded bg-blue-100 [&>svg]:w-full [&>svg]:h-full text-blue-600'>
+                    <Building className='w-full h-full' />
+                  </div>
+                  <span className='text-xs text-muted-foreground'>엔지니어</span>
+                </div>
+              </div>
+
+              {/* 내부사용자 */}
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                  selectedFilter === 'user'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-green-50/50 hover:border-primary/50 hover:bg-green-100/50'
+                }`}
+                onClick={() => setSelectedFilter('user')}
+              >
+                <Checkbox
+                  checked={selectedFilter === 'user'}
+                  onCheckedChange={() => setSelectedFilter('user')}
+                  onClick={e => e.stopPropagation()}
+                />
+                <div className='flex items-center gap-2'>
+                  <div className='flex items-center justify-center w-4 h-4 rounded bg-green-100 [&>svg]:w-full [&>svg]:h-full text-green-600'>
+                    <User className='w-full h-full' />
+                  </div>
+                  <span className='text-xs text-muted-foreground'>내부사용자</span>
+                </div>
+              </div>
+
+              {/* 외부사용자 */}
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                  selectedFilter === 'ex-user'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-orange-50/50 hover:border-primary/50 hover:bg-orange-100/50'
+                }`}
+                onClick={() => setSelectedFilter('ex-user')}
+              >
+                <Checkbox
+                  checked={selectedFilter === 'ex-user'}
+                  onCheckedChange={() => setSelectedFilter('ex-user')}
+                  onClick={e => e.stopPropagation()}
+                />
+                <div className='flex items-center gap-2'>
+                  <div className='flex items-center justify-center w-4 h-4 rounded bg-orange-100 [&>svg]:w-full [&>svg]:h-full text-orange-600'>
+                    <Globe className='w-full h-full' />
+                  </div>
+                  <span className='text-xs text-muted-foreground'>외부사용자</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 오른쪽: 기능들 (오른쪽 정렬) */}
+            <div className='flex items-center gap-2 justify-end'>
+              <Badge variant='secondary' className='text-base px-3 py-1.5 font-semibold'>
+                {processedUsers.length}명
+              </Badge>
+              <Button onClick={() => setShowCreateUser(true)}>
+                <UserPlus className='w-4 h-4 mr-2' />
+                사용자 등록
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 사용자 카드 목록 */}
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>

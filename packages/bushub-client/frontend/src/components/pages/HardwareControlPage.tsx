@@ -125,19 +125,6 @@ const UsageGuideCard = React.memo(() => (
   </Card>
 ));
 
-// 페이지 헤더 컴포넌트
-const PageHeader = React.memo(() => (
-  <div className='flex items-center justify-between'>
-    <div>
-      <h1 className='text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2'>
-        <Cpu className='h-6 w-6' />
-        {CONSTANTS.TITLES.HARDWARE_CONTROL}
-      </h1>
-      <p className='text-muted-foreground mt-2 text-sm'>{CONSTANTS.MESSAGES.DESCRIPTION}</p>
-    </div>
-  </div>
-));
-
 // 폴링 경고 컴포넌트
 const PollingWarningAlert = React.memo(() => (
   <Alert variant='destructive'>
@@ -256,8 +243,6 @@ const HardwareControlPage: React.FC = React.memo(() => {
 
   return (
     <div className='w-full p-6 space-y-6'>
-      {/* 페이지 헤더 */}
-      <PageHeader />
 
       {/* 폴링 활성화 경고 */}
       {isPollingActive && <PollingWarningAlert />}

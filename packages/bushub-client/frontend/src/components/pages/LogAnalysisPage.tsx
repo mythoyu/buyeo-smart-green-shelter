@@ -27,7 +27,7 @@ export default function LogAnalysisPage() {
 
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [linesToShow, setLinesToShow] = useState<number>(100);
+  const [linesToShow, setLinesToShow] = useState<number | 'all'>(100);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [refreshStatus, setRefreshStatus] = useState<string>('');
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
@@ -52,7 +52,7 @@ export default function LogAnalysisPage() {
     refetch: refetchContent,
   } = useGetLogContent({
     filename: selectedFile,
-    lines: linesToShow,
+    ...(linesToShow !== 'all' && { lines: linesToShow }),
     enabled: !!selectedFile,
     staleTime: 2 * 60 * 1000, // 2분 캐시
     refetchOnWindowFocus: false, // 로그 내용은 자동 갱신 불필요
@@ -228,114 +228,98 @@ export default function LogAnalysisPage() {
   };
 
   return (
-    <div className='space-y-2'>
+    <div className='flex flex-col' style={{ height: 'calc(100vh - 6rem)' }}>
       {/* 로그 패널 */}
-      <TopLogPanel isConnected={isConnected} />
+      <div className='flex-shrink-0'>
+        <TopLogPanel isConnected={isConnected} />
+      </div>
 
-      <div className='flex flex-col space-y-6'>
-        {/* 헤더 */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='w-10 h-10 flex items-center justify-center bg-muted rounded-full'>
-              <FileText className='w-5 h-5 text-primary' />
-            </div>
-            <div>
-              <h1 className='text-xl font-bold'>로그 분석</h1>
-              <p className='text-muted-foreground text-sm'>
-                시스템 로그를 분석하고 검색할 수 있습니다
-                {lastRefreshTime && (
-                  <span className='ml-2 text-xs'>• 마지막 새로고침: {formatLastRefreshTime(lastRefreshTime)}</span>
-                )}
-              </p>
-            </div>
-          </div>
-          <Button onClick={handleFullRefresh} disabled={isRefreshing || isFilesLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? refreshStatus || '전체 새로고침 중...' : '전체 새로고침'}
-          </Button>
-        </div>
-
+      <div className='flex-1 flex flex-col space-y-6 min-h-0'>
         {/* 컨트롤 패널 */}
         <Card>
           <CardContent className='py-0'>
-            <div className='flex items-center gap-4 flex-wrap'>
-              <div className='flex items-center gap-2'>
-                <label className='text-sm font-medium'>파일:</label>
-                <Select value={selectedFile} onValueChange={setSelectedFile} disabled={isFilesLoading}>
-                  <SelectTrigger className='w-[200px]'>
-                    <SelectValue placeholder={isFilesLoading ? '로딩 중...' : '로그 파일을 선택하세요'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isFilesLoading ? (
-                      <div className='p-2 text-center text-sm text-muted-foreground'>
-                        <RefreshCw className='w-4 h-4 animate-spin mx-auto mb-2' />
-                        로딩 중...
-                      </div>
-                    ) : (
-                      processedLogFiles.map((file: any) => (
-                        <SelectItem key={file.filename} value={file.filename}>
-                          {getDisplayFilename(file.filename)}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+            <div className='grid grid-cols-2 gap-4 items-center'>
+              {/* 왼쪽 열: 검색 패널 */}
+              <div className='flex items-center gap-3'>
+                <div className='w-8 h-8 flex items-center justify-center bg-muted rounded-full flex-shrink-0'>
+                  <Search className='w-4 h-4 text-primary' />
+                </div>
+                <div className='flex-1 flex gap-2'>
+                  <Input
+                    type='text'
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder='검색어를 입력하세요... (GZIP, ZIP 압축 파일도 검색됩니다)'
+                    onKeyPress={e => e.key === 'Enter' && handleSearch()}
+                  />
+                  <Button onClick={handleSearch} disabled={isSearchLoading || !searchQuery.trim()}>
+                    <Search className={`w-4 h-4 mr-2 ${isSearchLoading ? 'animate-spin' : ''}`} />
+                    {isSearchLoading ? '검색 중...' : '검색'}
+                  </Button>
+                  <Button onClick={() => setSearchQuery('')} variant='outline' disabled={isSearchLoading}>
+                    초기화
+                  </Button>
+                </div>
               </div>
-              <div className='flex items-center gap-2'>
-                <label className='text-sm font-medium'>라인:</label>
-                <Select
-                  value={linesToShow.toString()}
-                  onValueChange={value => setLinesToShow(Number(value))}
-                  disabled={isContentLoading}
-                >
-                  <SelectTrigger className='w-[100px]'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='50'>50줄</SelectItem>
-                    <SelectItem value='100'>100줄</SelectItem>
-                    <SelectItem value='200'>200줄</SelectItem>
-                    <SelectItem value='500'>500줄</SelectItem>
-                    <SelectItem value='1000'>1000줄</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {selectedFile && (
-                <Button
-                  onClick={() => handleDownloadLogFile(selectedFile)}
-                  variant='outline'
-                  size='sm'
-                  disabled={isContentLoading}
-                >
-                  <Download className='w-4 h-4 mr-2' />
-                  다운로드
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* 검색 패널 */}
-        <Card>
-          <CardContent className='py-0'>
-            <div className='flex items-center gap-3'>
-              <div className='w-8 h-8 flex items-center justify-center bg-muted rounded-full'>
-                <Search className='w-4 h-4 text-primary' />
-              </div>
-              <div className='flex-1 flex gap-2'>
-                <Input
-                  type='text'
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder='검색어를 입력하세요... (GZIP, ZIP 압축 파일도 검색됩니다)'
-                  onKeyPress={e => e.key === 'Enter' && handleSearch()}
-                />
-                <Button onClick={handleSearch} disabled={isSearchLoading || !searchQuery.trim()}>
-                  <Search className={`w-4 h-4 mr-2 ${isSearchLoading ? 'animate-spin' : ''}`} />
-                  {isSearchLoading ? '검색 중...' : '검색'}
-                </Button>
-                <Button onClick={() => setSearchQuery('')} variant='outline' disabled={isSearchLoading}>
-                  초기화
+              {/* 오른쪽 열: 파일 선택 */}
+              <div className='flex items-center gap-4 justify-end'>
+                <div className='flex items-center gap-2'>
+                  <label className='text-sm font-medium'>파일:</label>
+                  <Select value={selectedFile} onValueChange={setSelectedFile} disabled={isFilesLoading}>
+                    <SelectTrigger className='w-[200px]'>
+                      <SelectValue placeholder={isFilesLoading ? '로딩 중...' : '로그 파일을 선택하세요'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isFilesLoading ? (
+                        <div className='p-2 text-center text-sm text-muted-foreground'>
+                          <RefreshCw className='w-4 h-4 animate-spin mx-auto mb-2' />
+                          로딩 중...
+                        </div>
+                      ) : (
+                        processedLogFiles.map((file: any) => (
+                          <SelectItem key={file.filename} value={file.filename}>
+                            {getDisplayFilename(file.filename)}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <label className='text-sm font-medium'>라인:</label>
+                  <Select
+                    value={linesToShow.toString()}
+                    onValueChange={value => setLinesToShow(value === 'all' ? 'all' : Number(value))}
+                    disabled={isContentLoading}
+                  >
+                    <SelectTrigger className='w-[100px]'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='all'>전체</SelectItem>
+                      <SelectItem value='50'>50줄</SelectItem>
+                      <SelectItem value='100'>100줄</SelectItem>
+                      <SelectItem value='200'>200줄</SelectItem>
+                      <SelectItem value='500'>500줄</SelectItem>
+                      <SelectItem value='1000'>1000줄</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedFile && (
+                  <Button
+                    onClick={() => handleDownloadLogFile(selectedFile)}
+                    variant='outline'
+                    size='sm'
+                    disabled={isContentLoading}
+                  >
+                    <Download className='w-4 h-4 mr-2' />
+                    다운로드
+                  </Button>
+                )}
+                <Button onClick={handleFullRefresh} disabled={isRefreshing || isFilesLoading}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? refreshStatus || '전체 새로고침 중...' : '전체 새로고침'}
                 </Button>
               </div>
             </div>
@@ -343,8 +327,8 @@ export default function LogAnalysisPage() {
         </Card>
 
         {/* 로그 내용 */}
-        <Card className='flex-1'>
-          <CardHeader>
+        <Card className='flex-1 flex flex-col min-h-0 overflow-hidden'>
+          <CardHeader className='flex-shrink-0'>
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-3'>
                 <div className='w-8 h-8 flex items-center justify-center bg-muted rounded-full'>
@@ -353,7 +337,7 @@ export default function LogAnalysisPage() {
                 <CardTitle>로그 내용</CardTitle>
               </div>
               <div className='flex items-center gap-2'>
-                {processedLogContent && <Badge variant='secondary'>{processedLogContent.totalLines}줄</Badge>}
+                {processedLogContent && <Badge variant='secondary'>{processedLogContent.lines.length}줄</Badge>}
                 {processedLogContent?.isCompressed && (
                   <Badge variant='outline'>
                     <Archive className='w-3 h-3 mr-1' />
@@ -367,70 +351,82 @@ export default function LogAnalysisPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className='p-0'>
+          <CardContent className='p-0 flex-1 flex flex-col min-h-0 overflow-hidden'>
             {/* 파일 목록 에러 */}
             {hasFilesError && (
-              <div className='text-center py-8'>
-                <AlertCircle className='w-8 h-8 mx-auto mb-2 text-destructive' />
-                <p className='text-destructive'>로그 파일 목록을 불러올 수 없습니다.</p>
-                <p className='text-muted-foreground text-sm mt-1'>{getErrorMessage(filesError)}</p>
-                <Button onClick={() => refetchFiles()} variant='outline' size='sm' className='mt-2'>
-                  다시 시도
-                </Button>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <AlertCircle className='w-8 h-8 mx-auto mb-2 text-destructive' />
+                  <p className='text-destructive'>로그 파일 목록을 불러올 수 없습니다.</p>
+                  <p className='text-muted-foreground text-sm mt-1'>{getErrorMessage(filesError)}</p>
+                  <Button onClick={() => refetchFiles()} variant='outline' size='sm' className='mt-2'>
+                    다시 시도
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* 로그 내용 에러 */}
             {hasContentError && (
-              <div className='text-center py-8'>
-                <AlertCircle className='w-8 h-8 mx-auto mb-2 text-destructive' />
-                <p className='text-destructive'>로그 내용을 불러올 수 없습니다.</p>
-                <p className='text-muted-foreground text-sm mt-1'>{getErrorMessage(contentError)}</p>
-                <Button onClick={() => refetchContent()} variant='outline' size='sm' className='mt-2'>
-                  다시 시도
-                </Button>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <AlertCircle className='w-8 h-8 mx-auto mb-2 text-destructive' />
+                  <p className='text-destructive'>로그 내용을 불러올 수 없습니다.</p>
+                  <p className='text-muted-foreground text-sm mt-1'>{getErrorMessage(contentError)}</p>
+                  <Button onClick={() => refetchContent()} variant='outline' size='sm' className='mt-2'>
+                    다시 시도
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* 검색 에러 */}
             {hasSearchError && (
-              <div className='text-center py-8'>
-                <AlertCircle className='w-8 h-8 mx-auto mb-2 text-destructive' />
-                <p className='text-destructive'>검색 중 오류가 발생했습니다.</p>
-                <p className='text-muted-foreground text-sm mt-1'>{getErrorMessage(searchError)}</p>
-                <Button onClick={() => refetchSearch()} variant='outline' size='sm' className='mt-2'>
-                  다시 시도
-                </Button>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <AlertCircle className='w-8 h-8 mx-auto mb-2 text-destructive' />
+                  <p className='text-destructive'>검색 중 오류가 발생했습니다.</p>
+                  <p className='text-muted-foreground text-sm mt-1'>{getErrorMessage(searchError)}</p>
+                  <Button onClick={() => refetchSearch()} variant='outline' size='sm' className='mt-2'>
+                    다시 시도
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* 파일 목록 로딩 */}
             {isFilesLoading && (
-              <div className='text-center py-8'>
-                <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
-                <p className='text-muted-foreground'>파일 목록을 불러오는 중...</p>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
+                  <p className='text-muted-foreground'>파일 목록을 불러오는 중...</p>
+                </div>
               </div>
             )}
 
             {/* 로그 내용 로딩 */}
             {isContentLoading && (
-              <div className='text-center py-8'>
-                <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
-                <p className='text-muted-foreground'>로그 내용을 불러오는 중...</p>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
+                  <p className='text-muted-foreground'>로그 내용을 불러오는 중...</p>
+                </div>
               </div>
             )}
 
             {/* 검색 로딩 */}
             {isSearchLoading && (
-              <div className='text-center py-8'>
-                <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
-                <p className='text-muted-foreground'>검색 중...</p>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
+                  <p className='text-muted-foreground'>검색 중...</p>
+                </div>
               </div>
             )}
 
             {/* 로그 내용 표시 */}
             {processedLogContent && !isAnyLoading && !hasContentError && !hasSearchError ? (
-              <div className='h-[calc(100vh-16rem)] overflow-y-auto bg-muted p-4 font-mono text-sm border-t custom-scrollbar'>
+              <div className='flex-1 overflow-y-auto bg-muted p-4 font-mono text-sm border-t custom-scrollbar min-h-0'>
                 {processedLogContent.lines.length === 0 ? (
                   <div className='text-center py-8'>
                     <FileText className='w-8 h-8 mx-auto mb-2 text-muted-foreground' />
@@ -445,9 +441,11 @@ export default function LogAnalysisPage() {
                 )}
               </div>
             ) : !isAnyLoading && !hasFilesError && !hasContentError && !hasSearchError ? (
-              <div className='text-center py-8'>
-                <FileText className='w-8 h-8 mx-auto mb-2 text-muted-foreground' />
-                <p className='text-muted-foreground'>로그 파일을 선택하거나 검색어를 입력하세요.</p>
+              <div className='flex-1 flex items-center justify-center'>
+                <div className='text-center py-8'>
+                  <FileText className='w-8 h-8 mx-auto mb-2 text-muted-foreground' />
+                  <p className='text-muted-foreground'>로그 파일을 선택하거나 검색어를 입력하세요.</p>
+                </div>
               </div>
             ) : null}
           </CardContent>

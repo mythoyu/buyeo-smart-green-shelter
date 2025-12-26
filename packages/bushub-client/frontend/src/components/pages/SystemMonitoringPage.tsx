@@ -148,26 +148,27 @@ const SystemMonitoringPage = () => {
 
   return (
     <div className='w-full p-6 space-y-6'>
-      {/* 헤더 */}
-      <div className='flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <Activity className='h-8 w-8 text-primary' />
-          <div>
-            <h1 className='text-2xl font-bold'>시스템 모니터링</h1>
-            <p className='text-muted-foreground'>실시간 시스템 상태 및 성능 모니터링</p>
+      {/* 컨트롤 패널 */}
+      <Card>
+        <CardContent className='py-0'>
+          <div className='grid grid-cols-2 gap-4 items-center'>
+            {/* 왼쪽: 비어있음 */}
+            <div></div>
+
+            {/* 오른쪽: 기능들 (오른쪽 정렬) */}
+            <div className='flex items-center gap-3 justify-end'>
+              <Badge variant={getStatusVariant(overallStatus)} className='text-sm'>
+                <span className='mr-1'>{getStatusIcon(overallStatus)}</span>
+                {getStatusText(overallStatus)}
+              </Badge>
+              <Button onClick={() => refetch()} variant='outline' size='sm'>
+                <RefreshCw className='h-4 w-4 mr-2' />
+                새로고침
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className='flex items-center gap-3'>
-          <Badge variant={getStatusVariant(overallStatus)} className='text-sm'>
-            <span className='mr-1'>{getStatusIcon(overallStatus)}</span>
-            {getStatusText(overallStatus)}
-          </Badge>
-          <Button onClick={() => refetch()} variant='outline' size='sm'>
-            <RefreshCw className='h-4 w-4 mr-2' />
-            새로고침
-          </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* 상태 카드 그리드 */}
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>

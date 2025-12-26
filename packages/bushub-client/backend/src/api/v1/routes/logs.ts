@@ -236,7 +236,7 @@ export default async function logsRoutes(app: FastifyInstance): Promise<void> {
     LOGS_ENDPOINTS.CONTENT,
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { filename, lines = 100, search } = request.query as any;
+      const { filename, lines, search } = request.query as any;
 
       try {
         if (!filename) {
@@ -261,17 +261,24 @@ export default async function logsRoutes(app: FastifyInstance): Promise<void> {
 
         // 압축 해제 또는 일반 파일 읽기
         const content = await decompressFile(filePath, filename);
-        let lines_array = content.split('\n').filter((line) => line.trim());
+        let lines_array = content.split('\n');
 
-        // 검색어가 있으면 필터링
+        // 마지막 줄이 빈 줄인 경우 제거 (split('\n')으로 인한 빈 줄)
+        if (lines_array.length > 0 && lines_array[lines_array.length - 1] === '') {
+          lines_array = lines_array.slice(0, -1);
+        }
+
+        // 검색어가 있으면 필터링 (검색 시에만 빈 줄 제외)
         if (search) {
           lines_array = lines_array.filter((line) => line.toLowerCase().includes(search.toLowerCase()));
         }
 
         // 라인 수 제한
         const totalLines = lines_array.length;
-        const requestedLines = Math.min(Number(lines), totalLines);
-        const resultLines = lines_array.slice(-requestedLines);
+        // lines 파라미터가 없거나 undefined, null, 빈 문자열이면 전체 반환
+        const requestedLines =
+          lines === undefined || lines === null || lines === '' ? totalLines : Math.min(Number(lines), totalLines);
+        const resultLines = requestedLines === totalLines ? lines_array : lines_array.slice(-requestedLines);
 
         return reply.send(
           createSuccessResponse('로그 파일 내용 조회 성공', {
