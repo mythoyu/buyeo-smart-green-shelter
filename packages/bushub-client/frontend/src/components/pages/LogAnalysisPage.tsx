@@ -1,5 +1,6 @@
-import { RefreshCw, Search, FileText, Download, Archive, AlertCircle } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { RefreshCw, Search, FileText, Download, Archive, AlertCircle, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 
 import { useGetLogFiles, useGetLogContent, useSearchLogs, downloadLogFile } from '../../api/queries/logs';
@@ -10,8 +11,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Select,
   SelectContent,
@@ -31,6 +30,19 @@ export default function LogAnalysisPage() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [refreshStatus, setRefreshStatus] = useState<string>('');
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+
+  // 정렬 순서 상태 (localStorage에서 읽어오기, 기본값: 'asc' - 시간오름차순)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
+    const saved = localStorage.getItem('logSortOrder');
+    return saved === 'asc' || saved === 'desc' ? saved : 'asc';
+  });
+
+  // 정렬 순서 변경 핸들러
+  const handleSortToggle = () => {
+    const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(newOrder);
+    localStorage.setItem('logSortOrder', newOrder);
+  };
 
   // React Query 훅 직접 사용
   const {
@@ -82,23 +94,140 @@ export default function LogAnalysisPage() {
     }));
   }, [logFilesData]);
 
+  // 로그 라인 파싱 함수 - 유연한 파싱 (JSON, 텍스트 형식 모두 지원)
+  const parseLogLine = (line: string) => {
+    // 1. JSON 형식 파싱 시도 (winston.format.json())
+    try {
+      const jsonData = JSON.parse(line);
+      if (jsonData.timestamp && jsonData.level && jsonData.message) {
+        return {
+          timestamp: jsonData.timestamp,
+          level: String(jsonData.level).toUpperCase(),
+          message: String(jsonData.message),
+          raw: line,
+        };
+      }
+    } catch {
+      // JSON 파싱 실패 시 다음 단계로
+    }
+
+    // 2. [timestamp] LEVEL : message 형식 파싱
+    const bracketMatch = line.match(/^\[([^\]]+)\]\s+(\w+)\s+:\s+(.*)$/);
+    if (bracketMatch) {
+      return {
+        timestamp: bracketMatch[1],
+        level: bracketMatch[2].toUpperCase(),
+        message: bracketMatch[3],
+        raw: line,
+      };
+    }
+
+    // 3. timestamp LEVEL message 형식 파싱 (공백으로 분리)
+    const parts = line.trim().split(/\s+/);
+    if (parts.length >= 3) {
+      // 타임스탬프 형식 확인 (YYYY-MM-DD 또는 YYYY-MM-DD HH:mm:ss 등)
+      const timestampPattern = /^\d{4}-\d{2}-\d{2}/;
+      if (timestampPattern.test(parts[0])) {
+        // 첫 번째가 타임스탬프일 가능성이 높음
+        const possibleLevel = parts.find(part => /^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)$/i.test(part));
+        if (possibleLevel) {
+          const timestampIndex = 0;
+          const levelIndex = parts.indexOf(possibleLevel);
+          const messageStart = levelIndex + 1;
+
+          return {
+            timestamp: parts.slice(timestampIndex, levelIndex).join(' '),
+            level: possibleLevel.toUpperCase(),
+            message: parts.slice(messageStart).join(' '),
+            raw: line,
+          };
+        }
+      }
+    }
+
+    // 4. 파싱 실패 시 전체를 메시지로 표시
+    return {
+      timestamp: undefined,
+      level: undefined,
+      message: line,
+      raw: line,
+    };
+  };
+
+  // 로그 레벨별 색상/스타일 가져오기 (배경색과 텍스트 색상 명확하게 구분)
+  const getLevelStyle = (level?: string) => {
+    if (!level) return { bgColor: 'bg-muted', textColor: 'text-muted-foreground' };
+
+    switch (level) {
+      case 'ERROR':
+      case 'FATAL':
+        return { bgColor: 'bg-red-600', textColor: 'text-white' };
+      case 'WARN':
+      case 'WARNING':
+        return { bgColor: 'bg-yellow-500', textColor: 'text-yellow-950' };
+      case 'INFO':
+        return { bgColor: 'bg-blue-600', textColor: 'text-white' };
+      case 'DEBUG':
+      case 'TRACE':
+        return { bgColor: 'bg-gray-400', textColor: 'text-gray-900' };
+      default:
+        return { bgColor: 'bg-muted', textColor: 'text-muted-foreground' };
+    }
+  };
+
   const processedLogContent = useMemo(() => {
     if (searchData && typeof searchData === 'object' && 'success' in searchData && searchData.success) {
+      const results = (searchData as { results?: string[] }).results;
+      const totalResults = (searchData as { totalResults?: number }).totalResults;
       return {
         filename: selectedFile || '검색 결과',
-        lines: (searchData as any).results || [],
-        totalLines: (searchData as any).totalResults || 0,
+        lines: Array.isArray(results) ? results : [],
+        totalLines: typeof totalResults === 'number' ? totalResults : 0,
         isCompressed: selectedFile ? selectedFile.endsWith('.gz') || selectedFile.endsWith('.zip') : false,
       };
     }
     if (logContentData && typeof logContentData === 'object' && 'success' in logContentData && logContentData.success) {
+      const lines = (logContentData as { lines?: string[] }).lines;
       return {
         ...logContentData,
+        lines: Array.isArray(lines) ? lines : [],
         isCompressed: selectedFile ? selectedFile.endsWith('.gz') || selectedFile.endsWith('.zip') : false,
       };
     }
     return null;
   }, [logContentData, searchData, selectedFile]);
+
+  // 파싱된 로그 데이터 메모이제이션 (성능 최적화)
+  const parsedLogs = useMemo(() => {
+    if (!processedLogContent || !Array.isArray(processedLogContent.lines)) return [];
+    const logs = processedLogContent.lines.map((line: string, index: number) => {
+      const parsed = parseLogLine(String(line));
+      return {
+        ...parsed,
+        index,
+        levelStyle: getLevelStyle(parsed.level),
+      };
+    });
+
+    // 정렬 순서에 따라 정렬 (시간오름차순/시간내림차순)
+    if (sortOrder === 'desc') {
+      // 시간내림차순: 최신 로그가 위에 (배열을 복사한 후 역순)
+      return [...logs].reverse();
+    }
+    // 시간오름차순: 오래된 로그가 위에 (기본값, 원본 순서 유지)
+    return logs;
+  }, [processedLogContent, sortOrder]);
+
+  // 가상화를 위한 스크롤 컨테이너 ref
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  // 가상화 설정
+  const virtualizer = useVirtualizer({
+    count: parsedLogs.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 48, // 각 로그 라인의 예상 높이 (px)
+    overscan: 5, // 화면 밖에 미리 렌더링할 아이템 수
+  });
 
   // 로딩 상태 세분화
   const isFilesLoading = filesLoading;
@@ -120,17 +249,16 @@ export default function LogAnalysisPage() {
   const handleFullRefresh = async () => {
     try {
       setIsRefreshing(true);
-      setRefreshStatus('파일 목록 새로고침 중...');
+      setRefreshStatus('새로고침 중...');
 
       // 파일 목록 새로고침
       await refetchFiles({ cancelRefetch: false });
 
       if (selectedFile) {
-        setRefreshStatus('파일 내용 새로고침 중...');
+        setRefreshStatus('새로고침 중...');
         await refetchContent({ cancelRefetch: false });
       }
 
-      setRefreshStatus('새로고침 완료');
       setLastRefreshTime(new Date());
       toast.success('전체 로그가 새로고침되었습니다.', { id: 'logs-refresh-success' });
     } catch (error) {
@@ -156,11 +284,18 @@ export default function LogAnalysisPage() {
     }
   }, [processedLogFiles, selectedFile]);
 
-  // 로그 파일 다운로드 (압축 파일은 해제된 내용으로 다운로드)
+  // 로그 파일 다운로드 (압축 파일은 해제된 내용으로 다운로드, 설정값에 맞게 다운로드)
   const handleDownloadLogFile = async (filename: string) => {
     try {
+      // 설정값(linesToShow)에 맞게 다운로드
+      const downloadParams: { filename: string; lines?: number } = { filename };
+      if (linesToShow !== 'all') {
+        downloadParams.lines = linesToShow;
+      }
+      // lines가 없으면 전체 다운로드
+
       // React Query 함수 사용
-      const result = await downloadLogFile({ filename, lines: 10000 });
+      const result = await downloadLogFile(downloadParams);
 
       if (result.success) {
         const content = result.data;
@@ -181,7 +316,8 @@ export default function LogAnalysisPage() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast.success(`${downloadName} 파일이 다운로드되었습니다.`, {
+        const lineInfo = linesToShow === 'all' ? '전체' : `${linesToShow}줄`;
+        toast.success(`${downloadName} 파일 (${lineInfo})이 다운로드되었습니다.`, {
           id: `logs-download-success-${downloadName}`,
         });
       } else {
@@ -201,30 +337,6 @@ export default function LogAnalysisPage() {
       return `${filename.slice(0, -4)} (ZIP 압축됨)`;
     }
     return filename;
-  };
-
-  // 마지막 새로고침 시간 포맷팅
-  const formatLastRefreshTime = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (seconds < 60) {
-      return `${seconds}초 전`;
-    } else if (minutes < 60) {
-      return `${minutes}분 전`;
-    } else if (hours < 24) {
-      return `${hours}시간 전`;
-    }
-    return date.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   return (
@@ -256,7 +368,13 @@ export default function LogAnalysisPage() {
                     <Search className={`w-4 h-4 mr-2 ${isSearchLoading ? 'animate-spin' : ''}`} />
                     {isSearchLoading ? '검색 중...' : '검색'}
                   </Button>
-                  <Button onClick={() => setSearchQuery('')} variant='outline' disabled={isSearchLoading}>
+                  <Button
+                    onClick={() => setSearchQuery('')}
+                    variant='outline'
+                    disabled={isSearchLoading}
+                    className='min-w-[80px] border-border/50 hover:border-border bg-muted/50 hover:bg-muted'
+                  >
+                    <X className='w-4 h-4 mr-2' />
                     초기화
                   </Button>
                 </div>
@@ -307,19 +425,40 @@ export default function LogAnalysisPage() {
                   </Select>
                 </div>
                 {selectedFile && (
-                  <Button
-                    onClick={() => handleDownloadLogFile(selectedFile)}
-                    variant='outline'
-                    size='sm'
-                    disabled={isContentLoading}
-                  >
-                    <Download className='w-4 h-4 mr-2' />
-                    다운로드
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => handleDownloadLogFile(selectedFile)}
+                      variant='outline'
+                      disabled={isContentLoading}
+                      className='min-w-[100px] border-border/50 hover:border-border bg-muted/50 hover:bg-muted'
+                    >
+                      <Download className='w-4 h-4 mr-2' />
+                      다운로드
+                    </Button>
+                    <Button
+                      onClick={handleSortToggle}
+                      variant='outline'
+                      disabled={isContentLoading || !processedLogContent}
+                      title={sortOrder === 'asc' ? '시간내림차순으로 정렬' : '시간오름차순으로 정렬'}
+                      className='min-w-[120px] border-border/50 hover:border-border bg-muted/50 hover:bg-muted'
+                    >
+                      {sortOrder === 'asc' ? (
+                        <>
+                          <ArrowDown className='w-4 h-4 mr-2' />
+                          시간내림차순
+                        </>
+                      ) : (
+                        <>
+                          <ArrowUp className='w-4 h-4 mr-2' />
+                          시간오름차순
+                        </>
+                      )}
+                    </Button>
+                  </>
                 )}
                 <Button onClick={handleFullRefresh} disabled={isRefreshing || isFilesLoading}>
                   <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  {isRefreshing ? refreshStatus || '전체 새로고침 중...' : '전체 새로고침'}
+                  {isRefreshing ? refreshStatus || '새로고침 중...' : '새로고침'}
                 </Button>
               </div>
             </div>
@@ -328,29 +467,6 @@ export default function LogAnalysisPage() {
 
         {/* 로그 내용 */}
         <Card className='flex-1 flex flex-col min-h-0 overflow-hidden'>
-          <CardHeader className='flex-shrink-0'>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-3'>
-                <div className='w-8 h-8 flex items-center justify-center bg-muted rounded-full'>
-                  <FileText className='w-4 h-4 text-primary' />
-                </div>
-                <CardTitle>로그 내용</CardTitle>
-              </div>
-              <div className='flex items-center gap-2'>
-                {processedLogContent && <Badge variant='secondary'>{processedLogContent.lines.length}줄</Badge>}
-                {processedLogContent?.isCompressed && (
-                  <Badge variant='outline'>
-                    <Archive className='w-3 h-3 mr-1' />
-                    {selectedFile?.endsWith('.gz')
-                      ? 'GZIP 해제됨'
-                      : selectedFile?.endsWith('.zip')
-                      ? 'ZIP 해제됨'
-                      : '압축 해제됨'}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </CardHeader>
           <CardContent className='p-0 flex-1 flex flex-col min-h-0 overflow-hidden'>
             {/* 파일 목록 에러 */}
             {hasFilesError && (
@@ -426,18 +542,59 @@ export default function LogAnalysisPage() {
 
             {/* 로그 내용 표시 */}
             {processedLogContent && !isAnyLoading && !hasContentError && !hasSearchError ? (
-              <div className='flex-1 overflow-y-auto bg-muted p-4 font-mono text-sm border-t custom-scrollbar min-h-0'>
-                {processedLogContent.lines.length === 0 ? (
+              <div ref={parentRef} className='flex-1 overflow-y-auto bg-muted custom-scrollbar min-h-0'>
+                {parsedLogs.length === 0 ? (
                   <div className='text-center py-8'>
                     <FileText className='w-8 h-8 mx-auto mb-2 text-muted-foreground' />
                     <p className='text-muted-foreground'>로그 내용이 없습니다.</p>
                   </div>
                 ) : (
-                  processedLogContent.lines.map((line: any, index: any) => (
-                    <div key={index} className='py-1 hover:bg-accent px-2 rounded transition-colors'>
-                      {line}
-                    </div>
-                  ))
+                  <div
+                    style={{
+                      height: `${virtualizer.getTotalSize()}px`,
+                      width: '100%',
+                      position: 'relative',
+                    }}
+                  >
+                    {virtualizer.getVirtualItems().map(virtualItem => {
+                      const logItem = parsedLogs[virtualItem.index];
+                      if (!logItem) return null;
+
+                      return (
+                        <div
+                          key={virtualItem.key}
+                          data-index={virtualItem.index}
+                          ref={virtualizer.measureElement}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${virtualItem.start}px)`,
+                          }}
+                        >
+                          <div className='grid grid-cols-[180px_80px_1fr] gap-4 items-center py-1.5 px-3 hover:bg-accent/50 transition-colors'>
+                            {/* 타임스탬프 */}
+                            <span className='text-xs text-muted-foreground font-mono'>{logItem.timestamp || ''}</span>
+
+                            {/* 레벨 */}
+                            {logItem.level ? (
+                              <Badge
+                                className={`${logItem.levelStyle.bgColor} ${logItem.levelStyle.textColor} w-fit text-xs font-medium px-2 py-0.5 rounded-md border-0`}
+                              >
+                                {logItem.level}
+                              </Badge>
+                            ) : (
+                              <span className='text-xs text-muted-foreground'>-</span>
+                            )}
+
+                            {/* 메시지 */}
+                            <span className='text-sm font-mono break-words'>{logItem.message}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             ) : !isAnyLoading && !hasFilesError && !hasContentError && !hasSearchError ? (
