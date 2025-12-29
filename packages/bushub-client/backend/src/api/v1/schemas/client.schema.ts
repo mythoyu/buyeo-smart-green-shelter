@@ -36,8 +36,8 @@ export const CLIENT_RESPONSE_EXAMPLE = {
     id: 'c0101',
     type: 'bushub',
     region: 'gn',
-    name: '강릉시외버스터미널',
-    location: '강원도 강릉시 하슬라로 27',
+    name: '부여 스마트그린쉼터',
+    location: '충청남도 부여군',
     latitude: 37.754692,
     longitude: 128.878805,
     devices: [

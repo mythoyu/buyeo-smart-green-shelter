@@ -1,0 +1,82 @@
+site_name: SmartCity Documentation
+site_description: SmartCity Monorepo Documentation
+site_author: SmartCity Team
+site_url: https://mythoyu.github.io/buyeo-smart-green-shelter
+
+theme:
+  name: material
+  language: ko
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - API:
+      - HTTP API: HTTP_API_SPEC.md
+      - External API: EXTERNAL_API_SPEC.md
+      - API Key Management: API_KEY_MANAGEMENT.md
+  - Modbus Protocols:
+      - LG HVAC Packets: LG_HVAC_MODBUS_PACKETS.md
+      - Samsung HVAC Packets: SAMSUNG_HVAC_MODBUS_PACKETS.md
+      - SNGIL DDC Packets: SNGIL_DDC_MODBUS_PACKETS.md
+  - HVAC Protocols:
+      - LG HVAC Protocol: LG_HVAC_MODBUS_PROTOCOL.md
+      - Samsung HVAC Protocol: SAMSUNG_HVAC_MODBUS_PROTOCOL.md
+      - HVAC External Control: HVAC_EXTERNAL_CONTROL_IMPACT_ANALYSIS.md
+      - HVAC Command Mapping: HVAC_COMMAND_MAPPING_STRATEGY.md
+  - Device & Unit:
+      - Device Unit Spec: DEVICE_UNIT_SPEC.md
+      - SNGIL DDC Commands: SNGIL_DDC_COMMANDS.md
+  - Development:
+      - Common Commands: COMMON_COMMANDS.md
+      - Git Convention: GIT_CONVENTION.md
+      - Skill Spec: SKILLSPEC.md
+      - Deployment Guide: DEPLOYMENT_GUIDE.md
+      - Environment Variables: ENVIRONMENT_VARIABLES.md
+      - Architecture: ARCHITECTURE.md
+      - Development Guide: DEVELOPMENT_GUIDE.md
+      - Operations Guide: OPERATIONS_GUIDE.md
+  - Client:
+      - Bushub Client Page: BUSHUB_CLIENT_PAGE.md
+
+plugins:
+  - search
+  - minify:
+      minify_html: true

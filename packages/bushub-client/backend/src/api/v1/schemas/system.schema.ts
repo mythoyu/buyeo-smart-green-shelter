@@ -169,8 +169,8 @@ export const SYSTEM_SETTINGS_RESPONSE_EXAMPLE = {
     },
     client: {
       id: 'c0101',
-      name: '강릉시외버스터미널',
-      location: '강원도 강릉시 하슬라로 27',
+      name: '부여 스마트그린쉼터',
+      location: '충청남도 부여군',
     },
   },
 };

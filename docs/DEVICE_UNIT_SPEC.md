@@ -269,7 +269,7 @@
 
 ---
 
-## 6. SHDDC 레지스터 주소 매핑 (README_SNGIL_DDC_COMMANDS.md 기반)
+## 6. SHDDC 레지스터 주소 매핑 (SNGIL_DDC_COMMANDS.md 기반)
 
 ### **접점제어 장비 (DO 포트) 레지스터 주소**
 

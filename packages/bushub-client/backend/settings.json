@@ -2,8 +2,8 @@
   "client": {
     "name": "Bushub Client",
     "id": "BH001",
-    "description": "버스환승센터 클라이언트",
-    "location": "강릉시 버스환승센터"
+    "description": "스마트그린쉼터 클라이언트",
+    "location": "부여군 스마트그린쉼터"
   },
   "ntp": {
     "enabled": true,

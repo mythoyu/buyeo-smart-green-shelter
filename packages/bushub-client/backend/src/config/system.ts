@@ -1,5 +1,5 @@
 export const SYSTEM_CONFIG = {
-  name: process.env.SYSTEM_NAME || '강릉 버스환승센터 스마트시티 관리 시스템',
+  name: process.env.SYSTEM_NAME || '부여 스마트그린쉼터 스마트시티 관리 시스템',
   version: process.env.SYSTEM_VERSION || '1.0.0',
   environment: process.env.NODE_ENV || 'development',
   port: process.env.PORT || 3000,

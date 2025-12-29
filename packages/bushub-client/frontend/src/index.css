@@ -539,7 +539,7 @@ body {
   animation: shelterFloat 3s ease-in-out infinite;
 }
 
-/* 환승센터 건물 호버 효과 */
+/* 스마트그린쉼터 건물 호버 효과 */
 .building-hover {
   transition: all 0.3s ease;
 }

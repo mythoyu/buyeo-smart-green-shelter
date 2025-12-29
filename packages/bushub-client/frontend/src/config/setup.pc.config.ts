@@ -53,7 +53,7 @@ export const SYSTEM_CONFIG: SystemConfigOptions = {
   dnsServers: [
     {
       value: '8.8.8.8',
-      label: '강릉 ITS 도시정보센터(8.8.8.8)',
+      label: '부여 ITS 도시정보센터(8.8.8.8)',
       category: 'private',
     },
   ],
@@ -96,7 +96,7 @@ export const SYSTEM_CONFIG: SystemConfigOptions = {
   ipAddresses: [
     {
       value: '192.168.1.10',
-      label: '강릉시외버스터미널 (192.168.1.10)',
+      label: '부여 스마트그린쉼터 (192.168.1.10)',
       category: 'private',
     },
     {
@@ -125,7 +125,7 @@ export const SYSTEM_CONFIG: SystemConfigOptions = {
   gateways: [
     {
       value: '192.168.1.1',
-      label: '강릉도시정보센터 (192.168.1.1)',
+      label: '부여 도시정보센터 (192.168.1.1)',
       category: 'router',
     },
   ],
@@ -154,7 +154,7 @@ export const FALLBACK_NTP_SERVERS: SelectOption[] = [
   },
   {
     value: '129.6.15.28',
-    label: '강릉 ITS 도시정보센터 (129.6.15.28)',
+    label: '부여 ITS 도시정보센터 (129.6.15.28)',
     category: 'private',
   },
 ];

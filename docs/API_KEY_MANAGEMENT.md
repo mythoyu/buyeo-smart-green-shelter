@@ -110,7 +110,7 @@ interface ApiUsageLog {
 회사 목록 조회
 
 ```bash
-GET /api/admin/companies?status=active&search=강릉&page=1&limit=10
+GET /api/admin/companies?status=active&search=부여&page=1&limit=10
 ```
 
 #### POST /api/admin/companies
@@ -122,11 +122,11 @@ POST /api/admin/companies
 Content-Type: application/json
 
 {
-    "name": "강릉시청",
+    "name": "부여군청",
     "contactPerson": "김철수",
-    "email": "kim@gangneung.go.kr",
-    "phone": "033-123-4567",
-    "address": "강원도 강릉시 시청로 1"
+    "email": "kim@buyeo.go.kr",
+    "phone": "041-123-4567",
+    "address": "충청남도 부여군 부여읍"
 }
 ```
 
@@ -147,11 +147,11 @@ PUT /api/admin/companies/507f1f77bcf86cd799439011
 Content-Type: application/json
 
 {
-    "name": "강릉시청 (수정)",
+    "name": "부여군청 (수정)",
     "contactPerson": "김철수",
-    "email": "kim@gangneung.go.kr",
-    "phone": "033-123-4567",
-    "address": "강원도 강릉시 시청로 1"
+    "email": "kim@buyeo.go.kr",
+    "phone": "041-123-4567",
+    "address": "충청남도 부여군 부여읍"
 }
 ```
 
@@ -183,9 +183,9 @@ Content-Type: application/json
 
 {
     "companyId": "507f1f77bcf86cd799439011",
-    "name": "강릉시청 외부 API",
+    "name": "부여군청 외부 API",
     "type": "external",
-    "description": "강릉시청 외부 시스템 연동용 API 키",
+    "description": "부여군청 외부 시스템 연동용 API 키",
     "permissions": ["read:devices", "read:logs"],
     "createdBy": "admin",
     "expiresAt": "2024-12-31T23:59:59.000Z",
@@ -213,7 +213,7 @@ PUT /api/admin/api-keys/507f1f77bcf86cd799439011
 Content-Type: application/json
 
 {
-    "name": "강릉시청 외부 API (수정)",
+    "name": "부여군청 외부 API (수정)",
     "description": "수정된 설명",
     "permissions": ["read:devices", "read:logs", "write:devices"],
     "status": "active",
@@ -354,16 +354,16 @@ http://localhost:3000/api-keys
 
 ### 샘플 회사
 
-1. 강릉시청
-2. 강릉시 교통과
-3. 강릉시 환경과
-4. 강릉시 도시계획과
-5. 강릉시 정보통신과
+1. 부여군청
+2. 부여군 교통과
+3. 부여군 환경과
+4. 부여군 도시계획과
+5. 부여군 정보통신과
 
 ### 샘플 API 키
 
-1. 강릉시청 외부 API (external)
-2. 강릉시청 내부 API (internal)
+1. 부여군청 외부 API (external)
+2. 부여군청 내부 API (internal)
 3. 교통과 외부 API (external)
 4. 환경과 외부 API (external)
 5. 도시계획과 내부 API (internal)

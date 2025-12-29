@@ -2,21 +2,35 @@
 
 ## 📚 문서 목차
 
-- [API 명세](docs/HTTP_API_SPEC.md)
-- [디바이스/유닛 명세](docs/DEVICE_UNIT_SPEC.md)
-- [스킬 명세](docs/SKILLSPEC.md)
-- [Bushub Client 페이지 설명](docs/BUSHUB_CLIENT_PAGE.md)
-- [시드 유저 정보](docs/SEED_USERS.md)
-- [운영 가이드](docs/OPERATION.md)
-- [프로젝트 발표자료](docs/SmartCity_Project_Presentation.md)
+### API Documentation
+- [HTTP API 명세](docs/HTTP_API_SPEC.md)
+- [External API 명세](docs/EXTERNAL_API_SPEC.md)
 - [API Key 관리](docs/API_KEY_MANAGEMENT.md)
-- [도커 명령어](docs/DOCKER_COMMANDS.md)
-- [배포 가이드](docs/DEPLOYMENT.md)
-- [Git 컨벤션](docs/GIT_CONVENTION.md)
-- [오프라인 배포](docs/OFFLINE_DEPLOYMENT.md)
-- [컴포넌트 가이드](docs/COMPONENTS.md)
+
+### Modbus Protocols
+- [LG HVAC Modbus 패킷](docs/LG_HVAC_MODBUS_PACKETS.md)
+- [Samsung HVAC Modbus 패킷](docs/SAMSUNG_HVAC_MODBUS_PACKETS.md)
+- [SNGIL DDC Modbus 패킷](docs/SNGIL_DDC_MODBUS_PACKETS.md)
+
+### HVAC Protocols
+- [LG HVAC Protocol](docs/LG_HVAC_MODBUS_PROTOCOL.md)
+- [Samsung HVAC Protocol](docs/SAMSUNG_HVAC_MODBUS_PROTOCOL.md)
+- [HVAC 외부 제어 영향 분석](docs/HVAC_EXTERNAL_CONTROL_IMPACT_ANALYSIS.md)
+- [HVAC 명령 매핑 전략](docs/HVAC_COMMAND_MAPPING_STRATEGY.md)
+
+### Device & Unit
+- [디바이스/유닛 명세](docs/DEVICE_UNIT_SPEC.md)
 - [SNGIL DDC 명령어](docs/SNGIL_DDC_COMMANDS.md)
-- [Monorepo 가이드](docs/MONOREPO.md)
+
+### Development
+- [공통 명령어](docs/COMMON_COMMANDS.md)
+- [Git 컨벤션](docs/GIT_CONVENTION.md)
+- [스킬 명세](docs/SKILLSPEC.md)
+
+### Client
+- [Bushub Client 페이지](docs/BUSHUB_CLIENT_PAGE.md)
+
+> **참고**: 더 많은 문서는 [MkDocs 사이트](https://YOUR_USERNAME.github.io/YOUR_REPOSITORY_NAME)에서 확인할 수 있습니다.
 
 ---
 
