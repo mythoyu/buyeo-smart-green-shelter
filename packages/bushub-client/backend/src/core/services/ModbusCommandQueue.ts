@@ -15,6 +15,7 @@ export interface ModbusCommand {
   timestamp: Date;
   resolve: (value: any) => void;
   reject: (error: any) => void;
+  port?: string; // ❄️ 포트 정보 (기본값: /dev/ttyS0, 외부제어: /dev/ttyS1)
 }
 
 // 큐 처리 결과

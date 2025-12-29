@@ -76,4 +76,33 @@ export interface ISystemService {
       'fine-tuning-winter': number;
     };
   } | null>;
+
+  // ❄️ 냉난방기 외부제어 설정 관련 메서드
+  getHvacSettings(): Promise<{
+    externalControlEnabled: boolean;
+    manufacturer: 'SAMSUNG' | 'LG' | null;
+    modbus: {
+      port: string;
+      baudRate: number;
+      parity: 'none' | 'even' | 'odd';
+    };
+  } | null>;
+
+  updateHvacSettings(settings: {
+    externalControlEnabled?: boolean;
+    manufacturer?: 'SAMSUNG' | 'LG' | null;
+    modbus?: {
+      port?: string;
+      baudRate?: number;
+      parity?: 'none' | 'even' | 'odd';
+    };
+  }): Promise<{
+    externalControlEnabled: boolean;
+    manufacturer: 'SAMSUNG' | 'LG' | null;
+    modbus: {
+      port: string;
+      baudRate: number;
+      parity: 'none' | 'even' | 'odd';
+    };
+  } | null>;
 }

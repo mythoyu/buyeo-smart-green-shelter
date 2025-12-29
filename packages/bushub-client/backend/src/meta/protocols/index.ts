@@ -165,6 +165,40 @@ export const getModbusCommandWithPortMapping = (unit: IUnit, commandKey: string)
     return cachedCommand;
   }
 
+  // ❄️ 냉난방기 외부제어 확인 (cooler 타입만)
+  if (unit.type === 'cooler') {
+    // Unit.data에서 외부제어 확인 (동기)
+    const hvacData = unit.data && typeof unit.data === 'object' ? (unit.data as any).hvac : null;
+    const externalControlEnabled =
+      hvacData?.externalControlEnabled === true ||
+      process.env.HVAC_EXTERNAL_CONTROL_ENABLED === 'true';
+
+    if (externalControlEnabled) {
+      // 외부제어 프로토콜 사용
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { getExternalControlHvacCommandSync } = require('../../data/protocols/hvacProtocols');
+        const externalCommand = getExternalControlHvacCommandSync(unit, commandKey);
+
+        // 외부제어 명령을 ModbusCommand 형식으로 변환
+        const result = {
+          name: externalCommand.port.description || externalCommand.description,
+          description: externalCommand.port.description || externalCommand.description,
+          functionCode: externalCommand.port.functionCode,
+          address: externalCommand.port.address,
+          length: externalCommand.port.length || externalCommand.length || 1,
+        };
+
+        // 캐시에 저장
+        mappingCache.set(unit, commandKey, result);
+        return result;
+      } catch (error) {
+        // 외부제어 명령 실패 시 기존 로직으로 fallback하지 않고 에러 throw
+        throw error;
+      }
+    }
+  }
+
   const { clientId } = unit;
   const deviceType = unit.type;
   const { unitId } = unit;

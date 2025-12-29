@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 
 import { Command, CommandInput, CommandList, CommandItem } from '../ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Badge } from '../ui/badge';
 
 export interface SelectOption<T = any> {
   value: string;
@@ -98,9 +99,20 @@ const SelectWithCommand = <T = any,>({
   return (
     <div className={`space-y-2 ${className}`}>
       {/* 라벨 */}
-      <div className='flex items-center'>
+      <div className='flex items-center gap-2'>
         <label className='text-sm font-medium text-gray-700'>{label}</label>
-        {description && <span className='text-xs text-gray-500 ml-2'>{description}</span>}
+        {description && (
+          <Badge
+            variant={
+              description === '설정되지 않음' || description === '미설정' || !description.trim()
+                ? 'subtle-error'
+                : 'subtle-success'
+            }
+            className='text-xs'
+          >
+            {description}
+          </Badge>
+        )}
       </div>
 
       {/* Popover + Command */}

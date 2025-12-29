@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { internalApi, networkControlApi } from '../axiosInstance';
 
@@ -340,6 +340,65 @@ export const useUpdateDeviceAdvancedSettings = () =>
       console.error('디바이스 상세설정 저장 실패:', error);
     },
   });
+
+// ==================== ❄️ 냉난방기 외부제어 설정 관련 API ====================
+
+// 냉난방기 외부제어 설정 조회
+const getHvacSettings = async (): Promise<{
+  externalControlEnabled: boolean;
+  manufacturer: 'SAMSUNG' | 'LG' | null;
+  modbus: {
+    port: string;
+    baudRate: number;
+    parity: 'none' | 'even' | 'odd';
+  };
+}> => {
+  return internalApi.get('/system/hvac').then(res => res.data.data);
+};
+
+// 냉난방기 외부제어 설정 업데이트
+const updateHvacSettings = async (settings: {
+  externalControlEnabled?: boolean;
+  manufacturer?: 'SAMSUNG' | 'LG' | null;
+  modbus?: {
+    port?: string;
+    baudRate?: number;
+    parity?: 'none' | 'even' | 'odd';
+  };
+}): Promise<{
+  externalControlEnabled: boolean;
+  manufacturer: 'SAMSUNG' | 'LG' | null;
+  modbus: {
+    port: string;
+    baudRate: number;
+    parity: 'none' | 'even' | 'odd';
+  };
+}> => {
+  return internalApi.post('/system/hvac', settings).then(res => res.data.data);
+};
+
+// 냉난방기 외부제어 설정 조회 훅
+export const useGetHvacSettings = () =>
+  useQuery({
+    queryKey: ['system', 'hvac'],
+    queryFn: getHvacSettings,
+  });
+
+// 냉난방기 외부제어 설정 업데이트 훅
+export const useUpdateHvacSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateHvacSettings,
+    onSuccess: () => {
+      // 캐시 무효화하여 최신 데이터 다시 가져오기
+      queryClient.invalidateQueries({ queryKey: ['system', 'hvac'] });
+      console.log('냉난방기 외부제어 설정이 성공적으로 저장되었습니다.');
+    },
+    onError: error => {
+      console.error('냉난방기 외부제어 설정 저장 실패:', error);
+    },
+  });
+};
 
 // 호스트 PC 재기동 훅
 export const useRestartHostSystem = () =>

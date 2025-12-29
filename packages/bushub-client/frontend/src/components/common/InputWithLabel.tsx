@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Badge } from '../ui/badge';
 
 interface InputWithLabelProps {
   label: string;
@@ -55,9 +56,20 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
 
   return (
     <div className='mb-3'>
-      <div className='flex items-center justify-between mb-1'>
+      <div className='flex items-center gap-2 mb-1'>
         <Label className='text-sm font-medium text-gray-700'>{label}</Label>
-        {description && <span className='text-xs text-gray-500 ml-2'>{description}</span>}
+        {description && (
+          <Badge
+            variant={
+              description === '설정되지 않음' || description === '미설정' || !description.trim()
+                ? 'subtle-error'
+                : 'subtle-success'
+            }
+            className='text-xs'
+          >
+            {description}
+          </Badge>
+        )}
       </div>
       <div className='relative'>
         <Input

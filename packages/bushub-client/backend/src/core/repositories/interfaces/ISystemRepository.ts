@@ -67,6 +67,17 @@ export interface SystemSettings {
       'fine-tuning-winter'?: number;
     };
   };
+
+  // ❄️ 냉난방기 외부제어 설정
+  hvac?: {
+    externalControlEnabled?: boolean;
+    manufacturer?: 'SAMSUNG' | 'LG' | null;
+    modbus?: {
+      port?: string;
+      baudRate?: number;
+      parity?: 'none' | 'even' | 'odd';
+    };
+  };
 }
 
 export interface SystemUpdateParams {
@@ -99,6 +110,15 @@ export interface SystemUpdateParams {
     temp?: {
       'fine-tuning-summer'?: number;
       'fine-tuning-winter'?: number;
+    };
+  };
+  hvac?: {
+    externalControlEnabled?: boolean;
+    manufacturer?: 'SAMSUNG' | 'LG' | null;
+    modbus?: {
+      port?: string;
+      baudRate?: number;
+      parity?: 'none' | 'even' | 'odd';
     };
   };
 }

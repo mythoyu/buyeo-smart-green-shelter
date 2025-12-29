@@ -49,20 +49,24 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
       </div>
 
       {/* 버튼 영역 */}
-      {(onApply || onReset) && (
+      {onApply && (
         <div className='flex gap-2 w-full'>
-          {onReset && (
-            <Button variant='outline' className='flex-1' onClick={onReset} disabled={resetDisabled || isLoading}>
-              복구
-            </Button>
-          )}
-          {onApply && (
-            <div className='flex gap-2 flex-1 items-center'>
-              <Button className='flex-1' onClick={onApply} disabled={applyDisabled || isLoading}>
-                {isLoading ? '적용 중...' : applyButtonText}
+          {onReset ? (
+            <>
+              <Button variant='outline' className='flex-1' onClick={onReset} disabled={resetDisabled || isLoading}>
+                복구
               </Button>
-              {applyExtra ? <div className='flex-shrink-0'>{applyExtra}</div> : null}
-            </div>
+              <div className='flex gap-2 flex-1 items-center'>
+                <Button className='flex-1' onClick={onApply} disabled={applyDisabled || isLoading}>
+                  {isLoading ? '적용 중...' : applyButtonText}
+                </Button>
+                {applyExtra ? <div className='flex-shrink-0'>{applyExtra}</div> : null}
+              </div>
+            </>
+          ) : (
+            <Button className='w-full' onClick={onApply} disabled={applyDisabled || isLoading}>
+              {isLoading ? '적용 중...' : applyButtonText}
+            </Button>
           )}
         </div>
       )}

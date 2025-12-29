@@ -40,6 +40,17 @@ export interface ISystem extends Document {
       'fine-tuning-winter'?: number;
     };
   };
+
+  // ❄️ 냉난방기 외부제어 설정
+  hvac?: {
+    externalControlEnabled?: boolean;
+    manufacturer?: 'SAMSUNG' | 'LG' | null;
+    modbus?: {
+      port?: string;
+      baudRate?: number;
+      parity?: 'none' | 'even' | 'odd';
+    };
+  };
 }
 
 export interface UnitValue {
@@ -107,6 +118,16 @@ const SystemSchema = new Schema<ISystem>(
         'fine-tuning-winter': { type: Number, default: 0, min: -5, max: 5 },
       },
     },
+    // ❄️ 냉난방기 외부제어 설정
+    hvac: {
+      externalControlEnabled: { type: Boolean, default: false },
+      manufacturer: { type: String, enum: ['SAMSUNG', 'LG', null], default: null },
+      modbus: {
+        port: { type: String, default: '/dev/ttyS1' },
+        baudRate: { type: Number, default: 9600 },
+        parity: { type: String, enum: ['none', 'even', 'odd'], default: 'even' },
+      },
+    },
   },
   {
     timestamps: true,
@@ -148,6 +169,16 @@ SystemSchema.statics.getDefaultSettings = function () {
       temp: {
         'fine-tuning-summer': 0,
         'fine-tuning-winter': 0,
+      },
+    },
+    // ❄️ 냉난방기 외부제어 설정 기본값
+    hvac: {
+      externalControlEnabled: false,
+      manufacturer: null,
+      modbus: {
+        port: '/dev/ttyS1',
+        baudRate: 9600,
+        parity: 'even',
       },
     },
   };

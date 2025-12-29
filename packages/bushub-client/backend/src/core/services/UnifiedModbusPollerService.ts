@@ -1,5 +1,8 @@
 import { CLIENT_PORT_MAPPINGS } from '../../data/clientPortMappings';
+import { getHvacConfigForUnit } from '../../config/hvac.config';
+import { getExternalControlHvacCommandSync } from '../../data/protocols/hvacProtocols';
 import { getModbusAddressMapping, isModbusMockEnabled } from '../../utils/environment';
+import { Unit } from '../../models/schemas/UnitSchema';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
 import { IUnifiedModbusCommunication } from '../interfaces/IModbusCommunication';
@@ -460,6 +463,25 @@ export class UnifiedModbusPollerService {
         return await this.executeCommonSystemPortPolling(clientId, deviceType);
       }
 
+      // ❄️ 냉난방기 외부제어 확인 및 분기 처리
+      if (deviceType === 'cooler') {
+        const unit = await Unit.findOne({ deviceId, unitId });
+        if (unit) {
+          try {
+            const hvacConfig = await getHvacConfigForUnit(unit);
+            if (hvacConfig.externalControlEnabled) {
+              // 외부제어 폴링 실행
+              return await this.executeExternalControlHvacPolling(deviceId, unitId, unit, hvacConfig);
+            }
+          } catch (error) {
+            this.logger?.warn(
+              `[UnifiedModbusPollerService] 외부제어 설정 확인 실패, 기본 폴링 사용: ${error}`,
+            );
+            // 에러 발생 시 기본 폴링으로 fallback
+          }
+        }
+      }
+
       // 일반 디바이스는 unitId 필요
       if (!clientMapping[deviceType][unitId]) {
         throw new Error(`Unit '${unitId}' not found in ${clientId}/${deviceType}`);
@@ -874,6 +896,125 @@ export class UnifiedModbusPollerService {
     } catch (error) {
       this.logger?.error(`[UnifiedModbusPollerService] Device 조회 실패: ${error}`);
       return null;
+    }
+  }
+
+  /**
+   * ❄️ 외부제어 냉난방기 폴링 실행
+   */
+  private async executeExternalControlHvacPolling(
+    deviceId: string,
+    unitId: string,
+    unit: any,
+    hvacConfig: any,
+  ): Promise<any> {
+    const startTime = Date.now();
+
+    try {
+      // 지원되는 GET 명령 목록 (제조사별)
+      const manufacturer = (hvacConfig.manufacturer || 'SAMSUNG').toLowerCase() as 'samsung' | 'lg';
+      let supportedGetCommands: string[];
+
+      if (manufacturer === 'lg') {
+        supportedGetCommands = ['GET_POWER', 'GET_MODE', 'GET_SPEED', 'GET_TEMP', 'GET_CUR_TEMP', 'GET_ALARM'];
+      } else {
+        // samsung (기본값)
+        supportedGetCommands = [
+          'GET_POWER',
+          'GET_MODE',
+          'GET_SPEED',
+          'GET_SUMMER_CONT_TEMP',
+          'GET_WINTER_CONT_TEMP',
+          'GET_CUR_TEMP',
+          'GET_ALARM',
+        ];
+      }
+
+      this.logger?.info(
+        `[UnifiedModbusPollerService] 외부제어 냉난방기 폴링 시작: ${deviceId}/${unitId} (제조사: ${manufacturer}, 포트: ${hvacConfig.modbus.port})`,
+      );
+
+      const results = [];
+
+      // 각 GET 명령에 대해 폴링 실행
+      for (const action of supportedGetCommands) {
+        try {
+          // 외부제어 프로토콜 명령 가져오기
+          const externalCommand = getExternalControlHvacCommandSync(unit, action);
+
+          // ModbusCommand 생성
+          const modbusCommand = {
+            id: `polling_external_hvac_${deviceId}_${unitId}_${action}_${Date.now()}`,
+            type: 'read' as const,
+            unitId: '1', // 기본 Slave ID
+            functionCode: externalCommand.port.functionCode,
+            address: externalCommand.port.address,
+            lengthOrValue: externalCommand.port.length || 1,
+            priority: 'low' as const,
+            timestamp: new Date(),
+            port: hvacConfig.modbus.port, // 외부제어 포트 사용
+            resolve: () => {},
+            reject: () => {},
+          };
+
+          const commandStartTime = Date.now();
+          const modbusResult = await this.modbusService.executeCommand(modbusCommand);
+          const commandDuration = Date.now() - commandStartTime;
+
+          this.logger?.debug(
+            `[UnifiedModbusPollerService] 📡 외부제어 Modbus 커맨드: ${action} (FC:${externalCommand.port.functionCode}, Addr:${externalCommand.port.address}) - ${commandDuration}ms`,
+          );
+
+          if (modbusResult.success) {
+            results.push({ action, success: true, data: modbusResult.data });
+          } else {
+            throw new Error(`Modbus read failed: ${modbusResult.error}`);
+          }
+        } catch (error) {
+          // NOT_SUPPORTED 명령은 무시 (로그만 출력)
+          if (error instanceof Error && error.message.includes('NOT_SUPPORTED')) {
+            this.logger?.debug(`[UnifiedModbusPollerService] 명령 ${action}는 ${manufacturer}에서 지원되지 않음`);
+            continue;
+          }
+
+          this.logger?.warn(
+            `[UnifiedModbusPollerService] 외부제어 액션 ${action} 실패: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          results.push({
+            action,
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      const successCount = results.filter((r) => r.success).length;
+      const responseTime = Date.now() - startTime;
+
+      this.logger?.debug(
+        `[UnifiedModbusPollerService] 외부제어 냉난방기 폴링 완료: ${successCount}/${supportedGetCommands.length} 명령 성공, 응답시간: ${responseTime}ms`,
+      );
+
+      return {
+        success: true,
+        deviceId,
+        unitId,
+        deviceType: 'cooler',
+        totalActions: supportedGetCommands.length,
+        successfulActions: successCount,
+        responseTime,
+        results,
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      this.logger?.error(
+        `[UnifiedModbusPollerService] 외부제어 냉난방기 폴링 실패: ${deviceId}/${unitId} - ${
+          error instanceof Error ? error.message : String(error)
+        }, 응답시간: ${responseTime}ms`,
+      );
+      return { success: false, error: error instanceof Error ? error.message : String(error), responseTime };
     }
   }
 

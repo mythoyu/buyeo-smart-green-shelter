@@ -5,6 +5,7 @@ import snapshotsRoutes from '../snapshots';
 import systemDdcTimeRoutes from './ddc-time';
 import systemDeviceAdvancedRoutes from './device-advanced';
 import systemGeneralRoutes from './general';
+import systemHvacRoutes from './hvac';
 import systemPollingRoutes from './polling';
 import systemSeasonalRoutes from './seasonal';
 
@@ -15,5 +16,6 @@ export default async function systemRoutes(app: FastifyInstance) {
   await systemDdcTimeRoutes(app);
   await systemPollingRoutes(app);
   await systemDeviceAdvancedRoutes(app);
+  await systemHvacRoutes(app);
   await snapshotsRoutes(app);
 }

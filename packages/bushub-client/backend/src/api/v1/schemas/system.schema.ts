@@ -27,6 +27,41 @@ export const DeviceAdvancedResponseSchema = Type.Object({
   }),
 });
 
+// ❄️ 냉난방기 외부제어 설정 전용 스키마
+export const HvacRequestSchema = Type.Object({
+  externalControlEnabled: Type.Optional(Type.Boolean({ description: '외부제어 활성화 여부' })),
+  manufacturer: Type.Optional(
+    Type.Union([Type.Literal('SAMSUNG'), Type.Literal('LG'), Type.Null()], {
+      description: '제조사 (SAMSUNG, LG, null)',
+    }),
+  ),
+  modbus: Type.Optional(
+    Type.Object({
+      port: Type.Optional(Type.String({ description: 'Modbus 포트 (예: /dev/ttyS1)' })),
+      baudRate: Type.Optional(Type.Number({ description: 'Baud Rate (예: 9600)' })),
+      parity: Type.Optional(
+        Type.Union([Type.Literal('none'), Type.Literal('even'), Type.Literal('odd')], {
+          description: 'Parity (none, even, odd)',
+        }),
+      ),
+    }),
+  ),
+});
+
+export const HvacResponseSchema = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+  data: Type.Object({
+    externalControlEnabled: Type.Boolean(),
+    manufacturer: Type.Union([Type.Literal('SAMSUNG'), Type.Literal('LG'), Type.Null()]),
+    modbus: Type.Object({
+      port: Type.String(),
+      baudRate: Type.Number(),
+      parity: Type.Union([Type.Literal('none'), Type.Literal('even'), Type.Literal('odd')]),
+    }),
+  }),
+});
+
 // 시스템 설정 조회 응답 스키마
 export const SystemSettingsResponseSchema = Type.Object({
   success: Type.Boolean(),

@@ -231,7 +231,7 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                 </SelectTrigger>
                 <SelectContent>
                   {collectionsLoading ? (
-                    <SelectItem value='' disabled>
+                    <SelectItem value='loading' disabled>
                       로딩 중...
                     </SelectItem>
                   ) : (

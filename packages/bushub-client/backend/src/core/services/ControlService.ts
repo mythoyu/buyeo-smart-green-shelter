@@ -1,10 +1,13 @@
 import { getModbusCommandWithPortMapping } from '../../meta/protocols';
+import { getHvacConfigForUnit } from '../../config/hvac.config';
 import { IDevice } from '../../models/schemas/DeviceSchema';
 import { IUnit } from '../../models/schemas/UnitSchema';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { HttpValidationError } from '../../shared/utils/responseHelper';
 import { IUnifiedModbusCommunication } from '../interfaces/IModbusCommunication';
 import { IControlRepository } from '../repositories/interfaces/IControlRepository';
+
+import { ModbusCommand } from './ModbusCommandQueue';
 
 import { CommandExecutionStrategyFactory, CommandExecutionStrategy } from './CommandExecutionStrategy';
 import { CommandResultHandler } from './CommandResultHandler';
@@ -247,19 +250,66 @@ export class ControlService implements IControlService {
     this.logger?.info(`🔍 CommandLog 생성 완료: requestId = ${requestId}, status = ${commandLog.status}`);
 
     try {
+      // ❄️ 냉난방기 외부제어 확인 및 설정 가져오기 (System 설정 포함)
+      let modbusPort: string | undefined;
+      let slaveId = 1; // 기본 Slave ID (외부제어 시 변경 가능)
+      
+      if (unit.type === 'cooler') {
+        try {
+          // 완전한 HVAC 설정 가져오기 (Unit.data > System.hvac > 환경변수)
+          const hvacConfig = await getHvacConfigForUnit(unit);
+          
+          if (hvacConfig.externalControlEnabled) {
+            modbusPort = hvacConfig.modbus.port;
+            // Slave ID는 현재는 기본값 1 사용 (나중에 설정에서 가져올 수 있음)
+            this.logger?.debug(
+              `[ControlService] 냉난방기 외부제어 활성화 - 포트: ${modbusPort}, 제조사: ${hvacConfig.manufacturer || '미설정'}`,
+            );
+          }
+        } catch (error) {
+          // getHvacConfigForUnit 실패 시 환경변수만 확인 (하위 호환성)
+          this.logger?.warn(`[ControlService] HVAC 설정 로드 실패, 환경변수 사용: ${error}`);
+          const externalControlEnabled = process.env.HVAC_EXTERNAL_CONTROL_ENABLED === 'true';
+          if (externalControlEnabled) {
+            modbusPort = process.env.HVAC_MODBUS_PORT || '/dev/ttyS1';
+          }
+        }
+      }
+
       let result;
       // Differentiate between read and write commands
       if (commandSpec.functionCode === 3 || commandSpec.functionCode === 4) {
         // RD_HLD_REG, RD_INPUT_REG
         const readLength = commandSpec.length || 1; // Use specified length, default to 1
         try {
-          const modbusResult = await this.unifiedModbusService?.readRegisters({
-            slaveId: 1, // 기본값 사용 (unit.slaveId가 없음)
-            functionCode: commandSpec.functionCode,
-            address: commandSpec.address,
-            length: readLength,
-            context: 'polling', // 읽기는 낮은 우선순위
-          });
+          // ❄️ 포트 정보가 있으면 ModbusCommand 직접 생성, 없으면 기존 방식 사용
+          let modbusResult;
+          if (modbusPort) {
+            // 외부제어: ModbusCommand 직접 생성하여 executeCommand 호출
+            const modbusCommand: ModbusCommand = {
+              id: `control_read_${unit.deviceId}_${unit.unitId}_${commandSpec.functionCode}_${commandSpec.address}_${Date.now()}`,
+              type: 'read',
+              unitId: '1',
+              functionCode: commandSpec.functionCode,
+              address: commandSpec.address,
+              lengthOrValue: readLength,
+              priority: 'normal',
+              timestamp: new Date(),
+              port: modbusPort,
+              resolve: () => {},
+              reject: () => {},
+            };
+            modbusResult = await this.unifiedModbusService?.executeCommand(modbusCommand);
+          } else {
+            // 기존 방식: readRegisters 사용
+            modbusResult = await this.unifiedModbusService?.readRegisters({
+              slaveId: 1, // 기본값 사용 (unit.slaveId가 없음)
+              functionCode: commandSpec.functionCode,
+              address: commandSpec.address,
+              length: readLength,
+              context: 'polling', // 읽기는 낮은 우선순위
+            });
+          }
 
           result = modbusResult;
           await this.commandResultHandler.handleSuccess(
@@ -290,13 +340,34 @@ export class ControlService implements IControlService {
         }
 
         try {
-          const modbusResult = await this.unifiedModbusService?.writeRegister({
-            slaveId: 1, // 기본값 사용 (unit.slaveId가 없음)
-            functionCode: commandSpec.functionCode,
-            address: commandSpec.address,
-            value: writeValue,
-            context: 'control', // 사용자 제어는 높은 우선순위
-          });
+          // ❄️ 포트 정보가 있으면 ModbusCommand 직접 생성, 없으면 기존 방식 사용
+          let modbusResult;
+          if (modbusPort) {
+            // 외부제어: ModbusCommand 직접 생성하여 executeCommand 호출
+            const modbusCommand: ModbusCommand = {
+              id: `control_write_${unit.deviceId}_${unit.unitId}_${commandSpec.functionCode}_${commandSpec.address}_${Date.now()}`,
+              type: 'write',
+              unitId: '1',
+              functionCode: commandSpec.functionCode,
+              address: commandSpec.address,
+              lengthOrValue: writeValue,
+              priority: 'high',
+              timestamp: new Date(),
+              port: modbusPort,
+              resolve: () => {},
+              reject: () => {},
+            };
+            modbusResult = await this.unifiedModbusService?.executeCommand(modbusCommand);
+          } else {
+            // 기존 방식: writeRegister 사용
+            modbusResult = await this.unifiedModbusService?.writeRegister({
+              slaveId: 1, // 기본값 사용 (unit.slaveId가 없음)
+              functionCode: commandSpec.functionCode,
+              address: commandSpec.address,
+              value: writeValue,
+              context: 'control', // 사용자 제어는 높은 우선순위
+            });
+          }
 
           result = modbusResult;
           await this.commandResultHandler.handleSuccess(

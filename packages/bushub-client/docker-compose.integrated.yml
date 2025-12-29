@@ -37,6 +37,8 @@ services:
       - backend_logs:/app/logs
       # 시리얼 포트 마운트 (Modbus 통신용)
       - /dev/ttyS0:/dev/ttyS0:rw
+      # 냉난방기 외부제어용 시리얼 포트 마운트
+      - /dev/ttyS1:/dev/ttyS1:rw
       # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
     privileged: true
@@ -48,6 +50,11 @@ services:
       - MODBUS_MOCK_ENABLED=false
       - MODBUS_BAUD_RATE=9600
       - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
+      - HVAC_EXTERNAL_CONTROL_ENABLED=${HVAC_EXTERNAL_CONTROL_ENABLED:-false}
+      - HVAC_MANUFACTURER=${HVAC_MANUFACTURER:-}
+      - HVAC_MODBUS_PORT=${HVAC_MODBUS_PORT:-/dev/ttyS1}
+      - HVAC_MODBUS_BAUD_RATE=${HVAC_MODBUS_BAUD_RATE:-9600}
+      - HVAC_MODBUS_PARITY=${HVAC_MODBUS_PARITY:-even}
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:
       - db

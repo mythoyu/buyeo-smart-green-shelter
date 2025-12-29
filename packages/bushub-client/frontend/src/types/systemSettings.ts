@@ -31,6 +31,17 @@ export interface DeviceAdvancedSettings {
   };
 }
 
+// ❄️ 냉난방기 외부제어 설정
+export interface HvacSettings {
+  externalControlEnabled: boolean;
+  manufacturer: 'SAMSUNG' | 'LG' | null;
+  modbus: {
+    port: string;
+    baudRate: number;
+    parity: 'none' | 'even' | 'odd';
+  };
+}
+
 export interface SystemSettings {
   ntp: NtpSettings;
   network: NetworkSettings;

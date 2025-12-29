@@ -16,6 +16,8 @@ import {
   useRestartBackend,
   useRefreshDdcTime,
 } from '../../api/queries/system';
+import DeviceAdvancedSettingsCard from '../common/DeviceAdvancedSettingsCard';
+import HvacSettingsCard from '../common/HvacSettingsCard';
 import {
   useSetNtp,
   useSetNetwork,
@@ -608,11 +610,14 @@ const SystemSettingsPage: React.FC = () => {
           >
             {/* SoftAP 활성화 토글 */}
             <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
+              <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>SoftAP 활성화</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  현재: {softapStatus?.data?.enabled ? '활성화' : '비활성화'}
-                </p>
+                <Badge
+                  variant={softapStatus?.data?.enabled ? 'subtle-success' : 'subtle-error'}
+                  className='text-xs'
+                >
+                  {softapStatus?.data?.enabled ? '활성화' : '비활성화'}
+                </Badge>
               </div>
               <OnOffToggleButton
                 checked={!!softapInput?.enabled}
@@ -627,7 +632,7 @@ const SystemSettingsPage: React.FC = () => {
               value={softapInput?.interface || ''}
               onChange={value => handleInput('softap', 'interface', value)}
               placeholder='WiFi 인터페이스 선택...'
-              description={`현재: ${firstWifiName || '설정되지 않음'}`}
+              description={firstWifiName || '설정되지 않음'}
               error={getFieldError('softap', 'interface')}
               disabled={!softapInput?.enabled}
               options={wifiInterfaceOptions}
@@ -639,7 +644,7 @@ const SystemSettingsPage: React.FC = () => {
               value={softapInput?.ssid || ''}
               onChange={e => handleInput('softap', 'ssid', e.target.value)}
               placeholder='WiFi 이름을 입력하세요'
-              description={`현재: ${softapStatus?.data?.ssid || '설정되지 않음'}`}
+              description={softapStatus?.data?.ssid || '설정되지 않음'}
               error={getFieldError('softap', 'ssid')}
               disabled={!softapInput?.enabled}
               showDefaultValueButton={true}
@@ -698,11 +703,20 @@ const SystemSettingsPage: React.FC = () => {
           >
             {/* 네트워크 DHCP 토글 */}
             <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
+              <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>DHCP 사용</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  현재: {selectedIface?.dhcp4 !== undefined ? (selectedIface.dhcp4 ? 'ON' : 'OFF') : '알 수 없음'}
-                </p>
+                <Badge
+                  variant={
+                    selectedIface?.dhcp4 !== undefined
+                      ? selectedIface.dhcp4
+                        ? 'subtle-success'
+                        : 'subtle-error'
+                      : 'subtle-error'
+                  }
+                  className='text-xs'
+                >
+                  {selectedIface?.dhcp4 !== undefined ? (selectedIface.dhcp4 ? 'ON' : 'OFF') : '알 수 없음'}
+                </Badge>
               </div>
               <OnOffToggleButton
                 checked={!!networkInput?.dhcp4}
@@ -717,7 +731,7 @@ const SystemSettingsPage: React.FC = () => {
               value={networkInput?.interface || ''}
               onChange={value => handleNetworkInterfaceSelect(value)}
               placeholder='유선 네트워크 인터페이스 선택...'
-              description={`현재: ${currentWiredInterface || '설정되지 않음'}`}
+              description={currentWiredInterface || '설정되지 않음'}
               error={getFieldError('network', 'interface')}
               options={networkInterfaceOptions}
               searchPlaceholder='유선 네트워크 인터페이스 검색...'
@@ -730,7 +744,7 @@ const SystemSettingsPage: React.FC = () => {
               value={networkInput?.ipv4 || ''}
               onChange={e => handleInput('network', 'ipv4', e.target.value)}
               placeholder='IP 주소를 입력하세요 (예: 192.168.0.120)'
-              description={`현재: ${(selectedIface?.ipv4 || '').split('/')?.[0] || '설정되지 않음'}`}
+              description={(selectedIface?.ipv4 || '').split('/')?.[0] || '설정되지 않음'}
               error={getFieldError('network', 'ipv4')}
               disabled={networkInput?.dhcp4}
               showDefaultValueButton={true}
@@ -741,7 +755,7 @@ const SystemSettingsPage: React.FC = () => {
               value={networkInput?.gateway || ''}
               onChange={e => handleInput('network', 'gateway', e.target.value)}
               placeholder='게이트웨이를 입력하세요 (예: 192.168.0.1)'
-              description={`현재: ${selectedIface?.gateway || '설정되지 않음'}`}
+              description={selectedIface?.gateway || '설정되지 않음'}
               error={getFieldError('network', 'gateway')}
               disabled={networkInput?.dhcp4}
               showDefaultValueButton={true}
@@ -752,7 +766,7 @@ const SystemSettingsPage: React.FC = () => {
               value={networkInput?.subnetmask || ''}
               onChange={e => handleInput('network', 'subnetmask', e.target.value)}
               placeholder='서브넷 마스크를 입력하세요 (예: 255.255.255.0)'
-              description={`현재: ${selectedIface?.subnetmask || '설정되지 않음'}`}
+              description={selectedIface?.subnetmask || '설정되지 않음'}
               error={getFieldError('network', 'subnetmask')}
               disabled={networkInput?.dhcp4}
               showDefaultValueButton={true}
@@ -763,7 +777,7 @@ const SystemSettingsPage: React.FC = () => {
               value={networkInput?.nameservers?.[0] || ''}
               onChange={e => handleInput('network', 'nameservers', e.target.value)}
               placeholder='DNS 서버를 입력하세요 (예: 8.8.8.8)'
-              description={`현재: ${(selectedIface?.dns && selectedIface?.dns[0]) || '설정되지 않음'}`}
+              description={(selectedIface?.dns && selectedIface?.dns[0]) || '설정되지 않음'}
               error={getFieldError('network', 'nameservers')}
               disabled={networkInput?.dhcp4}
               showDefaultValueButton={true}
@@ -791,11 +805,14 @@ const SystemSettingsPage: React.FC = () => {
             {/* NTP 활성화 토글 */}
             {/* enabled는 실제 NTP 동기화 상태 (주석 처리 여부와 독립적) */}
             <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
+              <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>NTP 서비스 활성화</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  현재: {ntpStatus?.data?.enabled ? '활성화' : '비활성화'} (실제 동기화 상태)
-                </p>
+                <Badge
+                  variant={ntpStatus?.data?.enabled ? 'subtle-success' : 'subtle-error'}
+                  className='text-xs'
+                >
+                  {ntpStatus?.data?.enabled ? '활성화' : '비활성화'} (실제 동기화 상태)
+                </Badge>
               </div>
               <OnOffToggleButton
                 checked={!!ntpInput?.enabled}
@@ -841,12 +858,17 @@ const SystemSettingsPage: React.FC = () => {
             <div>
               {/* 주 NTP 서버 */}
               <div className='mb-3'>
-                <div className='flex items-center justify-between mb-1'>
+                <div className='flex items-center gap-2 mb-1'>
                   <Label className='text-sm font-medium text-gray-700'>주 NTP 서버</Label>
-                  <span className='text-xs text-gray-500 ml-2'>
-                    현재: {ntpStatus?.data?.primaryServer || 'time.google.com'}{' '}
+                  <Badge
+                    variant={
+                      ntpStatus?.data?.primaryServerCommented ? 'subtle-error' : 'subtle-success'
+                    }
+                    className='text-xs'
+                  >
+                    {ntpStatus?.data?.primaryServer || 'time.google.com'}{' '}
                     {ntpStatus?.data?.primaryServerCommented ? '(주석 처리됨)' : '(활성화됨)'}
-                  </span>
+                  </Badge>
                 </div>
                 <div className='flex items-center gap-2'>
                   <Input
@@ -938,16 +960,23 @@ const SystemSettingsPage: React.FC = () => {
             <div>
               {/* 백업 NTP 서버 */}
               <div className='mb-3'>
-                <div className='flex items-center justify-between mb-1'>
+                <div className='flex items-center gap-2 mb-1'>
                   <Label className='text-sm font-medium text-gray-700'>백업 NTP 서버</Label>
-                  <span className='text-xs text-gray-500 ml-2'>
-                    현재: {ntpStatus?.data?.fallbackServer || '설정되지 않음'}{' '}
+                  <Badge
+                    variant={
+                      !ntpStatus?.data?.fallbackServer || ntpStatus?.data?.fallbackServerCommented
+                        ? 'subtle-error'
+                        : 'subtle-success'
+                    }
+                    className='text-xs'
+                  >
+                    {ntpStatus?.data?.fallbackServer || '설정되지 않음'}{' '}
                     {ntpStatus?.data?.fallbackServerCommented
                       ? '(주석 처리됨)'
                       : ntpStatus?.data?.fallbackServer
                       ? '(활성화됨)'
                       : ''}
-                  </span>
+                  </Badge>
                 </div>
                 <div className='flex items-center gap-2'>
                   <Input
@@ -1048,7 +1077,7 @@ const SystemSettingsPage: React.FC = () => {
               value={ntpInput?.timezone || ''}
               onChange={e => handleInput('ntp', 'timezone', e.target.value)}
               placeholder='타임존을 입력하세요 (예: Asia/Seoul)'
-              description={`현재: ${ntpStatus?.data?.timezone || '설정되지 않음'}`}
+              description={ntpStatus?.data?.timezone || '설정되지 않음'}
               error={getFieldError('ntp', 'timezone')}
               disabled={!ntpInput?.enabled}
               showDefaultValueButton={true}
@@ -1311,10 +1340,30 @@ const SystemSettingsPage: React.FC = () => {
           </SettingsCard>
         </div>
 
-        {/* 시스템 재기동 카드 */}
+        {/* 디바이스 상세 설정 */}
         <div
           style={{
             animationDelay: '600ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <DeviceAdvancedSettingsCard />
+        </div>
+
+        {/* ❄️ 냉난방기 외부제어 설정 */}
+        <div
+          style={{
+            animationDelay: '700ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <HvacSettingsCard />
+        </div>
+
+        {/* 시스템 재기동 카드 */}
+        <div
+          style={{
+            animationDelay: '800ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
           }}
         >

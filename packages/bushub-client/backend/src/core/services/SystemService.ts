@@ -1085,4 +1085,128 @@ export class SystemService implements ISystemService {
       throw error;
     }
   }
+
+  // ==================== ❄️ 냉난방기 외부제어 설정 관련 메서드들 ====================
+
+  /**
+   * ❄️ 냉난방기 외부제어 설정 조회
+   */
+  async getHvacSettings(): Promise<{
+    externalControlEnabled: boolean;
+    manufacturer: 'SAMSUNG' | 'LG' | null;
+    modbus: {
+      port: string;
+      baudRate: number;
+      parity: 'none' | 'even' | 'odd';
+    };
+  } | null> {
+    try {
+      this.logger?.info('냉난방기 외부제어 설정 조회 시작');
+
+      const systemDoc = await this.systemRepository.findOne();
+      const hvac = systemDoc?.hvac;
+
+      if (!hvac) {
+        // 기본값 반환
+        return {
+          externalControlEnabled: false,
+          manufacturer: null,
+          modbus: {
+            port: '/dev/ttyS1',
+            baudRate: 9600,
+            parity: 'even',
+          },
+        };
+      }
+
+      this.logger?.info('냉난방기 외부제어 설정 조회 완료');
+
+      return {
+        externalControlEnabled: hvac.externalControlEnabled ?? false,
+        manufacturer: hvac.manufacturer ?? null,
+        modbus: {
+          port: hvac.modbus?.port ?? '/dev/ttyS1',
+          baudRate: hvac.modbus?.baudRate ?? 9600,
+          parity: hvac.modbus?.parity ?? 'even',
+        },
+      };
+    } catch (error) {
+      this.logger?.error('냉난방기 외부제어 설정 조회 중 오류 발생');
+      throw error;
+    }
+  }
+
+  /**
+   * ❄️ 냉난방기 외부제어 설정 업데이트
+   */
+  async updateHvacSettings(settings: {
+    externalControlEnabled?: boolean;
+    manufacturer?: 'SAMSUNG' | 'LG' | null;
+    modbus?: {
+      port?: string;
+      baudRate?: number;
+      parity?: 'none' | 'even' | 'odd';
+    };
+  }): Promise<{
+    externalControlEnabled: boolean;
+    manufacturer: 'SAMSUNG' | 'LG' | null;
+    modbus: {
+      port: string;
+      baudRate: number;
+      parity: 'none' | 'even' | 'odd';
+    };
+  } | null> {
+    try {
+      this.logger?.info('냉난방기 외부제어 설정 업데이트 시작');
+
+      // 현재 설정 가져오기
+      const currentSettings = await this.getHvacSettings();
+      if (!currentSettings) {
+        throw new Error('현재 냉난방기 설정을 조회할 수 없습니다');
+      }
+
+      // 설정 병합
+      const updatedHvacSettings = {
+        externalControlEnabled: settings.externalControlEnabled ?? currentSettings.externalControlEnabled,
+        manufacturer: settings.manufacturer !== undefined ? settings.manufacturer : currentSettings.manufacturer,
+        modbus: {
+          port: settings.modbus?.port ?? currentSettings.modbus.port,
+          baudRate: settings.modbus?.baudRate ?? currentSettings.modbus.baudRate,
+          parity: settings.modbus?.parity ?? currentSettings.modbus.parity,
+        },
+      };
+
+      const updated = await this.systemRepository.updateSettings({
+        hvac: updatedHvacSettings,
+      });
+
+      if (!updated?.hvac) {
+        throw new Error('냉난방기 외부제어 설정 업데이트 실패');
+      }
+
+      // ❄️ HVAC 설정 캐시 무효화 (hvac.config.ts에서 사용)
+      try {
+        const { invalidateSystemHvacCache } = await import('../../config/hvac.config');
+        invalidateSystemHvacCache();
+        this.logger?.info('HVAC 설정 캐시 무효화 완료');
+      } catch (error) {
+        this.logger?.warn(`HVAC 설정 캐시 무효화 실패: ${error}`);
+      }
+
+      this.logger?.info('냉난방기 외부제어 설정 업데이트 완료');
+
+      return {
+        externalControlEnabled: updated.hvac.externalControlEnabled ?? false,
+        manufacturer: updated.hvac.manufacturer ?? null,
+        modbus: {
+          port: updated.hvac.modbus?.port ?? '/dev/ttyS1',
+          baudRate: updated.hvac.modbus?.baudRate ?? 9600,
+          parity: updated.hvac.modbus?.parity ?? 'even',
+        },
+      };
+    } catch (error) {
+      this.logger?.error('냉난방기 외부제어 설정 업데이트 중 오류 발생');
+      throw error;
+    }
+  }
 }
