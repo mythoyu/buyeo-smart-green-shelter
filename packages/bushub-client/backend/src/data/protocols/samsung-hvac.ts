@@ -133,13 +133,13 @@ export const samsungHvacProtocol = {
       type: 'number',
     },
 
-    // ❌ 지원하지 않는 명령
-    SET_AUTO: 'NOT_SUPPORTED',
-    GET_AUTO: 'NOT_SUPPORTED',
-    SET_START_TIME_1: 'NOT_SUPPORTED',
-    GET_START_TIME_1: 'NOT_SUPPORTED',
-    SET_END_TIME_1: 'NOT_SUPPORTED',
-    GET_END_TIME_1: 'NOT_SUPPORTED',
+    // ❌ 하드웨어에서 지원하지 않는 명령 (SOFTWARE_VIRTUAL로 처리)
+    SET_AUTO: 'SOFTWARE_VIRTUAL',
+    GET_AUTO: 'SOFTWARE_VIRTUAL',
+    SET_START_TIME_1: 'SOFTWARE_VIRTUAL',
+    GET_START_TIME_1: 'SOFTWARE_VIRTUAL',
+    SET_END_TIME_1: 'SOFTWARE_VIRTUAL',
+    GET_END_TIME_1: 'SOFTWARE_VIRTUAL',
   },
 };
 

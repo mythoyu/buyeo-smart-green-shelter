@@ -246,6 +246,26 @@ export class ServerInitializer {
     }
   }
 
+  /**
+   * ❄️ HVAC 스케줄러 서비스 시작
+   */
+  private async startHvacScheduler(): Promise<void> {
+    try {
+      logInfo('❄️ HVAC 스케줄러 서비스 시작 중...');
+
+      const hvacSchedulerService = this.serviceContainer.getHvacSchedulerService();
+      if (hvacSchedulerService) {
+        await hvacSchedulerService.start();
+        logInfo('✅ HVAC 스케줄러 서비스 시작 완료');
+      } else {
+        logWarn('⚠️ HvacSchedulerService를 찾을 수 없음');
+      }
+    } catch (error) {
+      logError(`❌ HVAC 스케줄러 서비스 시작 실패: ${error}`);
+      // HVAC 스케줄러 실패해도 서버는 계속 실행
+    }
+  }
+
   private async fallbackToMemoryMode(): Promise<void> {
     logWarn('⚠️ MongoDB 연결 실패, 서버 종료...');
     throw new Error('MongoDB 연결 실패로 서버를 시작할 수 없습니다.');
@@ -304,6 +324,9 @@ export class ServerInitializer {
 
     // 🔄 12단계: 폴링 자동 복구 서비스 시작
     await this.startPollingRecovery();
+
+    // ❄️ 13단계: HVAC 스케줄러 서비스 시작
+    await this.startHvacScheduler();
   }
 
   private async initializeModbusServices(): Promise<void> {

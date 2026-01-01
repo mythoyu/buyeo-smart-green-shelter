@@ -1,9 +1,11 @@
 import { Data } from '../../models/schemas/DataSchema';
 import SystemModel from '../../models/schemas/SystemSchema';
+import { Unit } from '../../models/schemas/UnitSchema';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { createSuccessResponse, SuccessResponse } from '../../shared/utils/responseHelper';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ISystemRepository, SystemSettings } from '../repositories/interfaces/ISystemRepository';
+import { getHvacConfigForUnit } from '../../config/hvac.config';
 
 import { ISystemService } from './interfaces/ISystemService';
 import { IWebSocketService } from './interfaces/IWebSocketService';
@@ -530,6 +532,14 @@ export class SystemService implements ISystemService {
       // 2️⃣ 모드버스를 통해 DDC에 설정 반영
       const modbusSuccess = await this.applySeasonalToModbus(clientId, seasonal);
 
+      // 3️⃣ 외부제어 HVAC 유닛에 절기 온도 반영
+      try {
+        await this.applySeasonalToHvac(clientId, seasonal);
+      } catch (error) {
+        this.logger?.warn(`[saveSeasonal] HVAC 절기 온도 적용 실패 (계속 진행): ${error}`);
+        // HVAC 적용 실패해도 DDC 적용은 성공했으므로 계속 진행
+      }
+
       if (modbusSuccess) {
         this.logger?.info(`✅ ${clientId} 절기 설정 저장 완료`);
         // 저장 후 DB에서 조회하여 응답 생성 (season 필드는 readonly이므로 제외)
@@ -682,6 +692,164 @@ export class SystemService implements ISystemService {
 
     this.logger?.info(`✅ ${clientId} 절기 설정 모드버스 반영 완료`);
     return true;
+  }
+
+  /**
+   * ❄️ 절기 설정을 외부제어 HVAC 유닛에 반영
+   * 현재 월 기준으로 여름/겨울 온도 적용
+   */
+  async applySeasonalToHvac(clientId: string, seasonal: SeasonalData): Promise<boolean> {
+    this.logger?.info(`🔄 ${clientId} 절기 설정 HVAC 반영 시작`);
+
+    try {
+      // 1. 현재 월 확인
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // 1-12
+
+      // 2. 현재 절기 확인 (월별 설정 확인)
+      const monthFieldMap: Record<number, keyof SeasonalData> = {
+        1: 'january',
+        2: 'february',
+        3: 'march',
+        4: 'april',
+        5: 'may',
+        6: 'june',
+        7: 'july',
+        8: 'august',
+        9: 'september',
+        10: 'october',
+        11: 'november',
+        12: 'december',
+      };
+
+      const currentMonthField = monthFieldMap[currentMonth];
+      const isSummer = seasonal[currentMonthField] === 1;
+
+      this.logger?.info(
+        `[applySeasonalToHvac] 현재 월: ${currentMonth}, 절기: ${isSummer ? '여름' : '겨울'}`,
+      );
+
+      // 3. 모든 cooler 타입 유닛 조회
+      const units = await Unit.find({ type: 'cooler' }).lean();
+
+      if (units.length === 0) {
+        this.logger?.info(`[applySeasonalToHvac] 처리할 cooler 유닛 없음`);
+        return true;
+      }
+
+      // 4. ControlService 가져오기
+      const serviceContainer = ServiceContainer.getInstance();
+      const controlService = serviceContainer.getControlService();
+
+      let successCount = 0;
+      let failureCount = 0;
+
+      // 5. 각 유닛별로 처리
+      for (const unit of units) {
+        try {
+          // 5-1. HVAC 설정 확인
+          const hvacConfig = await getHvacConfigForUnit(unit);
+
+          // 5-2. externalControlEnabled 확인
+          if (!hvacConfig.externalControlEnabled) {
+            this.logger?.debug(
+              `[applySeasonalToHvac] 스킵: ${unit.deviceId}/${unit.unitId} - externalControlEnabled=false`,
+            );
+            continue;
+          }
+
+          // 5-3. manufacturer 확인
+          if (!hvacConfig.manufacturer) {
+            this.logger?.warn(
+              `[applySeasonalToHvac] 스킵: ${unit.deviceId}/${unit.unitId} - manufacturer 미설정`,
+            );
+            continue;
+          }
+
+          // 5-4. Data 컬렉션에서 온도 값 확인
+          const dataDoc = await Data.findOne({
+            deviceId: unit.deviceId,
+            'units.unitId': unit.unitId,
+          });
+
+          if (!dataDoc) {
+            this.logger?.warn(`[applySeasonalToHvac] Data 없음: ${unit.deviceId}/${unit.unitId}`);
+            continue;
+          }
+
+          const unitData = dataDoc.units.find((u: any) => u.unitId === unit.unitId);
+          if (!unitData || !unitData.data) {
+            this.logger?.warn(`[applySeasonalToHvac] Unit 데이터 없음: ${unit.deviceId}/${unit.unitId}`);
+            continue;
+          }
+
+          // 5-5. 제조사별 온도 필드 확인
+          let targetTemp: number | undefined;
+
+          if (hvacConfig.manufacturer === 'SAMSUNG') {
+            // 삼성: summer_cont_temp 또는 winter_cont_temp 사용
+            if (isSummer) {
+              targetTemp = unitData.data.summer_cont_temp;
+            } else {
+              targetTemp = unitData.data.winter_cont_temp;
+            }
+          } else if (hvacConfig.manufacturer === 'LG') {
+            // LG: 단일 temp 필드 사용 (절기 구분 없음)
+            targetTemp = unitData.data.temp;
+          }
+
+          if (targetTemp === undefined || targetTemp === null) {
+            this.logger?.warn(
+              `[applySeasonalToHvac] 온도 값 없음: ${unit.deviceId}/${unit.unitId} - ${isSummer ? 'summer_cont_temp' : 'winter_cont_temp'}`,
+            );
+            continue;
+          }
+
+          // 5-6. Device 정보 가져오기
+          const { Device } = await import('../../models/schemas/DeviceSchema');
+          const device = await Device.findOne({ deviceId: unit.deviceId }).lean();
+
+          if (!device) {
+            this.logger?.warn(`[applySeasonalToHvac] Device 없음: ${unit.deviceId}`);
+            continue;
+          }
+
+          // 5-7. SET_TEMP 명령 실행
+          this.logger?.info(
+            `[applySeasonalToHvac] 온도 적용: ${unit.deviceId}/${unit.unitId} - ${isSummer ? '여름' : '겨울'} 온도 ${targetTemp}°C`,
+          );
+
+          const result = await controlService.executeUnitCommand(unit, device, 'SET_TEMP', targetTemp);
+
+          if (result.success) {
+            successCount++;
+            this.logger?.info(
+              `[applySeasonalToHvac] 온도 적용 성공: ${unit.deviceId}/${unit.unitId} - ${targetTemp}°C`,
+            );
+          } else {
+            failureCount++;
+            this.logger?.error(
+              `[applySeasonalToHvac] 온도 적용 실패: ${unit.deviceId}/${unit.unitId} - ${targetTemp}°C`,
+            );
+          }
+        } catch (error) {
+          failureCount++;
+          this.logger?.error(
+            `[applySeasonalToHvac] 유닛 처리 실패: ${unit.deviceId}/${unit.unitId} - ${error}`,
+          );
+          // 다음 유닛 계속 처리
+        }
+      }
+
+      this.logger?.info(
+        `✅ ${clientId} 절기 설정 HVAC 반영 완료: 성공 ${successCount}개, 실패 ${failureCount}개`,
+      );
+
+      return failureCount === 0;
+    } catch (error) {
+      this.logger?.error(`❌ ${clientId} 절기 설정 HVAC 반영 실패: ${error}`);
+      throw error;
+    }
   }
 
   async refreshSeasonal(clientId: string): Promise<SuccessResponse> {

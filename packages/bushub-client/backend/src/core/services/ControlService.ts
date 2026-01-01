@@ -180,6 +180,25 @@ export class ControlService implements IControlService {
   ): Promise<CommandResult> {
     this.logger?.info(`🔍 executeUnitCommand 시작: ${unit.deviceId}/${unit.unitId} - ${commandKey} = ${value}`);
 
+    // 🆕 SOFTWARE_VIRTUAL 명령어 처리 (냉난방기 외부제어 전용)
+    if (unit.type === 'cooler') {
+      try {
+        const commandSpec = getModbusCommandWithPortMapping(unit, commandKey);
+        if (commandSpec && (commandSpec as any).type === 'SOFTWARE_VIRTUAL') {
+          this.logger?.info(`[ControlService] SOFTWARE_VIRTUAL 명령어 감지: ${commandKey}`);
+          
+          if (commandKey.startsWith('GET_')) {
+            return this.executeSoftwareGetCommandVirtual(unit, device, commandKey, commandSpec as any, _request);
+          } else {
+            return this.executeSoftwareVirtualCommand(unit, device, commandKey, value, commandSpec as any, _request);
+          }
+        }
+      } catch (error) {
+        // getModbusCommandWithPortMapping 실패 시 일반 경로로 진행
+        this.logger?.debug(`[ControlService] SOFTWARE_VIRTUAL 확인 실패, 일반 경로로 진행: ${error}`);
+      }
+    }
+
     // 🆕 시간 명령어를 일반 Modbus 경로로 처리
     if (this.isTimeCommand(commandKey)) {
       this.logger?.info(`[ControlService] 시간 명령어 감지: ${commandKey} - 일반 Modbus 경로로 처리`);
@@ -1112,6 +1131,151 @@ export class ControlService implements IControlService {
         'error',
         'system',
         `수동모드 활성화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
+      );
+
+      throw error;
+    }
+  }
+
+  /**
+   * SOFTWARE_VIRTUAL 명령 처리 (SET): DB에만 저장하고 Modbus 명령은 보내지 않음
+   */
+  private async executeSoftwareVirtualCommand(
+    unit: IUnit,
+    device: IDevice,
+    commandKey: string,
+    value: any,
+    commandSpec: { type: string; collection: string; field: string; dataType: string },
+    _request?: any,
+  ): Promise<CommandResult> {
+    this.logger?.info(
+      `[ControlService] SOFTWARE_VIRTUAL SET 명령 처리: ${unit.deviceId}/${unit.unitId} - ${commandKey} = ${value}`,
+    );
+
+    // 명령 로그 생성 (waiting 상태)
+    const commandLog = await this.controlRepository.createCommandLog({
+      deviceId: unit.deviceId,
+      unitId: unit.unitId,
+      action: commandKey,
+      value,
+      status: 'waiting',
+    });
+
+    const requestId = (commandLog._id as any).toString();
+
+    try {
+      // DB에 직접 저장
+      const dataToUpdate: { [key: string]: any } = {};
+      dataToUpdate[commandSpec.field] = value;
+
+      await this.commandResultHandler.updateDeviceData(unit.deviceId, unit.unitId, dataToUpdate, {
+        source: 'control',
+      });
+
+      // CommandLog 업데이트 (success)
+      await this.controlRepository.updateCommandLog(requestId, {
+        status: 'success',
+        finishedAt: new Date(),
+        result: value,
+      });
+
+      this.logger?.info(
+        `[ControlService] SOFTWARE_VIRTUAL SET 명령 완료: ${unit.deviceId}/${unit.unitId} - ${commandSpec.field} = ${value}`,
+      );
+
+      return {
+        requestId,
+        success: true,
+        message: `SOFTWARE_VIRTUAL 명령 실행 완료: ${commandSpec.field} = ${value}`,
+        data: value,
+      };
+    } catch (error) {
+      // CommandLog 업데이트 (failed)
+      await this.controlRepository.updateCommandLog(requestId, {
+        status: 'failed',
+        finishedAt: new Date(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      this.logger?.error(
+        `[ControlService] SOFTWARE_VIRTUAL SET 명령 실패: ${unit.deviceId}/${unit.unitId} - ${commandKey} = ${value} - ${error}`,
+      );
+
+      throw error;
+    }
+  }
+
+  /**
+   * SOFTWARE_VIRTUAL 명령 처리 (GET): DB에서 직접 읽기
+   */
+  private async executeSoftwareGetCommandVirtual(
+    unit: IUnit,
+    device: IDevice,
+    commandKey: string,
+    commandSpec: { type: string; collection: string; field: string; dataType: string },
+    _request?: any,
+  ): Promise<CommandResult> {
+    this.logger?.info(
+      `[ControlService] SOFTWARE_VIRTUAL GET 명령 처리: ${unit.deviceId}/${unit.unitId} - ${commandKey}`,
+    );
+
+    // 명령 로그 생성 (waiting 상태)
+    const commandLog = await this.controlRepository.createCommandLog({
+      deviceId: unit.deviceId,
+      unitId: unit.unitId,
+      action: commandKey,
+      value: undefined,
+      status: 'waiting',
+    });
+
+    const requestId = (commandLog._id as any).toString();
+
+    try {
+      // Data 컬렉션에서 직접 읽기
+      const { Data } = await import('../../models/schemas/DataSchema');
+      const dataDoc = await Data.findOne({
+        deviceId: unit.deviceId,
+        'units.unitId': unit.unitId,
+      });
+
+      if (!dataDoc) {
+        throw new Error(`Data를 찾을 수 없습니다: ${unit.deviceId}/${unit.unitId}`);
+      }
+
+      const unitData = dataDoc.units.find((u: any) => u.unitId === unit.unitId);
+      if (!unitData || !unitData.data) {
+        throw new Error(`Unit 데이터를 찾을 수 없습니다: ${unit.deviceId}/${unit.unitId}`);
+      }
+
+      const value = unitData.data[commandSpec.field];
+
+      // CommandLog 업데이트 (success)
+      await this.controlRepository.updateCommandLog(requestId, {
+        status: 'success',
+        finishedAt: new Date(),
+        result: value,
+      });
+
+      this.logger?.info(
+        `[ControlService] SOFTWARE_VIRTUAL GET 명령 완료: ${unit.deviceId}/${unit.unitId} - ${commandSpec.field} = ${value}`,
+      );
+
+      return {
+        requestId,
+        success: true,
+        message: `SOFTWARE_VIRTUAL 명령 실행 완료: ${commandSpec.field}`,
+        data: value,
+      };
+    } catch (error) {
+      // CommandLog 업데이트 (failed)
+      await this.controlRepository.updateCommandLog(requestId, {
+        status: 'failed',
+        finishedAt: new Date(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      this.logger?.error(
+        `[ControlService] SOFTWARE_VIRTUAL GET 명령 실패: ${unit.deviceId}/${unit.unitId} - ${commandKey} - ${error}`,
       );
 
       throw error;

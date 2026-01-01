@@ -112,6 +112,33 @@ export function getExternalControlHvacCommandSync(unit: IUnit, commandKey: strin
     );
   }
 
+  // SOFTWARE_VIRTUAL 명령 처리: DB에만 저장하고 Modbus 명령은 보내지 않음
+  if (command === 'SOFTWARE_VIRTUAL') {
+    // 명령 키에 따라 field와 type 결정
+    let field: string;
+    let type: 'boolean' | 'string';
+
+    if (commandKey === 'SET_AUTO' || commandKey === 'GET_AUTO') {
+      field = 'auto';
+      type = 'boolean';
+    } else if (commandKey === 'SET_START_TIME_1' || commandKey === 'GET_START_TIME_1') {
+      field = 'start_time_1';
+      type = 'string';
+    } else if (commandKey === 'SET_END_TIME_1' || commandKey === 'GET_END_TIME_1') {
+      field = 'end_time_1';
+      type = 'string';
+    } else {
+      throw new HttpValidationError(`SOFTWARE_VIRTUAL 명령 '${commandKey}'의 field를 결정할 수 없습니다.`);
+    }
+
+    return {
+      type: 'SOFTWARE_VIRTUAL',
+      collection: 'data',
+      field,
+      type,
+    };
+  }
+
   return command;
 }
 
@@ -179,6 +206,33 @@ export async function getExternalControlHvacCommand(unit: IUnit, commandKey: str
     throw new HttpValidationError(
       `명령 '${commandKey}'는 ${manufacturer} 냉난방기에서 지원되지 않습니다. 이 명령은 DDC 제어 냉난방기에서만 사용 가능합니다.`,
     );
+  }
+
+  // SOFTWARE_VIRTUAL 명령 처리: DB에만 저장하고 Modbus 명령은 보내지 않음
+  if (command === 'SOFTWARE_VIRTUAL') {
+    // 명령 키에 따라 field와 type 결정
+    let field: string;
+    let type: 'boolean' | 'string';
+
+    if (commandKey === 'SET_AUTO' || commandKey === 'GET_AUTO') {
+      field = 'auto';
+      type = 'boolean';
+    } else if (commandKey === 'SET_START_TIME_1' || commandKey === 'GET_START_TIME_1') {
+      field = 'start_time_1';
+      type = 'string';
+    } else if (commandKey === 'SET_END_TIME_1' || commandKey === 'GET_END_TIME_1') {
+      field = 'end_time_1';
+      type = 'string';
+    } else {
+      throw new HttpValidationError(`SOFTWARE_VIRTUAL 명령 '${commandKey}'의 field를 결정할 수 없습니다.`);
+    }
+
+    return {
+      type: 'SOFTWARE_VIRTUAL',
+      collection: 'data',
+      field,
+      type,
+    };
   }
 
   return command;

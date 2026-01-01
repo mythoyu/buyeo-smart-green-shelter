@@ -34,6 +34,7 @@ import { DataSyncService } from '../services/DataSyncService';
 import { DdcTimeSyncService } from '../services/DdcTimeSyncService';
 import { ErrorService } from '../services/ErrorService';
 import { PollingAutoRecoveryService } from '../services/PollingAutoRecoveryService';
+import { HvacSchedulerService, IHvacSchedulerService } from '../services/HvacSchedulerService';
 import { IApiKeyService } from '../services/interfaces/IApiKeyService';
 import { IClientService } from '../services/interfaces/IClientService';
 import { ICommandLogService } from '../services/interfaces/ICommandLogService';
@@ -50,6 +51,7 @@ import { IUserConfigService } from '../services/interfaces/IUserConfigService';
 import { IUserService } from '../services/interfaces/IUserService';
 import { IWebSocketService } from '../services/interfaces/IWebSocketService';
 import { IPollingAutoRecoveryService } from '../services/interfaces/IPollingAutoRecoveryService';
+import { IHvacSchedulerService } from '../services/HvacSchedulerService';
 import { LinuxSystemService } from '../services/LinuxSystemService';
 import { LogSchedulerService } from '../services/LogSchedulerService';
 import { ModbusCommandQueue } from '../services/ModbusCommandQueue';
@@ -292,6 +294,10 @@ export class ServiceContainer {
     const pollingAutoRecoveryService = new PollingAutoRecoveryService(this.services.get('logger'));
     this.services.set('pollingAutoRecoveryService', pollingAutoRecoveryService);
 
+    // ❄️ HVAC 스케줄러 서비스 등록
+    const hvacSchedulerService = new HvacSchedulerService(this.services.get('logger'));
+    this.services.set('hvacSchedulerService', hvacSchedulerService);
+
     // 🎯 DDC 설정 서비스 등록
 
     // CommandResultHandler 서비스 등록 (이미 생성된 인스턴스 사용)
@@ -427,6 +433,10 @@ export class ServiceContainer {
     return this.services.get('pollingAutoRecoveryService');
   }
 
+  public getHvacSchedulerService(): IHvacSchedulerService {
+    return this.services.get('hvacSchedulerService');
+  }
+
   public getErrorService(): IErrorService {
     return this.services.get('errorService');
   }
@@ -482,6 +492,7 @@ export class ServiceContainer {
       unifiedLogService: this.getUnifiedLogService(),
       ddcTimeSyncService: this.getDdcTimeSyncService(),
       pollingAutoRecoveryService: this.getPollingAutoRecoveryService(),
+      hvacSchedulerService: this.getHvacSchedulerService(),
     };
   }
 

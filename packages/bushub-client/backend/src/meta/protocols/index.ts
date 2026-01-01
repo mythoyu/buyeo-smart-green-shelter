@@ -180,6 +180,16 @@ export const getModbusCommandWithPortMapping = (unit: IUnit, commandKey: string)
         const { getExternalControlHvacCommandSync } = require('../../data/protocols/hvacProtocols');
         const externalCommand = getExternalControlHvacCommandSync(unit, commandKey);
 
+        // SOFTWARE_VIRTUAL 명령 처리: Modbus 명령이 아닌 특별한 객체 반환
+        if (externalCommand && externalCommand.type === 'SOFTWARE_VIRTUAL') {
+          return {
+            type: 'SOFTWARE_VIRTUAL',
+            collection: externalCommand.collection,
+            field: externalCommand.field,
+            dataType: externalCommand.type,
+          } as any;
+        }
+
         // 외부제어 명령을 ModbusCommand 형식으로 변환
         const result = {
           name: externalCommand.port.description || externalCommand.description,
