@@ -15,13 +15,13 @@ export const cooler = {
       type: 'boolean',
     },
     SET_POWER: {
-      port: HW_PORTS.COOLER.POWER.set,
+      port: HW_PORTS.POWER_SAMSUNG.set,
       collection: 'data',
       field: 'power',
       type: 'boolean',
     },
     GET_POWER: {
-      port: HW_PORTS.COOLER.POWER.get,
+      port: HW_PORTS.POWER_SAMSUNG.get,
       collection: 'data',
       field: 'power',
       type: 'boolean',

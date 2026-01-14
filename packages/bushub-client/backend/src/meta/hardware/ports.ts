@@ -1550,6 +1550,19 @@ export const HW_PORTS = {
     },
   },
 
+  POWER_SAMSUNG: {
+    set: {
+      functionCode: MODBUS_FC.WR_SNGL_COIL,
+      address: 380,
+      description: '삼성 냉난방기 전원 설정',
+    },
+    get: {
+      functionCode: MODBUS_FC.RD_HLD_REG,
+      address: 142,
+      description: '삼성 냉난방기 전원 상태',
+    },
+  },
+
   EXCHANGER: {
     AUTO: {
       set: {
