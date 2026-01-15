@@ -1423,6 +1423,18 @@ export const HW_PORTS = {
         description: '냉난방기 전원 상태',
       },
     },
+    POWER_SAMSUNG: {
+      set: {
+        functionCode: MODBUS_FC.WR_SNGL_COIL,
+        address: 380,
+        description: '삼성 냉난방기 전원 설정',
+      },
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 142,
+        description: '삼성 냉난방기 전원 상태',
+      },
+    },
     MODE: {
       set: {
         functionCode: MODBUS_FC.WR_SNGL_REG,
@@ -1547,19 +1559,6 @@ export const HW_PORTS = {
         address: 102,
         description: '냉난방기 스케줄1 종료분',
       },
-    },
-  },
-
-  POWER_SAMSUNG: {
-    set: {
-      functionCode: MODBUS_FC.WR_SNGL_COIL,
-      address: 380,
-      description: '삼성 냉난방기 전원 설정',
-    },
-    get: {
-      functionCode: MODBUS_FC.RD_HLD_REG,
-      address: 142,
-      description: '삼성 냉난방기 전원 상태',
     },
   },
 

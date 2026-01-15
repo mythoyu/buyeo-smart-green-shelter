@@ -175,6 +175,24 @@ export class DdcTimeSyncService implements IDdcTimeSyncService {
         throw new Error(`DDC 시간 동기화 실패: ${clientId} (${successCount}/${ddcTimeCommands.length})`);
       }
 
+      // 🎯 DB에 동기화된 시간 저장
+      const systemService = this.serviceContainer.getSystemService();
+      const syncedDdcTime = {
+        year: kst.year,
+        month: kst.month,
+        day: kst.day,
+        dow: kst.dow,
+        hour: kst.hour,
+        minute: kst.minute,
+        second: kst.second,
+      };
+
+      await systemService.updateSettings({
+        ddcTime: syncedDdcTime,
+      });
+
+      this.logger.info(`✅ ${clientId} DDC 시간 동기화 및 DB 저장 완료`);
+
       // 🎯 클라이언트 ID를 포함한 명령 실행 완료 로그
       // this.logger.info(`✅ ${clientId} DDC 시간 동기화 명령 ${ddcTimeCommands.length}개 실행 완료`);
     } catch (error) {
