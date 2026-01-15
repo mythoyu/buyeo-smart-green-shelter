@@ -11,6 +11,7 @@ export interface PortSpec {
 export interface ReverseIndexSpec extends PortSpec {
   functionCode: number;
   address: number;
+  clientId?: string; // 클라이언트 ID (c0101, c0102, c0105 등)
 }
 
 const makeKey = (functionCode: number, address: number): string => `${functionCode}:${address}`;
@@ -45,15 +46,15 @@ export const buildReverseIndex = (): Map<string, ReverseIndexSpec> => {
               typeof spec.port.address === 'number'
             ) {
               const key = makeKey(spec.port.functionCode, spec.port.address);
-              if (!index.has(key)) {
-                index.set(key, {
-                  functionCode: spec.port.functionCode,
-                  address: spec.port.address,
-                  field: spec.field,
-                  type: spec.type,
-                  deviceType,
-                });
-              }
+              // 같은 address를 사용하는 경우 마지막 클라이언트의 clientId 저장
+              index.set(key, {
+                functionCode: spec.port.functionCode,
+                address: spec.port.address,
+                field: spec.field,
+                type: spec.type,
+                deviceType,
+                clientId, // 클라이언트 ID 저장
+              });
             }
           }
         }

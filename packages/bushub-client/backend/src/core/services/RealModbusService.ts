@@ -696,9 +696,53 @@ export class RealModbusService implements IModbusCommunication {
       return rawValue; // 기본 변환
     }
 
-    // const field = spec.field || '';
+    const field = spec.field || '';
+    const deviceType = (spec.deviceType || '').toString();
+    const clientId = spec.clientId || '';
+
+    // 🎯 c0101, c0102, c0105 삼성 냉난방기 전용 변환 (MODE/SPEED)
+    if ((clientId === 'c0101' || clientId === 'c0102' || clientId === 'c0105') && deviceType === 'cooler') {
+      // MODE 변환: 삼성 Modbus 값 → REST API 값
+      // 삼성 Modbus: 0x0000=자동, 0x0001=냉방, 0x0002=제습, 0x0003=송풍, 0x0004=난방
+      // REST API: 0=냉방, 1=제습, 2=송풍, 3=자동, 4=난방
+      if (field === 'mode') {
+        const modbusValue = Number(rawValue);
+        const modeMap: Record<number, number> = {
+          0: 3, // 자동 → 자동
+          1: 0, // 냉방 → 냉방
+          2: 1, // 제습 → 제습
+          3: 2, // 송풍 → 송풍
+          4: 4, // 난방 → 난방
+        };
+        const restApiValue = modeMap[modbusValue];
+        if (restApiValue === undefined) {
+          this.logger?.warn(`[RealModbusService] 알 수 없는 Modbus MODE 값: ${modbusValue}`);
+          return modbusValue; // 기본값으로 원본 반환
+        }
+        return restApiValue;
+      }
+
+      // SPEED 변환: 삼성 Modbus 값 → REST API 값
+      // 삼성 Modbus: 0x0000=자동, 0x0001=미풍, 0x0002=약풍, 0x0003=강풍
+      // REST API: 1=약, 2=중, 3=강, 4=자동
+      if (field === 'speed') {
+        const modbusValue = Number(rawValue);
+        const speedMap: Record<number, number> = {
+          0: 4, // 자동 → 자동
+          1: 1, // 미풍 → 약
+          2: 2, // 약풍 → 중
+          3: 3, // 강풍 → 강
+        };
+        const restApiValue = speedMap[modbusValue];
+        if (restApiValue === undefined) {
+          this.logger?.warn(`[RealModbusService] 알 수 없는 Modbus SPEED 값: ${modbusValue}`);
+          return 1; // 기본값으로 약 반환
+        }
+        return restApiValue;
+      }
+    }
+
     // const type = (spec.type || '').toString();
-    // const deviceType = (spec.deviceType || '').toString();
 
     // // boolean 계열 (0/1 유지)
     // if (type === 'boolean' || field === 'auto' || field === 'power' || field === 'alarm') {
@@ -743,6 +787,49 @@ export class RealModbusService implements IModbusCommunication {
     const field = spec.field || '';
     const type = (spec.type || '').toString();
     const deviceType = (spec.deviceType || '').toString();
+    const clientId = spec.clientId || '';
+
+    // 🎯 c0101, c0102, c0105 삼성 냉난방기 전용 변환 (MODE/SPEED)
+    if ((clientId === 'c0101' || clientId === 'c0102' || clientId === 'c0105') && deviceType === 'cooler') {
+      // MODE 변환: REST API 값 → 삼성 Modbus 값
+      // REST API: 0=냉방, 1=제습, 2=송풍, 3=자동, 4=난방
+      // 삼성 Modbus: 0x0000=자동, 0x0001=냉방, 0x0002=제습, 0x0003=송풍, 0x0004=난방
+      if (field === 'mode') {
+        const modeValue = Number(userValue);
+        const modeMap: Record<number, number> = {
+          0: 1, // 냉방 → 냉방
+          1: 2, // 제습 → 제습
+          2: 3, // 송풍 → 송풍
+          3: 0, // 자동 → 자동
+          4: 4, // 난방 → 난방
+        };
+        const modbusValue = modeMap[modeValue];
+        if (modbusValue === undefined) {
+          this.logger?.warn(`[RealModbusService] 지원하지 않는 MODE 값: ${modeValue}`);
+          return modeValue; // 기본값으로 원본 반환
+        }
+        return modbusValue;
+      }
+
+      // SPEED 변환: REST API 값 → 삼성 Modbus 값
+      // REST API: 1=약, 2=중, 3=강, 4=자동
+      // 삼성 Modbus: 0x0000=자동, 0x0001=미풍, 0x0002=약풍, 0x0003=강풍
+      if (field === 'speed') {
+        const speedValue = Number(userValue);
+        const speedMap: Record<number, number> = {
+          1: 1, // 약 → 미풍
+          2: 2, // 중 → 약풍
+          3: 3, // 강 → 강풍
+          4: 0, // 자동 → 자동
+        };
+        const modbusValue = speedMap[speedValue];
+        if (modbusValue === undefined) {
+          this.logger?.warn(`[RealModbusService] 지원하지 않는 SPEED 값: ${speedValue}`);
+          return 1; // 기본값으로 미풍 반환
+        }
+        return modbusValue;
+      }
+    }
 
     // 온도 역변환 (사용자 온도 → 하드웨어 레지스터 값)
     if (field === 'temp' || field === 'cur_temp') {
