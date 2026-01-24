@@ -1,9 +1,8 @@
-import { Wifi, Network, Clock, Sun, Cpu, Loader2, RefreshCcw } from 'lucide-react';
+import { Wifi, Network, Clock, Sun, Cpu, Loader2, RefreshCcw, Users } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-// import { internalApi } from '../../api/axiosInstance';
-// import { useSaveSnapshot, useDeleteSnapshot } from '../../api/queries/snapshots';
+import { useGetPeopleCounterState, useUpdatePeopleCounterState } from '../../api/queries/people-counter';
 import {
   useSaveSeasonal,
   useGetSeasonal,
@@ -33,7 +32,6 @@ import OnOffToggleButton from '../common/OnOffToggleButton';
 import SelectWithCommand from '../common/SelectWithCommand';
 import SelectWithLabel from '../common/SelectWithLabel';
 import SettingsCard from '../common/SettingsCard';
-// import SnapshotListDialog from '../common/SnapshotListDialog';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Button } from '../ui/button';
 import { SelectItem } from '../ui/select';
@@ -229,9 +227,6 @@ const SystemSettingsPage: React.FC = () => {
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
   // 뮤테이션 훅들
-  // const saveSnapshotMutation = useSaveSnapshot();
-  // const deleteSnapshotMutation = useDeleteSnapshot();
-  // const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
   const setNtpMutation = useSetNtp();
   const checkNtpMutation = useCheckNtpConnectivity();
   const setNetworkMutation = useSetNetwork();
@@ -239,6 +234,8 @@ const SystemSettingsPage: React.FC = () => {
   const saveSeasonalMutation = useSaveSeasonal();
   const syncDdcTimeMutation = useSyncDdcTime();
   const setPollingIntervalMutation = useSetPollingInterval();
+  const { data: peopleCounterData } = useGetPeopleCounterState();
+  const updatePeopleCounterMutation = useUpdatePeopleCounterState();
 
   // 🌸 절기 설정 초기 로드 (저장된 설정이 있으면 불러오기)
   useEffect(() => {
@@ -566,6 +563,18 @@ const SystemSettingsPage: React.FC = () => {
     if (interval < 1000) return `${interval}ms`;
     if (interval < 60000) return `${interval / 1000}초`;
     return `${interval / 60000}분`;
+  };
+
+  const handlePeopleCounterToggle = async (enabled: boolean) => {
+    try {
+      await updatePeopleCounterMutation.mutateAsync(enabled);
+      toast.success(enabled ? '피플카운터가 활성화되었습니다' : '피플카운터가 비활성화되었습니다', {
+        id: 'people-counter-toggle',
+      });
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.response?.data?.error || '피플카운터 설정 변경에 실패했습니다';
+      toast.error(msg, { id: 'people-counter-toggle-error' });
+    }
   };
 
   // 현재 시간을 1초마다 업데이트하는 useEffect
@@ -1311,10 +1320,48 @@ const SystemSettingsPage: React.FC = () => {
           </SettingsCard>
         </div>
 
-        {/* 시스템 재기동 카드 */}
+        {/* 피플카운터 Enable/Disable */}
         <div
           style={{
             animationDelay: '600ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
+            icon={Users}
+            title='피플카운터'
+            description='입장 인원 계수 기능 사용 여부 (APC100 등)'
+          >
+            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+              <div>
+                <span className='text-sm font-medium'>피플카운터</span>
+                <p className='text-xs text-muted-foreground mt-1'>
+                  {updatePeopleCounterMutation.isPending
+                    ? '적용 중...'
+                    : peopleCounterData?.peopleCounterEnabled
+                      ? '활성화'
+                      : '비활성화'}
+                </p>
+              </div>
+              <span className={cn(updatePeopleCounterMutation.isPending && 'opacity-50 pointer-events-none')}>
+                <OnOffToggleButton
+                  checked={!!peopleCounterData?.peopleCounterEnabled}
+                  onChange={handlePeopleCounterToggle}
+                  labelOn='ON'
+                  labelOff='OFF'
+                />
+              </span>
+            </div>
+            <p className='text-xs text-muted-foreground'>
+              피플카운터 장비가 연결된 경우에만 활성화하세요. 비활성화 시 해당 기능이 동작하지 않습니다.
+            </p>
+          </SettingsCard>
+        </div>
+
+        {/* 시스템 재기동 카드 */}
+        <div
+          style={{
+            animationDelay: '700ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
           }}
         >

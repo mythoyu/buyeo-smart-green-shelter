@@ -11,6 +11,7 @@ import domainStatusRoutes from '../api/v1/routes/domain-status';
 import errorsRoutes from '../api/v1/routes/errors';
 import hardwareRoutes from '../api/v1/routes/hardware';
 import logsRoutes from '../api/v1/routes/logs';
+import peopleCounterExternalRoutes from '../api/v1/routes/people-counter-external';
 import statusRoutes from '../api/v1/routes/status';
 import systemRoutes from '../api/v1/routes/system';
 import systemMonitoringRoutes from '../api/v1/routes/system-monitoring';
@@ -106,7 +107,16 @@ export class RouterManager {
    * 외부 라우터 목록 반환
    */
   public getExternalRoutes(): RouteModule[] {
-    return [clientRoutes, clientsRoutes, statusRoutes, dataRoutes, errorsRoutes, controlRoutes, systemSeasonalRoutes];
+    return [
+      clientRoutes,
+      clientsRoutes,
+      statusRoutes,
+      dataRoutes,
+      errorsRoutes,
+      controlRoutes,
+      systemSeasonalRoutes,
+      peopleCounterExternalRoutes,
+    ];
   }
 
   /**

@@ -14,6 +14,7 @@ export interface ISystem extends Document {
     pollingEnabled: boolean;
     pollingInterval: number; // 이동됨
     applyInProgress: boolean;
+    peopleCounterEnabled?: boolean;
   };
 
   // 🌸 절기 설정
@@ -83,6 +84,7 @@ const SystemSchema = new Schema<ISystem>(
         max: [3600000, '폴링 간격은 최대 3600000ms(1시간)까지 가능합니다.'],
       },
       applyInProgress: { type: Boolean, default: false },
+      peopleCounterEnabled: { type: Boolean },
     },
     // 🌸 절기 설정
     seasonal: {
@@ -126,6 +128,7 @@ SystemSchema.statics.getDefaultSettings = function () {
       pollingEnabled: false, // 새로운 시스템 초기화 시에만 사용
       pollingInterval: 20000,
       applyInProgress: false,
+      peopleCounterEnabled: false,
     },
     // 🌸 절기 설정 기본값
     seasonal: {

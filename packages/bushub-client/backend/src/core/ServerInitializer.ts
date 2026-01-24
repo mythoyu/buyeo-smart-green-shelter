@@ -304,6 +304,21 @@ export class ServerInitializer {
 
     // 🔄 12단계: 폴링 자동 복구 서비스 시작
     await this.startPollingRecovery();
+
+    // 13단계: 피플카운터 폴러 시작 (peopleCounterEnabled일 때만 실제 폴링)
+    this.startPeopleCounterPoller();
+  }
+
+  private startPeopleCounterPoller(): void {
+    try {
+      const poller = this.serviceContainer.getPeopleCounterPoller();
+      if (poller) {
+        poller.start();
+        logInfo('✅ 피플카운터 폴러 시작 (설정 ON 시 ttyS1 폴링)');
+      }
+    } catch (error) {
+      logWarn(`⚠️ 피플카운터 폴러 시작 건너뜀: ${error}`);
+    }
   }
 
   private async initializeModbusServices(): Promise<void> {

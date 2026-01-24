@@ -73,72 +73,6 @@ export class SystemService implements ISystemService {
     }
   }
 
-  /**
-   * 🆕 스냅샷 시스템 설정 적용 (백업 및 롤백 포함)
-   */
-  async applySnapshotSettings(snapshotData: any, appliedBy: string): Promise<SystemSettings | null> {
-    try {
-      this.logger?.info(`[SystemService] 스냅샷 시스템 설정 적용 시작: ${appliedBy}`);
-
-      // 1단계: 현재 설정 백업
-      this.logger?.info('[SystemService] 현재 시스템 설정 백업 중...');
-      const currentSettings = await this.getSettings();
-      if (!currentSettings) {
-        throw new Error('현재 시스템 설정을 조회할 수 없습니다');
-      }
-
-      try {
-        // 2단계: 스냅샷 데이터 검증
-        this.logger?.info('[SystemService] 스냅샷 데이터 검증 중...');
-        await this.validateSnapshotSettings(snapshotData);
-
-        // 3단계: 스냅샷 설정 적용
-        this.logger?.info('[SystemService] 스냅샷 설정 적용 중...');
-        const updated = await this.systemRepository.updateSettings(snapshotData);
-
-        this.logger?.info('[SystemService] 스냅샷 시스템 설정 적용 완료');
-        return updated;
-      } catch (error) {
-        // 롤백 시도
-        this.logger?.warn(`[SystemService] 스냅샷 적용 실패, 롤백 시도: ${error}`);
-        try {
-          await this.systemRepository.updateSettings(currentSettings);
-          this.logger?.info('[SystemService] 시스템 설정 롤백 완료');
-        } catch (rollbackError) {
-          this.logger?.error(`[SystemService] 롤백 실패: ${rollbackError}`);
-        }
-        throw error;
-      }
-    } catch (error) {
-      this.logger?.error(`[SystemService] 스냅샷 시스템 설정 적용 실패: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
-   * 🆕 스냅샷 시스템 설정 검증
-   */
-  private async validateSnapshotSettings(snapshotData: any): Promise<void> {
-    if (!snapshotData || typeof snapshotData !== 'object') {
-      throw new Error('스냅샷 시스템 설정 데이터가 유효하지 않습니다');
-    }
-
-    // 필수 필드 검증
-    const requiredFields = ['client', 'ntp', 'network'];
-    for (const field of requiredFields) {
-      if (!snapshotData[field]) {
-        throw new Error(`스냅샷에 필수 필드 '${field}'가 없습니다`);
-      }
-    }
-
-    // 클라이언트 정보 검증
-    if (!snapshotData.client.name || !snapshotData.client.id) {
-      throw new Error('스냅샷에 클라이언트 정보가 불완전합니다');
-    }
-
-    this.logger?.info('[SystemService] 스냅샷 시스템 설정 검증 완료');
-  }
-
   // 🔄 폴링 상태 업데이트 (간소화됨)
   async updatePollingState(pollingEnabled: boolean): Promise<SystemSettings | null> {
     try {
@@ -152,6 +86,7 @@ export class SystemService implements ISystemService {
         pollingEnabled: false,
         pollingInterval: 30000,
         applyInProgress: false,
+        peopleCounterEnabled: false,
       };
 
       this.logger?.info(`🔍 [SystemService] 현재 runtime: ${JSON.stringify(currentRuntime, null, 2)}`);
@@ -226,6 +161,7 @@ export class SystemService implements ISystemService {
             pollingEnabled: false, // 기본값은 false이지만 사용자가 변경한 값은 보존
             pollingInterval: 30000,
             applyInProgress: false,
+            peopleCounterEnabled: false,
           };
 
           const updated = await this.systemRepository.updateSettings({
@@ -252,6 +188,50 @@ export class SystemService implements ISystemService {
       };
     } catch (error) {
       this.logger?.error('폴링 상태 조회 중 오류 발생');
+      throw error;
+    }
+  }
+
+  async getPeopleCounterState(initializeIfMissing = false): Promise<{ peopleCounterEnabled: boolean } | null> {
+    try {
+      const settings = await this.getSettings();
+      if (!settings?.runtime) {
+        if (initializeIfMissing) {
+          this.logger?.info('피플카운터 상태가 없어 기본값으로 초기화합니다');
+          const defaultRuntime = {
+            pollingEnabled: false,
+            pollingInterval: 30000,
+            applyInProgress: false,
+            peopleCounterEnabled: false,
+          };
+          const updated = await this.systemRepository.updateSettings({ runtime: defaultRuntime });
+          if (!updated?.runtime) return null;
+          return { peopleCounterEnabled: updated.runtime.peopleCounterEnabled ?? false };
+        }
+        return null;
+      }
+      return { peopleCounterEnabled: settings.runtime.peopleCounterEnabled ?? false };
+    } catch (error) {
+      this.logger?.error('피플카운터 상태 조회 중 오류 발생');
+      throw error;
+    }
+  }
+
+  async updatePeopleCounterState(peopleCounterEnabled: boolean): Promise<SystemSettings | null> {
+    try {
+      const currentSettings = await this.getSettings();
+      const currentRuntime = currentSettings?.runtime || {
+        pollingEnabled: false,
+        pollingInterval: 30000,
+        applyInProgress: false,
+        peopleCounterEnabled: false,
+      };
+      const updated = await this.systemRepository.updateSettings({
+        runtime: { ...currentRuntime, peopleCounterEnabled },
+      });
+      return updated;
+    } catch (error) {
+      this.logger?.error('피플카운터 상태 업데이트 중 오류 발생');
       throw error;
     }
   }
@@ -353,6 +333,7 @@ export class SystemService implements ISystemService {
         pollingEnabled: false,
         pollingInterval: 1000,
         applyInProgress: false,
+        peopleCounterEnabled: false,
       };
 
       const updated = await this.systemRepository.updateSettings({

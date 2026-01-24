@@ -9,10 +9,6 @@ pnpm-store/
 dist/
 build/
 
-# Environment variables
-.env*
-env.*
-
 # Logs
 logs/
 *.log

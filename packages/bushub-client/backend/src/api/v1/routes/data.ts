@@ -8,6 +8,7 @@ const DATA_ENDPOINTS = {
   META_SCHEMA: '/meta/schema',
 } as const;
 
+import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import logger from '../../../logger';
 import { Client as ClientSchema } from '../../../models/schemas/ClientSchema';
 import { Data as DataSchema } from '../../../models/schemas/DataSchema';
@@ -47,11 +48,17 @@ async function dataRoutes(app: FastifyInstance) {
 
         // 모든 장비 데이터 조회 (단일 클라이언트)
         const datas = await DataSchema.find({}).lean();
-        const devices = datas.map((data) => ({
+        let devices = datas.map((data) => ({
           id: data.deviceId,
           type: data.type,
           units: data.units.map((u: any) => ({ id: u.unitId, data: u.data })),
         }));
+
+        const systemService = ServiceContainer.getInstance().getSystemService();
+        const pcState = await systemService.getPeopleCounterState(false);
+        if (!pcState?.peopleCounterEnabled) {
+          devices = devices.filter((d) => d.id !== 'd082');
+        }
 
         const result = {
           id: currentClientId,

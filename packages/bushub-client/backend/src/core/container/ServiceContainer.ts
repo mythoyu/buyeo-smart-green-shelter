@@ -54,9 +54,9 @@ import { LinuxSystemService } from '../services/LinuxSystemService';
 import { LogSchedulerService } from '../services/LogSchedulerService';
 import { ModbusCommandQueue } from '../services/ModbusCommandQueue';
 import { ModbusService } from '../services/ModbusService';
+import { PeopleCounterPollerService } from '../services/PeopleCounterPollerService';
 import { PollingDataPersistenceService } from '../services/PollingDataPersistenceService';
 import { SecurityService } from '../services/SecurityService';
-import { SnapshotScheduler } from '../services/SnapshotScheduler';
 import { StatusService } from '../services/StatusService';
 import { SystemService } from '../services/SystemService';
 import { UnifiedLogService } from '../services/UnifiedLogService';
@@ -261,18 +261,12 @@ export class ServiceContainer {
     // DataSyncService에 CommandResultHandler 주입
     dataSyncService.setCommandResultHandler(commandResultHandler);
 
-    // 🆕 DataApplyService 및 SnapshotScheduler 생성
+    // DataApplyService 생성
     const dataApplyService = new DataApplyService(logger);
-    // DataApplyService에 ServiceContainer 주입하여 내부 의존성 접근 가능하게 함
     dataApplyService.initialize(this);
-
-    // 🔥 DataApplyService에 CommandResultHandler 주입
     dataApplyService.setCommandResultHandler(commandResultHandler);
 
-    const snapshotScheduler = SnapshotScheduler.getInstance(logger);
-
     this.services.set('dataApplyService', dataApplyService);
-    this.services.set('snapshotScheduler', snapshotScheduler);
     // modbusCommunicationService 키 제거 - unifiedModbusService로 통일
     this.services.set('userConfigService', userConfigService);
 
@@ -291,6 +285,11 @@ export class ServiceContainer {
     // 🔄 폴링 자동 복구 서비스 등록
     const pollingAutoRecoveryService = new PollingAutoRecoveryService(this.services.get('logger'));
     this.services.set('pollingAutoRecoveryService', pollingAutoRecoveryService);
+
+    // 피플카운터 폴러 (ttyS1, APC100)
+    const peopleCounterPoller = new PeopleCounterPollerService(logger);
+    peopleCounterPoller.initialize(this);
+    this.services.set('peopleCounterPoller', peopleCounterPoller);
 
     // 🎯 DDC 설정 서비스 등록
 
@@ -333,8 +332,8 @@ export class ServiceContainer {
     return this.services.get('dataApplyService');
   }
 
-  public getSnapshotScheduler(): SnapshotScheduler {
-    return this.services.get('snapshotScheduler');
+  public getPeopleCounterPoller(): PeopleCounterPollerService {
+    return this.services.get('peopleCounterPoller');
   }
 
   public getControlService(): IControlService {

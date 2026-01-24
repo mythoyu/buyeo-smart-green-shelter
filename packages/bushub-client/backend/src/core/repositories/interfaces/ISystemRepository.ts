@@ -30,6 +30,7 @@ export interface SystemSettings {
     pollingEnabled: boolean;
     pollingInterval: number; // 이동됨
     applyInProgress: boolean;
+    peopleCounterEnabled?: boolean;
   };
 
   // 🎯 DDC 시간 설정 추가
@@ -79,6 +80,7 @@ export interface SystemUpdateParams {
     pollingEnabled?: boolean;
     pollingInterval?: number; // 이동됨
     applyInProgress?: boolean;
+    peopleCounterEnabled?: boolean;
   };
   seasonal?: {
     season: number;

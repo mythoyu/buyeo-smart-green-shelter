@@ -74,16 +74,18 @@ export class MongoSystemRepository implements ISystemRepository {
         // runtime 필드가 있는 경우 특별 처리
         if (settingsData.runtime) {
           logInfo(`🔧 [MongoSystemRepository] runtime 필드 특별 처리`);
+          const runtimeSet: Record<string, unknown> = {
+            'runtime.pollingEnabled': settingsData.runtime.pollingEnabled,
+            'runtime.pollingInterval': settingsData.runtime.pollingInterval,
+            'runtime.applyInProgress': settingsData.runtime.applyInProgress,
+            updatedAt: new Date(),
+          };
+          if (settingsData.runtime.peopleCounterEnabled !== undefined) {
+            runtimeSet['runtime.peopleCounterEnabled'] = settingsData.runtime.peopleCounterEnabled;
+          }
           result = await SystemSchema.findByIdAndUpdate(
             existing._id,
-            {
-              $set: {
-                'runtime.pollingEnabled': settingsData.runtime.pollingEnabled,
-                'runtime.pollingInterval': settingsData.runtime.pollingInterval,
-                'runtime.applyInProgress': settingsData.runtime.applyInProgress,
-                updatedAt: new Date(),
-              },
-            },
+            { $set: runtimeSet },
             { new: true },
           );
         } else {

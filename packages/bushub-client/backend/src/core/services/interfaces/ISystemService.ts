@@ -32,12 +32,13 @@ interface DdcTimeData {
 export interface ISystemService {
   getSettings(): Promise<SystemSettings | null>;
   updateSettings(settings: Partial<SystemSettings>): Promise<SystemSettings | null>;
-  applySnapshotSettings(snapshotData: any, appliedBy: string): Promise<SystemSettings | null>;
   updatePollingState(pollingEnabled: boolean): Promise<SystemSettings | null>;
   getPollingState(initializeIfMissing?: boolean): Promise<{
     pollingEnabled: boolean;
     applyInProgress: boolean;
   } | null>;
+  getPeopleCounterState(initializeIfMissing?: boolean): Promise<{ peopleCounterEnabled: boolean } | null>;
+  updatePeopleCounterState(peopleCounterEnabled: boolean): Promise<SystemSettings | null>;
   setApplyLock(applyInProgress: boolean): Promise<SystemSettings | null>;
   updatePollingInterval(pollingInterval: number): Promise<SystemSettings | null>;
   exportSettings(): Promise<SystemSettings | null>;
