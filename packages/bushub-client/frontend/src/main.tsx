@@ -6,6 +6,7 @@ import App from './App.tsx';
 import './index.css';
 import './globals.css';
 import { LogProvider } from './contexts/LogContext';
+import { RightSidebarProvider } from './contexts/RightSidebarContext';
 
 // QueryClient 인스턴스 생성
 const queryClient = new QueryClient({
@@ -28,7 +29,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <LogProvider>
-        <App />
+        <RightSidebarProvider>
+          <App />
+        </RightSidebarProvider>
       </LogProvider>
     </QueryClientProvider>
   </React.StrictMode>

@@ -1,15 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Filter, LayoutGrid } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { useExecuteDeviceAction } from '../../api/queries/device';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { getDeviceActions, getActionInfo, type ActionKey } from '../../meta/actions/deviceActions';
 import { DashboardFilterBar } from '../common/DashboardFilterBar';
 import DeviceListShowDetail from '../common/DeviceListShowDetail/index';
 import { DeviceListShowDetailHandle } from '../common/DeviceListShowDetail/types';
+import { RightSidebarItem } from '../layout/RightSidebar';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Alert, AlertDescription } from '../ui';
 import ModeControlCard from '../common/ModeControlCard';
@@ -39,6 +41,8 @@ const DashboardPage: React.FC = () => {
   // 기존 상태 관리 유지
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [showFilter, setShowFilter] = useState<boolean>(false);
+  const [showModeControl, setShowModeControl] = useState<boolean>(false);
   const { isConnected } = useWebSocket({});
 
   // 🆕 필터링 로직 최적화 - 의존성 배열 최소화
@@ -140,6 +144,41 @@ const DashboardPage: React.FC = () => {
     return getDeviceActions(deviceType);
   }, []);
 
+  // 필터/모드 제어 토글 핸들러 (메모이제이션)
+  const handleToggleFilter = useCallback(() => {
+    setShowFilter(prev => !prev);
+  }, []);
+
+  const handleToggleModeControl = useCallback(() => {
+    setShowModeControl(prev => !prev);
+  }, []);
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(
+    () => (
+      <>
+        <RightSidebarItem
+          icon={Filter}
+          label='필터'
+          active={showFilter}
+          onClick={handleToggleFilter}
+          title='필터'
+        />
+        <RightSidebarItem
+          icon={LayoutGrid}
+          label='모드\n제어'
+          active={showModeControl}
+          onClick={handleToggleModeControl}
+          title='모드 제어'
+        />
+      </>
+    ),
+    [showFilter, showModeControl, handleToggleFilter, handleToggleModeControl]
+  );
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [showFilter, showModeControl, handleToggleFilter, handleToggleModeControl]);
+
   // 🆕 에러 처리 로직 추가
   if (error) {
     return (
@@ -152,32 +191,38 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className='space-y-4'>
-      {/* 로그 패널 - 항상 렌더링하되 CSS로 애니메이션 처리 */}
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 모드 제어 카드와 필터바 - 2열 레이아웃 (모바일: 2행) */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-        {/* 필터바 - devices prop 추가 */}
-        <DashboardFilterBar
-          selectedType={selectedType}
-          onSelectType={handleSelectType}
-          selectedStatus={selectedStatus}
-          onSelectStatus={handleSelectStatus}
-          devices={devices}
-        />
+      {/* 필터 및 모드 제어 카드 (토글 가능, 1열로 표시) */}
+      {(showFilter || showModeControl) && (
+        <div className='flex flex-col gap-4'>
+          {showFilter && (
+            <div id='dashboard-filter'>
+              <DashboardFilterBar
+                selectedType={selectedType}
+                onSelectType={handleSelectType}
+                selectedStatus={selectedStatus}
+                onSelectStatus={handleSelectStatus}
+                devices={devices}
+              />
+            </div>
+          )}
+          {showModeControl && (
+            <div id='dashboard-mode'>
+              <ModeControlCard
+                devices={devices}
+                deviceSpecs={deviceSpecs}
+                deviceStyles={deviceStyles}
+                onFormChange={(key, value, deviceId, unitId) => {
+                  deviceListRef.current?.handleFormChange(key, value, deviceId, unitId);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* 🆕 Mode Switch 카드 */}
-        <ModeControlCard
-          devices={devices}
-          deviceSpecs={deviceSpecs}
-          deviceStyles={deviceStyles}
-          onFormChange={(key, value, deviceId, unitId) => {
-            deviceListRef.current?.handleFormChange(key, value, deviceId, unitId);
-          }}
-        />
-      </div>
-
-      {/* 장비 목록 - 타입 안전성을 위해 any 타입 사용 */}
+      {/* 장비 목록 */}
       {filteredDevices.length === 0 && devices.length > 0 ? (
         <div className='text-center py-12 space-y-2'>
           <p className='text-gray-500 font-medium'>선택한 필터 조건에 맞는 장비가 없습니다.</p>

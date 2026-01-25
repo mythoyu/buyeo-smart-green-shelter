@@ -1,10 +1,12 @@
-import { RefreshCw, Search, FileText, Download, Archive, AlertCircle, ArrowUp, ArrowDown, X } from 'lucide-react';
-import { useState, useMemo, useRef } from 'react';
+import { RefreshCw, Search, FileText, Download, AlertCircle, ArrowUp, ArrowDown, X, AlertTriangle, Info, Bug, Activity } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 
 import { useGetLogFiles, useGetLogContent, useSearchLogs, downloadLogFile } from '../../api/queries/logs';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { useWebSocket } from '../../hooks/useWebSocket';
+import { RightSidebarItem } from '../layout/RightSidebar';
 import { TopLogPanel } from '../common/TopLogPanel';
 import {
   Badge,
@@ -29,7 +31,8 @@ export default function LogAnalysisPage() {
   const [linesToShow, setLinesToShow] = useState<number | 'all'>(100);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [refreshStatus, setRefreshStatus] = useState<string>('');
-  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+  const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [selectedLogLevel, setSelectedLogLevel] = useState<string>('all'); // 'all' | 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE' | 'FATAL'
 
   // 정렬 순서 상태 (localStorage에서 읽어오기, 기본값: 'asc' - 시간오름차순)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
@@ -209,14 +212,20 @@ export default function LogAnalysisPage() {
       };
     });
 
+    // 로그 레벨 필터링
+    const filteredLogs =
+      selectedLogLevel === 'all'
+        ? logs
+        : logs.filter(log => log.level && log.level.toUpperCase() === selectedLogLevel.toUpperCase());
+
     // 정렬 순서에 따라 정렬 (시간오름차순/시간내림차순)
     if (sortOrder === 'desc') {
       // 시간내림차순: 최신 로그가 위에 (배열을 복사한 후 역순)
-      return [...logs].reverse();
+      return [...filteredLogs].reverse();
     }
     // 시간오름차순: 오래된 로그가 위에 (기본값, 원본 순서 유지)
-    return logs;
-  }, [processedLogContent, sortOrder]);
+    return filteredLogs;
+  }, [processedLogContent, sortOrder, selectedLogLevel]);
 
   // 가상화를 위한 스크롤 컨테이너 ref
   const parentRef = useRef<HTMLDivElement>(null);
@@ -241,17 +250,16 @@ export default function LogAnalysisPage() {
   const hasSearchError = !!searchError;
 
   // 검색 실행
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     refetchSearch();
-  };
+  }, [refetchSearch]);
 
   // 전체 새로고침 (파일 목록 + 선택된 파일 내용)
-  const handleFullRefresh = async () => {
+  const handleFullRefresh = useCallback(async () => {
     try {
       setIsRefreshing(true);
       setRefreshStatus('새로고침 중...');
 
-      // 파일 목록 새로고침
       await refetchFiles({ cancelRefetch: false });
 
       if (selectedFile) {
@@ -259,7 +267,6 @@ export default function LogAnalysisPage() {
         await refetchContent({ cancelRefetch: false });
       }
 
-      setLastRefreshTime(new Date());
       toast.success('전체 로그가 새로고침되었습니다.', { id: 'logs-refresh-success' });
     } catch (error) {
       console.error('새로고침 실패:', error);
@@ -268,7 +275,7 @@ export default function LogAnalysisPage() {
       setIsRefreshing(false);
       setRefreshStatus('');
     }
-  };
+  }, [selectedFile, refetchFiles, refetchContent]);
 
   // 에러 메시지 생성
   const getErrorMessage = (error: any) => {
@@ -278,14 +285,14 @@ export default function LogAnalysisPage() {
   };
 
   // 파일 선택 시 첫 번째 파일 자동 선택
-  useMemo(() => {
+  useEffect(() => {
     if (processedLogFiles.length > 0 && !selectedFile) {
       setSelectedFile(processedLogFiles[0].filename);
     }
   }, [processedLogFiles, selectedFile]);
 
   // 로그 파일 다운로드 (압축 파일은 해제된 내용으로 다운로드, 설정값에 맞게 다운로드)
-  const handleDownloadLogFile = async (filename: string) => {
+  const handleDownloadLogFile = useCallback(async (filename: string) => {
     try {
       // 설정값(linesToShow)에 맞게 다운로드
       const downloadParams: { filename: string; lines?: number } = { filename };
@@ -327,7 +334,7 @@ export default function LogAnalysisPage() {
       console.error('로그 파일 다운로드 실패:', error);
       toast.error('로그 파일 다운로드 중 오류가 발생했습니다.', { id: `logs-download-error-${filename}` });
     }
-  };
+  }, [linesToShow]);
 
   // 파일명 표시 (압축 파일 표시)
   const getDisplayFilename = (filename: string) => {
@@ -339,6 +346,70 @@ export default function LogAnalysisPage() {
     return filename;
   };
 
+  // 핸들러 메모이제이션
+  const handleToggleSearch = useCallback(() => {
+    setShowSearch(prev => !prev);
+  }, []);
+
+  // 로그 레벨 필터 핸들러
+  const handleLogLevelFilter = useCallback((level: string) => {
+    setSelectedLogLevel(level);
+  }, []);
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(
+    () => (
+      <>
+        <RightSidebarItem
+          icon={Search}
+          label='검색'
+          active={showSearch}
+          onClick={handleToggleSearch}
+          title='검색'
+        />
+        <RightSidebarItem
+          icon={Activity}
+          label='전체'
+          active={selectedLogLevel === 'all'}
+          onClick={() => handleLogLevelFilter('all')}
+          title='전체 로그'
+        />
+        <RightSidebarItem
+          icon={AlertCircle}
+          label='ERROR'
+          active={selectedLogLevel === 'ERROR'}
+          onClick={() => handleLogLevelFilter('ERROR')}
+          title='ERROR 레벨'
+        />
+        <RightSidebarItem
+          icon={AlertTriangle}
+          label='WARN'
+          active={selectedLogLevel === 'WARN'}
+          onClick={() => handleLogLevelFilter('WARN')}
+          title='WARN 레벨'
+        />
+        <RightSidebarItem
+          icon={Info}
+          label='INFO'
+          active={selectedLogLevel === 'INFO'}
+          onClick={() => handleLogLevelFilter('INFO')}
+          title='INFO 레벨'
+        />
+        <RightSidebarItem
+          icon={Bug}
+          label='DEBUG'
+          active={selectedLogLevel === 'DEBUG'}
+          onClick={() => handleLogLevelFilter('DEBUG')}
+          title='DEBUG 레벨'
+        />
+      </>
+    ),
+    [showSearch, handleToggleSearch, selectedLogLevel, handleLogLevelFilter]
+  );
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [showSearch, handleToggleSearch, selectedLogLevel, handleLogLevelFilter]);
+
   return (
     <div className='flex flex-col' style={{ height: 'calc(100vh - 6rem)' }}>
       {/* 로그 패널 */}
@@ -347,90 +418,72 @@ export default function LogAnalysisPage() {
       </div>
 
       <div className='flex-1 flex flex-col space-y-6 min-h-0'>
-        {/* 컨트롤 패널 */}
-        <Card>
-          <CardContent className='py-0'>
-            <div className='grid grid-cols-2 gap-4 items-center'>
-              {/* 왼쪽 열: 검색 패널 */}
-              <div className='flex items-center gap-3'>
-                <div className='w-8 h-8 flex items-center justify-center bg-muted rounded-full flex-shrink-0'>
-                  <Search className='w-4 h-4 text-primary' />
-                </div>
-                <div className='flex-1 flex gap-2'>
+        {/* 컨트롤 패널 (검색, 파일 선택 등) - 토글 가능 */}
+        {showSearch && (
+          <Card>
+            <CardContent className='py-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                {/* 검색바 */}
+                <div id='log-search' className='flex flex-wrap items-center gap-2'>
                   <Input
                     type='text'
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder='검색어를 입력하세요... (GZIP, ZIP 압축 파일도 검색됩니다)'
+                    placeholder='검색어 입력... (GZIP, ZIP 압축 파일도 검색)'
                     onKeyPress={e => e.key === 'Enter' && handleSearch()}
+                    className='flex-1 min-w-[200px]'
                   />
-                  <Button onClick={handleSearch} disabled={isSearchLoading || !searchQuery.trim()}>
+                  <Button onClick={handleSearch} disabled={isSearchLoading || !searchQuery.trim()} size='sm'>
                     <Search className={`w-4 h-4 mr-2 ${isSearchLoading ? 'animate-spin' : ''}`} />
-                    {isSearchLoading ? '검색 중...' : '검색'}
+                    검색
                   </Button>
-                  <Button
-                    onClick={() => setSearchQuery('')}
-                    variant='outline'
-                    disabled={isSearchLoading}
-                    className='min-w-[80px] border-border/50 hover:border-border bg-muted/50 hover:bg-muted'
-                  >
+                  <Button onClick={() => setSearchQuery('')} variant='outline' size='sm' disabled={isSearchLoading}>
                     <X className='w-4 h-4 mr-2' />
                     초기화
                   </Button>
                 </div>
-              </div>
-
-              {/* 오른쪽 열: 파일 선택 */}
-              <div className='flex items-center gap-4 justify-end'>
-                <div className='flex items-center gap-2'>
-                  <label className='text-sm font-medium'>파일:</label>
-                  <Select value={selectedFile} onValueChange={setSelectedFile} disabled={isFilesLoading}>
-                    <SelectTrigger className='w-[200px]'>
-                      <SelectValue placeholder={isFilesLoading ? '로딩 중...' : '로그 파일을 선택하세요'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isFilesLoading ? (
-                        <div className='p-2 text-center text-sm text-muted-foreground'>
-                          <RefreshCw className='w-4 h-4 animate-spin mx-auto mb-2' />
-                          로딩 중...
-                        </div>
-                      ) : (
-                        processedLogFiles.map((file: any) => (
-                          <SelectItem key={file.filename} value={file.filename}>
-                            {getDisplayFilename(file.filename)}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <label className='text-sm font-medium'>라인:</label>
-                  <Select
-                    value={linesToShow.toString()}
-                    onValueChange={value => setLinesToShow(value === 'all' ? 'all' : Number(value))}
-                    disabled={isContentLoading}
-                  >
-                    <SelectTrigger className='w-[100px]'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='all'>전체</SelectItem>
-                      <SelectItem value='50'>50줄</SelectItem>
-                      <SelectItem value='100'>100줄</SelectItem>
-                      <SelectItem value='200'>200줄</SelectItem>
-                      <SelectItem value='500'>500줄</SelectItem>
-                      <SelectItem value='1000'>1000줄</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* 파일 선택 */}
+                <div id='log-file' className='flex flex-wrap items-center gap-2'>
+                <Select value={selectedFile} onValueChange={setSelectedFile} disabled={isFilesLoading}>
+                  <SelectTrigger className='w-[200px]'>
+                    <SelectValue placeholder={isFilesLoading ? '로딩 중...' : '로그 파일 선택'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isFilesLoading ? (
+                      <div className='p-2 text-center text-sm text-muted-foreground'>로딩 중...</div>
+                    ) : (
+                      processedLogFiles.map((file: any) => (
+                        <SelectItem key={file.filename} value={file.filename}>
+                          {getDisplayFilename(file.filename)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={linesToShow.toString()}
+                  onValueChange={value => setLinesToShow(value === 'all' ? 'all' : Number(value))}
+                  disabled={isContentLoading}
+                >
+                  <SelectTrigger className='w-[100px]'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>전체</SelectItem>
+                    <SelectItem value='50'>50줄</SelectItem>
+                    <SelectItem value='100'>100줄</SelectItem>
+                    <SelectItem value='200'>200줄</SelectItem>
+                    <SelectItem value='500'>500줄</SelectItem>
+                    <SelectItem value='1000'>1000줄</SelectItem>
+                  </SelectContent>
+                </Select>
                 {selectedFile && (
                   <>
                     <Button
                       onClick={() => handleDownloadLogFile(selectedFile)}
                       variant='outline'
+                      size='sm'
                       disabled={isContentLoading}
-                      className='min-w-[100px] border-border/50 hover:border-border bg-muted/50 hover:bg-muted'
                     >
                       <Download className='w-4 h-4 mr-2' />
                       다운로드
@@ -438,32 +491,24 @@ export default function LogAnalysisPage() {
                     <Button
                       onClick={handleSortToggle}
                       variant='outline'
+                      size='sm'
                       disabled={isContentLoading || !processedLogContent}
-                      title={sortOrder === 'asc' ? '시간내림차순으로 정렬' : '시간오름차순으로 정렬'}
-                      className='min-w-[120px] border-border/50 hover:border-border bg-muted/50 hover:bg-muted'
+                      title={sortOrder === 'asc' ? '시간 내림차순' : '시간 오름차순'}
                     >
-                      {sortOrder === 'asc' ? (
-                        <>
-                          <ArrowDown className='w-4 h-4 mr-2' />
-                          시간내림차순
-                        </>
-                      ) : (
-                        <>
-                          <ArrowUp className='w-4 h-4 mr-2' />
-                          시간오름차순
-                        </>
-                      )}
+                      {sortOrder === 'asc' ? <ArrowDown className='w-4 h-4 mr-2' /> : <ArrowUp className='w-4 h-4 mr-2' />}
+                      {sortOrder === 'asc' ? '내림' : '오름'}
                     </Button>
                   </>
                 )}
-                <Button onClick={handleFullRefresh} disabled={isRefreshing || isFilesLoading}>
+                <Button onClick={handleFullRefresh} variant='outline' size='sm' disabled={isRefreshing}>
                   <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  {isRefreshing ? refreshStatus || '새로고침 중...' : '새로고침'}
+                  {isRefreshing ? refreshStatus || '새로고침...' : '새로고침'}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* 로그 내용 */}
         <Card className='flex-1 flex flex-col min-h-0 overflow-hidden'>

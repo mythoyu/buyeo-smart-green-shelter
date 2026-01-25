@@ -1,11 +1,13 @@
-import { AlertCircle, Cpu } from 'lucide-react';
+import { AlertCircle, Cpu, Zap, Radio, Thermometer, Gauge, Settings } from 'lucide-react';
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { usePollingStatus } from '../../hooks/usePollingStatus';
 import { useUpdatePollingState } from '../../api/queries/polling';
 import { HardwareControlTabs } from '../common/HardwareControl/HardwareControlTabs';
+import { RightSidebarItem } from '../layout/RightSidebar';
 import { PollingDialog } from '../common/PollingDialog';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -57,6 +59,7 @@ const AccessDeniedCard = React.memo(() => (
     </Card>
   </div>
 ));
+AccessDeniedCard.displayName = 'AccessDeniedCard';
 
 // 로딩 카드 컴포넌트
 const LoadingCard = React.memo(() => (
@@ -77,6 +80,7 @@ const LoadingCard = React.memo(() => (
     </Card>
   </div>
 ));
+LoadingCard.displayName = 'LoadingCard';
 
 // 에러 카드 컴포넌트
 const ErrorCard = React.memo<{ error: HardwareControlError; onRetry: () => void }>(({ error, onRetry }) => (
@@ -108,6 +112,7 @@ const ErrorCard = React.memo<{ error: HardwareControlError; onRetry: () => void 
     </Card>
   </div>
 ));
+ErrorCard.displayName = 'ErrorCard';
 
 // 사용 안내 카드 컴포넌트
 const UsageGuideCard = React.memo(() => (
@@ -124,6 +129,7 @@ const UsageGuideCard = React.memo(() => (
     </CardContent>
   </Card>
 ));
+UsageGuideCard.displayName = 'UsageGuideCard';
 
 // 폴링 경고 컴포넌트
 const PollingWarningAlert = React.memo(() => (
@@ -134,14 +140,24 @@ const PollingWarningAlert = React.memo(() => (
     </AlertDescription>
   </Alert>
 ));
+PollingWarningAlert.displayName = 'PollingWarningAlert';
 
 /**
  * 직접 제어 페이지
  * superuser, engineer 권한 사용자만 접근 가능
  */
+const HW_TAB_OPTIONS = [
+  { value: 'do', label: 'DO', icon: Zap },
+  { value: 'di', label: 'DI', icon: Radio },
+  { value: 'hvac', label: 'HVAC', icon: Thermometer },
+  { value: 'sensors', label: '통합\n센서', icon: Gauge },
+  { value: 'system', label: '시스템', icon: Settings },
+] as const;
+
 const HardwareControlPage: React.FC = React.memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('do');
 
   // 권한 확인: superuser, engineer만 접근 가능 (메모이제이션)
   const canAccessHardwareControl = useMemo(() => user?.role === 'superuser' || user?.role === 'engineer', [user?.role]);
@@ -226,6 +242,40 @@ const HardwareControlPage: React.FC = React.memo(() => {
     [pollingStatus?.pollingEnabled]
   );
 
+  const isMainView = canAccessHardwareControl && !pollingLoading && !error;
+
+  // 탭 변경 핸들러 (메모이제이션)
+  const handleTabChange = useCallback(
+    (value: string) => {
+      setActiveTab(value);
+    },
+    []
+  );
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(() => {
+    if (!isMainView) {
+      return null;
+    }
+    return (
+      <>
+        {HW_TAB_OPTIONS.map(({ value, label, icon }) => (
+          <RightSidebarItem
+            key={value}
+            icon={icon}
+            label={label}
+            active={activeTab === value}
+            onClick={() => handleTabChange(value)}
+            title={label.replace('\n', ' ')}
+          />
+        ))}
+      </>
+    );
+  }, [isMainView, activeTab, handleTabChange]);
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [isMainView, activeTab, handleTabChange]);
+
   // 권한이 없는 경우 접근 거부
   if (!canAccessHardwareControl) {
     return <AccessDeniedCard />;
@@ -242,13 +292,20 @@ const HardwareControlPage: React.FC = React.memo(() => {
   }
 
   return (
-    <div className='w-full p-6 space-y-6'>
+    <div className='w-full space-y-6'>
 
       {/* 폴링 활성화 경고 */}
       {isPollingActive && <PollingWarningAlert />}
 
-      {/* 하드웨어 제어 탭 */}
-      <HardwareControlTabs disabled={isPollingActive} onError={handleError} pollingStatus={pollingStatusProp} />
+      {/* 하드웨어 제어 탭 (사이드바에서 선택, 탭 리스트 숨김) */}
+      <HardwareControlTabs
+        disabled={isPollingActive}
+        onError={handleError}
+        pollingStatus={pollingStatusProp}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        hideTabsList
+      />
 
       {/* 사용 안내 */}
       <UsageGuideCard />

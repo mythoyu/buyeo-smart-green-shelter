@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { MapPin, Building, Lightbulb, Fan, Thermometer, DoorOpen, Activity, Gauge, Train, Leaf } from 'lucide-react';
+import { MapPin, Building, Lightbulb, Fan, Thermometer, DoorOpen, Activity, Gauge, Train, Leaf, Search, RefreshCw, CheckSquare2 } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,12 +9,14 @@ import { ClientInfoDto } from '../../api/dto';
 import { useRegisterDevice } from '../../api/queries';
 import { useGetPollingState, useUpdatePollingState } from '../../api/queries/polling';
 import { useDeviceRegistrationData } from '../../hooks/useDeviceRegistrationData';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import DeviceUnitDialog from '../common/DeviceUnitDialog';
 import { EmptyState } from '../common/EmptyState';
 import { PollingDialog } from '../common/PollingDialog';
 import { ProcessDialog } from '../common/ProcessDialog';
 import { TopLogPanel } from '../common/TopLogPanel';
+import { RightSidebarItem } from '../layout/RightSidebar';
 import { Card, CardContent, Input } from '../ui';
 
 interface DeviceRegistrationPageProps {
@@ -58,7 +60,7 @@ interface ModbusConfig {
 
 const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
   // DeviceRegistrationPage 전용 훅 사용
-  const { currentClient, clients } = useDeviceRegistrationData();
+  const { currentClient, clients, refetchClients, refetchCurrentClient } = useDeviceRegistrationData();
 
   // React Query 클라이언트와 mutation 훅들
   const queryClient = useQueryClient();
@@ -87,8 +89,10 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
   const updatePollingMutation = useUpdatePollingState();
 
   const [search, setSearch] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all'); // 'all' | 'sm-shelter' | 'sm-restplace'
   const [selectedClient, setSelectedClient] = useState<ClientInfoDto | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSearch, setShowSearch] = useState<boolean>(false);
 
   // ProcessDialog 상태 관리 추가
   const [processDialog, setProcessDialog] = useState<{
@@ -155,14 +159,15 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
     return selectedClient && currentClient && currentClient.id !== selectedClient.id;
   }, [currentClient, selectedClient]);
 
-  // 필터링 (전체 클라이언트 목록에서 필터링 - 검색만 사용)
+  // 필터링 (검색 + 타입 필터링)
   const filteredClients = useMemo(
     () =>
       clients.filter((c: any) => {
         const searchMatch = !search || c.name.includes(search) || c.location.includes(search);
-        return searchMatch;
+        const typeMatch = selectedType === 'all' || c.type === selectedType;
+        return searchMatch && typeMatch;
       }),
-    [clients, search]
+    [clients, search, selectedType]
   );
 
   const handleSearchChange = useCallback((searchTerm: string) => {
@@ -401,26 +406,93 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
     }
   };
 
+  // 타입 필터 핸들러 (메모이제이션)
+  const handleTypeFilter = useCallback(
+    (type: string) => {
+      setSelectedType(type);
+    },
+    []
+  );
+
+  // 검색바 토글 핸들러 (메모이제이션)
+  const handleToggleSearch = useCallback(() => {
+    setShowSearch(prev => !prev);
+  }, []);
+
+  // 새로고침 핸들러 (메모이제이션)
+  const handleRefresh = useCallback(async () => {
+    try {
+      await Promise.all([refetchClients(), refetchCurrentClient()]);
+      toast.success('현장 목록이 새로고침되었습니다.', { id: 'device-registration-refresh-success' });
+    } catch (error) {
+      console.error('새로고침 실패:', error);
+      toast.error('새로고침 중 오류가 발생했습니다.', { id: 'device-registration-refresh-error' });
+    }
+  }, [refetchClients, refetchCurrentClient]);
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(
+    () => (
+      <>
+        <RightSidebarItem
+          icon={Search}
+          label='검색'
+          active={showSearch}
+          onClick={handleToggleSearch}
+          title='검색'
+        />
+        <RightSidebarItem
+          icon={CheckSquare2}
+          label='전체'
+          active={selectedType === 'all'}
+          onClick={() => handleTypeFilter('all')}
+          title='전체 현장'
+        />
+        <RightSidebarItem
+          icon={Train}
+          label='쉼터'
+          active={selectedType === 'sm-shelter'}
+          onClick={() => handleTypeFilter('sm-shelter')}
+          title='쉼터 타입'
+        />
+        <RightSidebarItem
+          icon={Leaf}
+          label='승강장'
+          active={selectedType === 'sm-restplace'}
+          onClick={() => handleTypeFilter('sm-restplace')}
+          title='승강장 타입'
+        />
+        <RightSidebarItem icon={RefreshCw} label='새로\n고침' onClick={handleRefresh} title='현장 목록 새로고침' />
+      </>
+    ),
+    [showSearch, handleToggleSearch, handleTypeFilter, selectedType, handleRefresh]
+  );
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [showSearch, handleToggleSearch, handleTypeFilter, selectedType, handleRefresh]);
+
   return (
     <div className='space-y-2'>
       {/* 로그 패널 */}
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 상단 필터바 */}
-      <Card>
-        <CardContent className='px-6'>
-          <div className='flex flex-col sm:flex-row gap-4 items-stretch sm:items-center'>
-            <div className='flex-1 min-w-0'>
-              <Input
-                placeholder='현장명/주소 검색'
-                value={search}
-                onChange={e => handleSearchChange(e.target.value)}
-                className='w-full'
-              />
+      {/* 상단 필터바 (토글 가능) */}
+      {showSearch && (
+        <Card id='device-registration-search'>
+          <CardContent className='px-6'>
+            <div className='flex flex-col sm:flex-row gap-4 items-stretch sm:items-center'>
+              <div className='flex-1 min-w-0'>
+                <Input
+                  placeholder='현장명/주소 검색'
+                  value={search}
+                  onChange={e => handleSearchChange(e.target.value)}
+                  className='w-full'
+                />
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 클라이언트 목록 */}
       <div key={search} className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2'>

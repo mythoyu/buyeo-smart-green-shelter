@@ -1,8 +1,10 @@
-import { Wifi, Network, Clock, Sun, Cpu, Loader2, RefreshCcw, Users } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { Wifi, Network, Clock, Sun, Cpu, Loader2, RefreshCcw, Users, RotateCw, Activity, Settings } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 import { useGetPeopleCounterState, useUpdatePeopleCounterState } from '../../api/queries/people-counter';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
+import { SETTINGS_NAV } from '../../constants/sidebarConfig';
 import {
   useSaveSeasonal,
   useGetSeasonal,
@@ -39,6 +41,7 @@ import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { RightSidebarItem } from '../layout/RightSidebar';
 import type { NtpSettings, NetworkSettings, SoftapSettings } from '../../types/systemSettings';
 
 // 월별 이름 매핑
@@ -93,6 +96,17 @@ const monthFieldByIndex: Record<number, MonthField> = {
 
 const SystemSettingsPage: React.FC = () => {
   const { isConnected } = useWebSocket({});
+
+  // 오른쪽 사이드바에서 선택된 설정 그룹 ('all'이면 모든 카드 표시, 그 외에는 해당 그룹의 카드만)
+  const [selectedSettingsId, setSelectedSettingsId] = useState<string>('all');
+
+  // 설정 그룹 정의
+  const SETTINGS_GROUPS = [
+    { id: 'all', label: '전체', icon: Activity },
+    { id: 'network', label: '네트\n워크', icon: Network, cardIds: ['settings-softap', 'settings-network', 'settings-ntp'] },
+    { id: 'system', label: '시스템', icon: Settings, cardIds: ['settings-ddc-time', 'settings-seasonal', 'settings-polling', 'settings-people-counter'] },
+    { id: 'reboot', label: '재기동', icon: RotateCw, cardIds: ['settings-reboot'] },
+  ] as const;
 
   // 커스텀 훅들
   const { validateField, hasErrors, getFieldError } = useValidation();
@@ -586,6 +600,42 @@ const SystemSettingsPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // 설정 그룹 선택 핸들러 (해당 그룹의 카드만 표시)
+  const handleSelectSettings = useCallback((groupId: string) => {
+    setSelectedSettingsId(groupId);
+  }, []);
+
+  // 선택된 그룹에 해당하는 카드 ID 목록
+  const visibleCardIds = useMemo(() => {
+    if (selectedSettingsId === 'all') {
+      return ['settings-softap', 'settings-network', 'settings-ntp', 'settings-ddc-time', 'settings-seasonal', 'settings-polling', 'settings-people-counter', 'settings-reboot'];
+    }
+    const group = SETTINGS_GROUPS.find(g => g.id === selectedSettingsId);
+    return group?.cardIds || [];
+  }, [selectedSettingsId]);
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(
+    () => (
+      <>
+        {SETTINGS_GROUPS.map(({ id, label, icon: Icon }) => (
+          <RightSidebarItem
+            key={id}
+            icon={Icon}
+            label={label}
+            active={selectedSettingsId === id}
+            onClick={() => handleSelectSettings(id)}
+            title={label}
+          />
+        ))}
+      </>
+    ),
+    [selectedSettingsId, handleSelectSettings]
+  );
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [selectedSettingsId, handleSelectSettings]);
+
   // UI 렌더링
   return (
     <div className='space-y-2'>
@@ -594,7 +644,9 @@ const SystemSettingsPage: React.FC = () => {
 
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'>
         {/* SoftAP 설정 */}
+        {visibleCardIds.includes('settings-softap') && (
         <div
+          id='settings-softap'
           style={{
             animationDelay: '0ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -682,9 +734,12 @@ const SystemSettingsPage: React.FC = () => {
             />
           </SettingsCard>
         </div>
+        )}
 
         {/* 유선 네트워크 설정 */}
+        {visibleCardIds.includes('settings-network') && (
         <div
+          id='settings-network'
           style={{
             animationDelay: '100ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -780,9 +835,12 @@ const SystemSettingsPage: React.FC = () => {
             />
           </SettingsCard>
         </div>
+        )}
 
         {/* NTP 설정 */}
+        {visibleCardIds.includes('settings-ntp') && (
         <div
+          id='settings-ntp'
           style={{
             animationDelay: '200ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -1065,9 +1123,12 @@ const SystemSettingsPage: React.FC = () => {
             />
           </SettingsCard>
         </div>
+        )}
 
         {/* 절기 설정 - DDCConfigurationPage 스타일로 교체 */}
+        {visibleCardIds.includes('settings-seasonal') && (
         <div
+          id='settings-seasonal'
           style={{
             animationDelay: '300ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -1190,9 +1251,12 @@ const SystemSettingsPage: React.FC = () => {
             </div>
           </SettingsCard>
         </div>
+        )}
 
         {/* DDC 시간 설정 */}
+        {visibleCardIds.includes('settings-ddc-time') && (
         <div
+          id='settings-ddc-time'
           style={{
             animationDelay: '400ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -1273,9 +1337,12 @@ const SystemSettingsPage: React.FC = () => {
             </div>
           </SettingsCard>
         </div>
+        )}
 
         {/* DDC 폴링 간격 설정 */}
+        {visibleCardIds.includes('settings-polling') && (
         <div
+          id='settings-polling'
           style={{
             animationDelay: '500ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -1319,9 +1386,12 @@ const SystemSettingsPage: React.FC = () => {
             </SelectWithLabel>
           </SettingsCard>
         </div>
+        )}
 
         {/* 피플카운터 Enable/Disable */}
+        {visibleCardIds.includes('settings-people-counter') && (
         <div
+          id='settings-people-counter'
           style={{
             animationDelay: '600ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -1357,9 +1427,12 @@ const SystemSettingsPage: React.FC = () => {
             </p>
           </SettingsCard>
         </div>
+        )}
 
         {/* 시스템 재기동 카드 */}
+        {visibleCardIds.includes('settings-reboot') && (
         <div
+          id='settings-reboot'
           style={{
             animationDelay: '700ms',
             animation: 'fadeInUp 0.6s ease-out forwards',
@@ -1435,6 +1508,7 @@ const SystemSettingsPage: React.FC = () => {
             </div>
           </SettingsCard>
         </div>
+        )}
       </div>
     </div>
   );

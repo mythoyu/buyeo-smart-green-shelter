@@ -16,11 +16,13 @@ import {
   X,
   CheckSquare2,
 } from 'lucide-react';
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { RightSidebarItem } from '../layout/RightSidebar';
 import { toast } from 'sonner';
 
 import { useGetUsers, useGetApiKeys, useCreateUser, useUpdateUser, useDeleteUser } from '../../api/queries';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { type CreateUserRequest, type UpdateUserRequest, type ApiKey } from '../../hooks/useUserManagement';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { debugAllEnvironmentVariables } from '../../utils/environment';
@@ -156,6 +158,54 @@ export default function UserManagementPage() {
   useEffect(() => {
     console.log('apiKeys 상태 변경:', apiKeys);
   }, [apiKeys]);
+
+  const userNav = [
+    { value: 'all', icon: CheckSquare2, label: '전체' },
+    { value: 'superuser', icon: Crown, label: '관리자' },
+    { value: 'engineer', icon: Building, label: '엔지\n니어' },
+    { value: 'user', icon: User, label: '내부' },
+    { value: 'ex-user', icon: Globe, label: '외부' },
+  ] as const;
+
+  // 핸들러 메모이제이션 (사이드바용)
+  const handleOpenCreateUser = useCallback(() => {
+    setShowCreateUser(true);
+  }, []);
+
+  const handleFilterChange = useCallback(
+    (value: string) => {
+      setSelectedFilter(value);
+    },
+    []
+  );
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(
+    () => (
+      <>
+        <RightSidebarItem
+          icon={UserPlus}
+          label='등록'
+          onClick={handleOpenCreateUser}
+          title={`사용자 등록 (${processedUsers.length}명)`}
+        />
+        {userNav.map(({ value, icon, label }) => (
+          <RightSidebarItem
+            key={value}
+            icon={icon}
+            label={label}
+            active={selectedFilter === value}
+            onClick={() => handleFilterChange(value)}
+            title={label}
+          />
+        ))}
+      </>
+    ),
+    [selectedFilter, processedUsers.length, handleOpenCreateUser, handleFilterChange]
+  );
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [selectedFilter, processedUsers.length, handleOpenCreateUser, handleFilterChange]);
 
   const handleCopy = (key: string) => {
     navigator.clipboard.writeText(key);
@@ -333,137 +383,6 @@ export default function UserManagementPage() {
       {/* 로그 패널 */}
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 컨트롤 패널 */}
-      <Card>
-        <CardContent className='py-0'>
-          <div className='grid grid-cols-2 gap-4 items-center'>
-            {/* 왼쪽: 필터 */}
-            <div className='flex flex-wrap items-center gap-2'>
-              {/* 전체 */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                  selectedFilter === 'all'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-muted/50 hover:border-primary/50 hover:bg-muted'
-                }`}
-                onClick={() => setSelectedFilter('all')}
-              >
-                <Checkbox
-                  checked={selectedFilter === 'all'}
-                  onCheckedChange={() => setSelectedFilter('all')}
-                  onClick={e => e.stopPropagation()}
-                />
-                <div className='flex items-center gap-2'>
-                  <div className='flex items-center justify-center w-4 h-4 rounded bg-muted [&>svg]:w-full [&>svg]:h-full text-gray-600'>
-                    <CheckSquare2 className='w-full h-full' />
-                  </div>
-                  <span className='text-xs text-muted-foreground font-medium'>전체</span>
-                </div>
-              </div>
-
-              {/* 시스템 관리자 */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                  selectedFilter === 'superuser'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-purple-50/50 hover:border-primary/50 hover:bg-purple-100/50'
-                }`}
-                onClick={() => setSelectedFilter('superuser')}
-              >
-                <Checkbox
-                  checked={selectedFilter === 'superuser'}
-                  onCheckedChange={() => setSelectedFilter('superuser')}
-                  onClick={e => e.stopPropagation()}
-                />
-                <div className='flex items-center gap-2'>
-                  <div className='flex items-center justify-center w-4 h-4 rounded bg-purple-100 [&>svg]:w-full [&>svg]:h-full text-purple-600'>
-                    <Crown className='w-full h-full' />
-                  </div>
-                  <span className='text-xs text-muted-foreground'>시스템 관리자</span>
-                </div>
-              </div>
-
-              {/* 엔지니어 */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                  selectedFilter === 'engineer'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-blue-50/50 hover:border-primary/50 hover:bg-blue-100/50'
-                }`}
-                onClick={() => setSelectedFilter('engineer')}
-              >
-                <Checkbox
-                  checked={selectedFilter === 'engineer'}
-                  onCheckedChange={() => setSelectedFilter('engineer')}
-                  onClick={e => e.stopPropagation()}
-                />
-                <div className='flex items-center gap-2'>
-                  <div className='flex items-center justify-center w-4 h-4 rounded bg-blue-100 [&>svg]:w-full [&>svg]:h-full text-blue-600'>
-                    <Building className='w-full h-full' />
-                  </div>
-                  <span className='text-xs text-muted-foreground'>엔지니어</span>
-                </div>
-              </div>
-
-              {/* 내부사용자 */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                  selectedFilter === 'user'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-green-50/50 hover:border-primary/50 hover:bg-green-100/50'
-                }`}
-                onClick={() => setSelectedFilter('user')}
-              >
-                <Checkbox
-                  checked={selectedFilter === 'user'}
-                  onCheckedChange={() => setSelectedFilter('user')}
-                  onClick={e => e.stopPropagation()}
-                />
-                <div className='flex items-center gap-2'>
-                  <div className='flex items-center justify-center w-4 h-4 rounded bg-green-100 [&>svg]:w-full [&>svg]:h-full text-green-600'>
-                    <User className='w-full h-full' />
-                  </div>
-                  <span className='text-xs text-muted-foreground'>내부사용자</span>
-                </div>
-              </div>
-
-              {/* 외부사용자 */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                  selectedFilter === 'ex-user'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-orange-50/50 hover:border-primary/50 hover:bg-orange-100/50'
-                }`}
-                onClick={() => setSelectedFilter('ex-user')}
-              >
-                <Checkbox
-                  checked={selectedFilter === 'ex-user'}
-                  onCheckedChange={() => setSelectedFilter('ex-user')}
-                  onClick={e => e.stopPropagation()}
-                />
-                <div className='flex items-center gap-2'>
-                  <div className='flex items-center justify-center w-4 h-4 rounded bg-orange-100 [&>svg]:w-full [&>svg]:h-full text-orange-600'>
-                    <Globe className='w-full h-full' />
-                  </div>
-                  <span className='text-xs text-muted-foreground'>외부사용자</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 오른쪽: 기능들 (오른쪽 정렬) */}
-            <div className='flex items-center gap-2 justify-end'>
-              <Badge variant='secondary' className='text-base px-3 py-1.5 font-semibold'>
-                {processedUsers.length}명
-              </Badge>
-              <Button onClick={() => setShowCreateUser(true)}>
-                <UserPlus className='w-4 h-4 mr-2' />
-                사용자 등록
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* 사용자 카드 목록 */}
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
         {filterUsersByRole(processedUsers, selectedFilter)
@@ -601,9 +520,9 @@ export default function UserManagementPage() {
           })}
       </div>
 
-      {/* 사용자 등록 모달 */}
+      {/* 사용자 등록 모달 (오른쪽 사이드바 z-50보다 위에 표시) */}
       {showCreateUser && (
-        <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50'>
+        <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]'>
           <div className='w-full max-w-md'>
             <Card className='bg-white rounded-lg shadow-xl border border-gray-200'>
               <CardHeader>
@@ -646,7 +565,7 @@ export default function UserManagementPage() {
                       <SelectTrigger className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 text-sm'>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className='z-[70]'>
                         <SelectItem value='superuser'>시스템 관리자 (superuser)</SelectItem>
                         <SelectItem value='engineer'>엔지니어 (engineer)</SelectItem>
                         <SelectItem value='user'>내부사용자 (user)</SelectItem>
@@ -813,10 +732,10 @@ export default function UserManagementPage() {
         </div>
       )}
 
-      {/* 사용자 편집 모달 */}
+      {/* 사용자 편집 모달 (오른쪽 사이드바 z-50보다 위에 표시) */}
       {editingUser && (
         <div
-          className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50'
+          className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]'
           onClick={handleCancelEditUser}
         >
           <div className='w-full max-w-md' onClick={e => e.stopPropagation()}>
@@ -858,7 +777,7 @@ export default function UserManagementPage() {
                       <SelectTrigger className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 text-sm'>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className='z-[70]'>
                         <SelectItem value='superuser'>시스템 관리자 (superuser)</SelectItem>
                         <SelectItem value='engineer'>엔지니어 (engineer)</SelectItem>
                         <SelectItem value='user'>내부사용자 (user)</SelectItem>

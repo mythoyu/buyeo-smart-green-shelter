@@ -1,7 +1,9 @@
-import { Activity, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { RefreshCw, Server, Wifi, Database, Package, Cpu, Activity, BarChart2, Network } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useGetSystemMonitoring } from '../../api/queries/system-monitoring';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
+import { MONITOR_NAV } from '../../constants/sidebarConfig';
 import {
   ServerStatusCard,
   DatabaseStatusCard,
@@ -18,9 +20,20 @@ import DatabaseExplorerModal from '../common/SystemMonitoring/DatabaseExplorerMo
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { RightSidebarItem } from '../layout/RightSidebar';
 
 const SystemMonitoringPage = () => {
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
+  // 오른쪽 사이드바에서 선택된 모니터링 그룹 ('all'이면 모든 카드 표시, 그 외에는 해당 그룹의 카드만)
+  const [selectedMonitorId, setSelectedMonitorId] = useState<string>('all');
+
+  // 모니터링 그룹 정의
+  const MONITOR_GROUPS = [
+    { id: 'all', label: '전체', icon: Activity },
+    { id: 'connection', label: '연결', icon: Network, cardIds: ['monitor-superior-server', 'monitor-ping-test'] },
+    { id: 'system', label: '시스템', icon: Server, cardIds: ['monitor-server', 'monitor-database', 'monitor-services', 'monitor-hardware'] },
+    { id: 'monitoring', label: '모니\n터링', icon: BarChart2, cardIds: ['monitor-polling', 'monitor-polling-recovery', 'monitor-ddc-time-sync', 'monitor-system-summary'] },
+  ] as const;
 
   const { data, isLoading, error, refetch } = useGetSystemMonitoring();
 
@@ -97,6 +110,44 @@ const SystemMonitoringPage = () => {
     }
   };
 
+  // 모니터링 그룹 선택 핸들러 (해당 그룹의 카드만 표시)
+  const handleSelectMonitor = useCallback((groupId: string) => {
+    setSelectedMonitorId(groupId);
+  }, []);
+
+  // 선택된 그룹에 해당하는 카드 ID 목록
+  const visibleCardIds = useMemo(() => {
+    if (selectedMonitorId === 'all') {
+      return ['monitor-superior-server', 'monitor-ping-test', 'monitor-server', 'monitor-database', 'monitor-services', 'monitor-hardware', 'monitor-polling', 'monitor-polling-recovery', 'monitor-ddc-time-sync', 'monitor-system-summary'];
+    }
+    const group = MONITOR_GROUPS.find(g => g.id === selectedMonitorId);
+    return group?.cardIds || [];
+  }, [selectedMonitorId]);
+
+  // 사이드바 컨텐츠
+  const sidebarContent = useMemo(() => {
+    if (isLoading || error || !data) {
+      return null;
+    }
+    return (
+      <>
+        {MONITOR_GROUPS.map(({ id, label, icon: Icon }) => (
+          <RightSidebarItem
+            key={id}
+            icon={Icon}
+            label={label}
+            active={selectedMonitorId === id}
+            onClick={() => handleSelectMonitor(id)}
+            title={label}
+          />
+        ))}
+      </>
+    );
+  }, [isLoading, error, data, selectedMonitorId, handleSelectMonitor]);
+
+  // 오른쪽 사이드바 설정
+  useRightSidebarContent(sidebarContent, [isLoading, error, data, selectedMonitorId, handleSelectMonitor]);
+
   if (isLoading) {
     return (
       <div className='min-h-screen flex items-center justify-center'>
@@ -146,46 +197,43 @@ const SystemMonitoringPage = () => {
     );
   }
 
-  return (
-    <div className='w-full p-6 space-y-6'>
-      {/* 컨트롤 패널 */}
-      <Card>
-        <CardContent className='py-0'>
-          <div className='grid grid-cols-2 gap-4 items-center'>
-            {/* 왼쪽: 비어있음 */}
-            <div></div>
-
-            {/* 오른쪽: 기능들 (오른쪽 정렬) */}
-            <div className='flex items-center gap-3 justify-end'>
-              <Badge variant={getStatusVariant(overallStatus)} className='text-sm'>
-                <span className='mr-1'>{getStatusIcon(overallStatus)}</span>
-                {getStatusText(overallStatus)}
-              </Badge>
-              <Button onClick={() => refetch()} variant='outline' size='sm'>
-                <RefreshCw className='h-4 w-4 mr-2' />
-                새로고침
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 상태 카드 그리드 */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-        {(() => {
-          const cards = [
-            <SuperiorServerStatusCard key='superior-server' />,
-            <PingTestCard key='ping-test' />,
-            data?.server && <ServerStatusCard key='server' data={data.server} />,
-            data?.database && (
+  const cardEntries: { id: string; card: React.ReactNode }[] = [
+    { id: 'monitor-superior-server', card: <SuperiorServerStatusCard key='superior-server' /> },
+    { id: 'monitor-ping-test', card: <PingTestCard key='ping-test' /> },
+    ...(data?.server ? [{ id: 'monitor-server', card: <ServerStatusCard key='server' data={data.server} /> }] : []),
+    ...(data?.database
+      ? [
+          {
+            id: 'monitor-database',
+            card: (
               <DatabaseStatusCard key='database' data={data.database} onViewData={() => setIsDatabaseModalOpen(true)} />
             ),
-            data?.services && <ServicesStatusCard key='services' data={data.services} />,
-            data?.hardware && <HardwareStatusCard key='hardware' data={data.hardware} />,
-            data?.polling && <PollingStatusCard key='polling' data={data.polling} />,
-            data?.pollingRecovery && <PollingRecoveryStatusCard key='polling-recovery' data={data.pollingRecovery} />,
-            data?.ddcTimeSync && <DdcTimeSyncStatusCard key='ddc-time-sync' data={data.ddcTimeSync} />,
-            <Card key='system-summary'>
+          },
+        ]
+      : []),
+    ...(data?.services ? [{ id: 'monitor-services', card: <ServicesStatusCard key='services' data={data.services} /> }] : []),
+    ...(data?.hardware ? [{ id: 'monitor-hardware', card: <HardwareStatusCard key='hardware' data={data.hardware} /> }] : []),
+    ...(data?.polling ? [{ id: 'monitor-polling', card: <PollingStatusCard key='polling' data={data.polling} /> }] : []),
+    ...(data?.pollingRecovery
+      ? [
+          {
+            id: 'monitor-polling-recovery',
+            card: <PollingRecoveryStatusCard key='polling-recovery' data={data.pollingRecovery} />,
+          },
+        ]
+      : []),
+    ...(data?.ddcTimeSync
+      ? [
+          {
+            id: 'monitor-ddc-time-sync',
+            card: <DdcTimeSyncStatusCard key='ddc-time-sync' data={data.ddcTimeSync} />,
+          },
+        ]
+      : []),
+    {
+      id: 'monitor-system-summary',
+      card: (
+        <Card key='system-summary'>
           <CardHeader>
             <CardTitle className='text-lg'>시스템 요약</CardTitle>
           </CardHeader>
@@ -205,14 +253,14 @@ const SystemMonitoringPage = () => {
               </div>
               <div className='flex justify-between'>
                 <span>서버 상태</span>
-                <Badge variant={data?.server.status === 'healthy' ? 'default' : 'destructive'} className='text-xs'>
-                  {data?.server.status === 'healthy' ? '정상' : '문제'}
+                <Badge variant={data?.server?.status === 'healthy' ? 'default' : 'destructive'} className='text-xs'>
+                  {data?.server?.status === 'healthy' ? '정상' : '문제'}
                 </Badge>
               </div>
               <div className='flex justify-between'>
                 <span>데이터베이스</span>
-                <Badge variant={data?.database.status === 'connected' ? 'default' : 'destructive'} className='text-xs'>
-                  {data?.database.status === 'connected' ? '연결됨' : '연결안됨'}
+                <Badge variant={data?.database?.status === 'connected' ? 'default' : 'destructive'} className='text-xs'>
+                  {data?.database?.status === 'connected' ? '연결됨' : '연결안됨'}
                 </Badge>
               </div>
               <div className='pt-2 border-t text-xs text-muted-foreground space-y-1'>
@@ -231,12 +279,20 @@ const SystemMonitoringPage = () => {
               </div>
             </div>
           </CardContent>
-        </Card>,
-          ].filter(Boolean);
+        </Card>
+      ),
+    },
+  ];
 
-          return cards.map((card, index) => (
+  return (
+    <div className='w-full p-6 space-y-6'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+        {cardEntries
+          .filter(({ id }) => visibleCardIds.includes(id))
+          .map(({ id, card }, index) => (
             <div
-              key={card?.key || index}
+              key={id}
+              id={id}
               style={{
                 animationDelay: `${index * 100}ms`,
                 animation: 'fadeInUp 0.6s ease-out forwards',
@@ -244,15 +300,11 @@ const SystemMonitoringPage = () => {
             >
               {card}
             </div>
-          ));
-        })()}
+          ))}
       </div>
 
       {/* 데이터베이스 탐색 모달 */}
       <DatabaseExplorerModal isOpen={isDatabaseModalOpen} onClose={() => setIsDatabaseModalOpen(false)} />
-
-      {/* 자동 새로고침 정보 */}
-      <div className='text-center text-xs text-muted-foreground'>데이터는 15초마다 자동으로 새로고침됩니다.</div>
     </div>
   );
 };

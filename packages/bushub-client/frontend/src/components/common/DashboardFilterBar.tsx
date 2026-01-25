@@ -3,11 +3,11 @@ import React, { useMemo } from 'react';
 
 import type { DeviceInfoDto } from '../../api/dto/Client.dto';
 
-import { STATUS_OPTIONS } from '../../constants/statusOptions';
+// import { STATUS_OPTIONS } from '../../constants/statusOptions';
 import { useApi } from '../../hooks/useApi';
 import { Card, CardContent } from '../ui';
 
-import { FilterBar } from './FilterBar';
+// import { FilterBar } from './FilterBar';
 
 interface DeviceTypeOption {
   type: string;
@@ -36,38 +36,34 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
   ({ selectedStatus, onSelectStatus, selectedType, onSelectType, className = '', devices = [] }) => {
     const { deviceTypeOptions: allDeviceTypeOptions } = useApi().client.catalog();
 
-    // 🎯 실제 장비 데이터를 기반으로 status 카운트 계산
-    const statusCounts = useMemo(() => {
-      const counts = {
-        all: devices.length,
-        '0': 0,
-        '1': 0,
-        '2': 0,
-      };
-
-      devices.forEach(device => {
-        // device.status를 number로 변환하여 타입 안전성 보장
-        const status = Number(device.status ?? 0);
-        const statusKey = String(status);
-        if (counts.hasOwnProperty(statusKey)) {
-          counts[statusKey as keyof typeof counts]++;
-        }
-      });
-
-      return counts;
-    }, [devices]);
-
-    const statusOptions = useMemo(
-      () =>
-        STATUS_OPTIONS.map(opt => ({
-          key: opt.key,
-          label: opt.label,
-          icon: typeof opt.icon === 'function' ? opt.icon() : opt.icon,
-          count: statusCounts[opt.key as keyof typeof statusCounts] ?? 0,
-          colorClass: opt.colorClass,
-        })),
-      [statusCounts]
-    );
+    // // 🎯 상태 필터(전체/정상/일부비정상/전체비정상) - 주석 처리
+    // const statusCounts = useMemo(() => {
+    //   const counts = {
+    //     all: devices.length,
+    //     '0': 0,
+    //     '1': 0,
+    //     '2': 0,
+    //   };
+    //   devices.forEach(device => {
+    //     const status = Number(device.status ?? 0);
+    //     const statusKey = String(status);
+    //     if (counts.hasOwnProperty(statusKey)) {
+    //       counts[statusKey as keyof typeof counts]++;
+    //     }
+    //   });
+    //   return counts;
+    // }, [devices]);
+    // const statusOptions = useMemo(
+    //   () =>
+    //     STATUS_OPTIONS.map(opt => ({
+    //       key: opt.key,
+    //       label: opt.label,
+    //       icon: typeof opt.icon === 'function' ? opt.icon() : opt.icon,
+    //       count: statusCounts[opt.key as keyof typeof statusCounts] ?? 0,
+    //       colorClass: opt.colorClass,
+    //     })),
+    //   [statusCounts]
+    // );
 
     // 🎯 실제 존재하는 장비 타입만 필터 옵션으로 생성 (카운트 포함)
     const deviceTypeOptions = useMemo(() => {
@@ -95,9 +91,9 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = React.memo(
     return (
       <Card className={`w-full ${className}`}>
         <CardContent className='flex flex-col gap-4'>
-          {/* 상태 필터(1행) - @shared FilterBar 사용 */}
-          <FilterBar options={statusOptions} selected={selectedStatus} onSelect={onSelectStatus} />
-          {/* 장비 타입 카드(2행) */}
+          {/* 상태 필터(전체/정상/일부비정상/전체비정상) - 주석 처리 */}
+          {/* <FilterBar options={statusOptions} selected={selectedStatus} onSelect={onSelectStatus} /> */}
+          {/* 장비 타입 카드 */}
           <div className='flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar'>
             {/* 전체 옵션 */}
             <Card

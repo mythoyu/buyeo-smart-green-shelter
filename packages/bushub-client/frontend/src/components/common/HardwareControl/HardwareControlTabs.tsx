@@ -23,6 +23,11 @@ interface HardwareControlTabsProps {
   disabled?: boolean;
   onError?: (error: HardwareControlError) => void;
   pollingStatus?: { pollingEnabled: boolean };
+  /** 외부 제어: 사이드바에서 탭 선택 시 사용 */
+  activeTab?: string;
+  onTabChange?: (value: string) => void;
+  /** true이면 TabsList 숨김 (오른쪽 사이드바에서 선택) */
+  hideTabsList?: boolean;
 }
 
 // 탭 설정 상수
@@ -48,8 +53,27 @@ const TAB_COMPONENTS = {
  * 각 하드웨어 타입별로 탭을 분리하여 성능 최적화
  */
 export const HardwareControlTabs: React.FC<HardwareControlTabsProps> = React.memo(
-  ({ disabled = false, onError, pollingStatus }) => {
-    const [activeTab, setActiveTab] = useState('do');
+  ({
+    disabled = false,
+    onError,
+    pollingStatus,
+    activeTab: controlledTab,
+    onTabChange,
+    hideTabsList = false,
+  }) => {
+    const [internalTab, setInternalTab] = useState('do');
+    const isControlled = controlledTab !== undefined && onTabChange != null;
+    const activeTab = isControlled ? controlledTab : internalTab;
+    const handleTabChange = useCallback(
+      (value: string) => {
+        if (isControlled) {
+          onTabChange!(value);
+        } else {
+          setInternalTab(value);
+        }
+      },
+      [isControlled, onTabChange]
+    );
 
     // 기본 에러 핸들러
     const handleError = onError || (() => {});
@@ -57,12 +81,6 @@ export const HardwareControlTabs: React.FC<HardwareControlTabsProps> = React.mem
     // 기본 폴링 상태
     const defaultPollingStatus = pollingStatus || { pollingEnabled: false };
 
-    // 탭 변경 핸들러 메모이제이션
-    const handleTabChange = useCallback((value: string) => {
-      setActiveTab(value);
-    }, []);
-
-    // 탭 리스트 메모이제이션
     const tabsList = useMemo(
       () => (
         <TabsList className='grid w-full grid-cols-5'>
@@ -76,13 +94,14 @@ export const HardwareControlTabs: React.FC<HardwareControlTabsProps> = React.mem
       []
     );
 
-    // 탭 콘텐츠 렌더링 함수
     const renderTabContent = useCallback(
       (tabValue: keyof typeof TAB_COMPONENTS) => {
         const TabComponent = TAB_COMPONENTS[tabValue];
-
+        if (TabComponent == null) {
+          return <TabsContent key={tabValue} value={tabValue}  />;
+        }
         return (
-          <TabsContent value={tabValue} className='mt-6'>
+          <TabsContent key={tabValue} value={tabValue}>
             <Suspense fallback={<LoadingSpinner />}>
               <TabComponent disabled={disabled} onError={handleError} pollingStatus={defaultPollingStatus} />
             </Suspense>
@@ -94,8 +113,7 @@ export const HardwareControlTabs: React.FC<HardwareControlTabsProps> = React.mem
 
     return (
       <Tabs value={activeTab} onValueChange={handleTabChange} className='w-full'>
-        {tabsList}
-
+        {!hideTabsList && tabsList}
         {renderTabContent('do')}
         {renderTabContent('di')}
         {renderTabContent('hvac')}
