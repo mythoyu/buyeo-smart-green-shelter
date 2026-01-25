@@ -141,8 +141,13 @@ const DatabaseStatusCard: React.FC<DatabaseStatusCardProps> = ({ data, onViewDat
               </div>
 
               {/* 데이터 보기 버튼 */}
-              <div className='pt-2 border-t'>
-                <Button variant='outline' size='sm' className='w-full' onClick={onViewData}>
+              <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='w-full border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  onClick={onViewData}
+                >
                   <Eye className='h-4 w-4 mr-2' />
                   데이터 보기
                 </Button>

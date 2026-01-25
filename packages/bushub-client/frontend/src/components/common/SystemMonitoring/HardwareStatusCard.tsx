@@ -184,7 +184,7 @@ const HardwareStatusCard: React.FC<HardwareStatusCardProps> = ({ data }) => {
           </Collapsible>
 
           {/* 요약 */}
-          <div className='pt-2 border-t'>
+          <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
             <div className='text-xs text-muted-foreground'>
               DDC: {data.ddc.connected ? HARDWARE_STATUS_TEXT.CONNECTED : HARDWARE_STATUS_TEXT.DISCONNECTED} | Modbus:{' '}
               {data.modbus.isConnected ? HARDWARE_STATUS_TEXT.CONNECTED : HARDWARE_STATUS_TEXT.DISCONNECTED}

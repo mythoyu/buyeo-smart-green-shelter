@@ -148,7 +148,7 @@ const ServicesStatusCard: React.FC<ServicesStatusCardProps> = ({ data }) => {
           </Collapsible>
 
           {/* 요약 */}
-          <div className='pt-2 border-t'>
+          <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
             <div className='text-xs text-muted-foreground'>
               총 {deviceStatus.total + systemStatus.total + userStatus.total}개 서비스 중{' '}
               {deviceStatus.available + systemStatus.available + userStatus.available}개 정상

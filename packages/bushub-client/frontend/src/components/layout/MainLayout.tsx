@@ -16,6 +16,7 @@ import {
   User,
   Train,
   MapPin,
+  UserCheck,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -262,6 +263,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     { name: '현장 설정', label: '현장\n설정', href: '/device-registration', icon: Database },
     { name: '사용자 관리', label: '사용자\n관리', href: '/users', icon: Users },
     { name: '로그 분석', label: '로그\n분석', href: '/log-analysis', icon: BarChart3 },
+    { name: '이용자 통계', label: '이용자\n통계', href: '/user-statistics', icon: UserCheck },
     { name: '시스템 설정', label: '시스템\n설정', href: '/system-settings', icon: Settings },
     { name: '시스템 분석', label: '시스템\n분석', href: '/system-monitoring', icon: Activity },
     // 하드웨어 제어는 superuser, engineer만 접근 가능

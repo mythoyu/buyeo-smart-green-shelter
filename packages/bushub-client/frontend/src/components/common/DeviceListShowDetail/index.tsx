@@ -119,8 +119,9 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
       );
     }
 
+    // 그리드는 부모 컴포넌트(DashboardPage)에서 관리하므로 Fragment로 반환
     return (
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+      <>
         {displayDevices.map((device: Device, deviceIndex: number) => (
           <DeviceCard
             key={device.id || device.deviceId}
@@ -147,7 +148,7 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
             devices={displayDevices}
           />
         ))}
-      </div>
+      </>
     );
   }
 );

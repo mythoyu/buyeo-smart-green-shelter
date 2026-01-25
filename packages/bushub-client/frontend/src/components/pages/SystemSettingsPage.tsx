@@ -1482,6 +1482,7 @@ const SystemSettingsPage: React.FC = () => {
                 <Button
                   variant='outline'
                   size='sm'
+                  className='w-fit border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   onClick={() => {
                     if (window.confirm('백엔드 서비스를 재기동하시겠습니까? 서비스가 잠시 중단될 수 있습니다.')) {
                       restartBackendMutation.mutate(undefined, {
@@ -1500,7 +1501,6 @@ const SystemSettingsPage: React.FC = () => {
                     }
                   }}
                   disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
-                  className='w-fit'
                 >
                   {restartBackendMutation.isPending ? '재기동 중...' : '백엔드 재기동'}
                 </Button>

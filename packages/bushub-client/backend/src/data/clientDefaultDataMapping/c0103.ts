@@ -1,0 +1,77 @@
+import { DeviceDefaultValues } from './index';
+
+export const c0103Defaults: DeviceDefaultValues = {
+  lighting: {
+    u001: {
+      start_time_1: '06:30',
+      start_time_1_hour: 6,
+      start_time_1_minute: 30,
+      end_time_1: '08:00',
+      end_time_1_hour: 8,
+      end_time_1_minute: 0,
+      start_time_2: '19:00',
+      start_time_2_hour: 19,
+      start_time_2_minute: 0,
+      end_time_2: '22:00',
+      end_time_2_hour: 22,
+      end_time_2_minute: 0,
+      power: false,
+      auto: true,
+    },
+  },
+  cooler: {
+    u001: {
+      start_time_1: '06:30',
+      start_time_1_hour: 6,
+      start_time_1_minute: 30,
+      end_time_1: '22:00',
+      end_time_1_hour: 22,
+      end_time_1_minute: 0,
+      power: false,
+      auto: true,
+      mode: 3,
+      speed: 4,
+      summer_cont_temp: 22,
+      winter_cont_temp: 24,
+      cur_temp: 22,
+      alarm: 0,
+    },
+  },
+  bench: {
+    u001: {
+      start_time_1: '06:30',
+      start_time_1_hour: 6,
+      start_time_1_minute: 30,
+      end_time_1: '22:00',
+      end_time_1_hour: 22,
+      end_time_1_minute: 0,
+      power: false,
+      auto: true,
+    },
+  },
+  door: {
+    u001: {
+      start_time_1: '00:00',
+      start_time_1_hour: 0,
+      start_time_1_minute: 0,
+      end_time_1: '00:00',
+      end_time_1_hour: 0,
+      end_time_1_minute: 0,
+      power: true,
+      auto: false,
+    },
+  },
+  people_counter: {
+    u001: {
+      currentCount: 0,
+      inCumulative: 0,
+      outCumulative: 0,
+      output1: false,
+      output2: false,
+      countEnabled: true,
+      buttonStatus: false,
+      sensorStatus: true,
+      limitExceeded: false,
+    },
+  },
+};

@@ -16,6 +16,7 @@ const SystemMonitoringPage = lazy(() => import('./components/pages/SystemMonitor
 const UserManagementPage = lazy(() => import('./components/pages/UserManagementPage'));
 const ChangePasswordPage = lazy(() => import('./components/pages/ChangePasswordPage'));
 const HardwareControlPage = lazy(() => import('./components/pages/HardwareControlPage'));
+const UserStatisticsPage = lazy(() => import('./components/pages/UserStatisticsPage'));
 const LoginPage = lazy(() => import('./components/pages/LoginPage'));
 const Logout = lazy(() => import('./components/pages/Logout'));
 
@@ -198,6 +199,16 @@ function AppContent() {
               <ProtectedRoute path='/hardware-control' requiresClient>
                 <Suspense fallback={<PageLoading />}>
                   <HardwareControlPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/user-statistics'
+            element={
+              <ProtectedRoute path='/user-statistics' requiresClient>
+                <Suspense fallback={<PageLoading />}>
+                  <UserStatisticsPage />
                 </Suspense>
               </ProtectedRoute>
             }

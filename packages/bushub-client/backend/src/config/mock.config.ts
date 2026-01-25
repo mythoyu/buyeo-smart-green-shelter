@@ -9,6 +9,7 @@ export interface MockConfig {
   websocket: boolean;
   hardware: boolean;
   usbTest: boolean; // USB 테스트 모드 추가
+  peopleCounter: boolean; // 피플카운터 Mock 모드
 }
 
 // 🆕 동적 Mock 설정 로딩 함수
@@ -19,11 +20,13 @@ export const getMockConfig = (): MockConfig => {
     websocket: process.env.WEBSOCKET_MOCK_ENABLED === 'true',
     hardware: process.env.HARDWARE_MOCK_ENABLED === 'true',
     usbTest: process.env.MODBUS_USB_TEST_MODE === 'true', // USB 테스트 모드
+    peopleCounter: process.env.PEOPLE_COUNTER_MOCK_ENABLED === 'true', // 피플카운터 Mock 모드
   };
 };
 
 // 🆕 실시간 환경변수 확인 함수들
 export const isModbusMockEnabled = (): boolean => process.env.MODBUS_MOCK_ENABLED === 'true';
+export const isPeopleCounterMockEnabled = (): boolean => process.env.PEOPLE_COUNTER_MOCK_ENABLED === 'true';
 
 // 🆕 Mock 설정 상태 로깅 함수
 export const logMockStatus = (logger: any): void => {

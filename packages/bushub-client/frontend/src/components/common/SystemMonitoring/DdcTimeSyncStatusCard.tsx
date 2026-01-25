@@ -77,13 +77,13 @@ const DdcTimeSyncStatusCard: React.FC<DdcTimeSyncStatusCardProps> = ({ data }) =
           </div>
 
           {/* 설명 */}
-          <div className='pt-2 border-t'>
+          <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
             <div className='text-xs text-muted-foreground'>24시간마다 DDC 장비의 시간을 동기화합니다.</div>
           </div>
 
           {/* 에러 표시 */}
           {data.error && (
-            <div className='pt-2 border-t'>
+            <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
               <div className='text-xs text-red-600 bg-red-50 p-2 rounded'>
                 <strong>에러:</strong> {data.error}
               </div>

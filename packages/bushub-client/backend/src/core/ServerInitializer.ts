@@ -306,14 +306,14 @@ export class ServerInitializer {
     await this.startPollingRecovery();
 
     // 13단계: 피플카운터 폴러 시작 (peopleCounterEnabled일 때만 실제 폴링)
-    this.startPeopleCounterPoller();
+    await this.startPeopleCounterPoller();
   }
 
-  private startPeopleCounterPoller(): void {
+  private async startPeopleCounterPoller(): Promise<void> {
     try {
       const poller = this.serviceContainer.getPeopleCounterPoller();
       if (poller) {
-        poller.start();
+        await poller.start();
         logInfo('✅ 피플카운터 폴러 시작 (설정 ON 시 ttyS1 폴링)');
       }
     } catch (error) {

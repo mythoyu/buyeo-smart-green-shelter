@@ -546,7 +546,7 @@ export default function UserManagementPage() {
                         value={newUser.username}
                         onChange={e => setNewUser({ ...newUser, username: e.target.value })}
                         placeholder='사용자명'
-                        className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 placeholder:text-xs text-sm'
+                        className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 placeholder:text-xs text-sm'
                         disabled={createUserMutation.isPending}
                       />
                     </div>
@@ -562,7 +562,7 @@ export default function UserManagementPage() {
                         setNewUser({ ...newUser, role: value })
                       }
                     >
-                      <SelectTrigger className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 text-sm'>
+                      <SelectTrigger className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-sm'>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className='z-[70]'>
@@ -585,7 +585,7 @@ export default function UserManagementPage() {
                         value={newUser.password}
                         onChange={e => setNewUser({ ...newUser, password: e.target.value })}
                         placeholder='비밀번호'
-                        className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 placeholder:text-xs text-sm pr-10'
+                        className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 placeholder:text-xs text-sm pr-10'
                         disabled={createUserMutation.isPending}
                       />
                       <span
@@ -669,7 +669,7 @@ export default function UserManagementPage() {
                       id='apiKey'
                       value={newUserApiKey}
                       onChange={e => setNewUserApiKey(e.target.value)}
-                      className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 text-sm font-mono'
+                      className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-sm font-mono'
                       disabled={createUserMutation.isPending}
                     />
                     <p className='text-xs text-gray-500'>사용자 인증에 사용될 API 키를 입력하세요</p>
@@ -700,7 +700,7 @@ export default function UserManagementPage() {
                     <Button
                       variant='outline'
                       onClick={() => setShowCreateUser(false)}
-                      className='flex-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm'
+                      className='flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 text-sm'
                       disabled={createUserMutation.isPending}
                     >
                       취소
@@ -758,7 +758,7 @@ export default function UserManagementPage() {
                     <Input
                       id='edit-username'
                       value={editingUser?.username || ''}
-                      className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 text-sm cursor-not-allowed'
+                      className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 text-gray-600 text-sm cursor-not-allowed'
                       disabled={true}
                     />
                     <p className='text-xs text-gray-500'>사용자명은 수정할 수 없습니다</p>
@@ -774,7 +774,7 @@ export default function UserManagementPage() {
                         setEditingUserData({ ...editingUserData, role: value })
                       }
                     >
-                      <SelectTrigger className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 text-sm'>
+                      <SelectTrigger className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-sm'>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className='z-[70]'>
@@ -809,7 +809,7 @@ export default function UserManagementPage() {
                         value={editingPassword}
                         onChange={e => setEditingPassword(e.target.value)}
                         placeholder='새 비밀번호'
-                        className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 placeholder:text-xs text-sm'
+                        className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 placeholder:text-xs text-sm'
                         disabled={updateUserMutation.isPending}
                       />
                     )}
@@ -828,7 +828,7 @@ export default function UserManagementPage() {
                       value={editingApiKey}
                       onChange={e => setEditingApiKey(e.target.value)}
                       placeholder='새 API 키'
-                      className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 placeholder:text-xs text-sm font-mono'
+                      className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-gray-300 dark:hover:border-gray-600 placeholder:text-xs text-sm font-mono'
                       disabled={updateUserMutation.isPending}
                     />
                     <p className='text-xs text-gray-500'>새 API 키를 입력하세요 (비워두면 변경하지 않음)</p>
@@ -838,7 +838,7 @@ export default function UserManagementPage() {
                     <Button
                       variant='outline'
                       onClick={handleCancelEditUser}
-                      className='flex-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm'
+                      className='flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 text-sm'
                       disabled={updateUserMutation.isPending}
                     >
                       취소
@@ -886,7 +886,7 @@ export default function UserManagementPage() {
               <Button
                 variant='outline'
                 onClick={() => setDeletingUser(null)}
-                className='flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 text-gray-700 font-medium'
+                className='flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 text-gray-700 font-medium'
               >
                 취소
               </Button>

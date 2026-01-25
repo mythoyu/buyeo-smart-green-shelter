@@ -211,7 +211,7 @@ const PingTestCard: React.FC = () => {
                 />
               </div>
 
-              <div className='text-xs text-muted-foreground border-t pt-2'>
+              <div className='text-xs text-muted-foreground border-t border-gray-200 dark:border-gray-700 pt-2'>
                 테스트 시간: {new Date(pingResult.timestamp).toLocaleString('ko-KR')}
               </div>
             </div>

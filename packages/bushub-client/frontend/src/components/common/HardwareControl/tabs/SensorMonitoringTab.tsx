@@ -128,7 +128,7 @@ export const SensorMonitoringTab: React.FC<SensorMonitoringTabProps> = ({
               disabled={isLoading}
               variant='outline'
               size='sm'
-              className='flex items-center gap-2'
+              className='flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             >
               <RefreshCw className={`h-4 w-4 ${readAllStatus.isPending ? 'animate-spin' : ''}`} />
               데이터 새로고침
@@ -137,7 +137,7 @@ export const SensorMonitoringTab: React.FC<SensorMonitoringTabProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className='rounded-md border overflow-x-auto'>
+        <div className='rounded-md border border-gray-200 dark:border-gray-700 overflow-x-auto'>
           <Table>
             <TableHeader>
               <TableRow>

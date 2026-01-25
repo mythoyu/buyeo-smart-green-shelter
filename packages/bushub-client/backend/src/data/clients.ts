@@ -22,6 +22,7 @@ export const commonDevices = {
   door: { id: 'd051', name: '자동문' },
   integrated_sensor: { id: 'd061', name: '통합센서' },
   externalsw: { id: 'd081', name: '자동문외부스위치' },
+  people_counter: { id: 'd082', name: '피플카운터' },
 };
 
 // 클라이언트별 유닛 구성
@@ -41,6 +42,13 @@ export const clientUnits = {
     cooler: [{ id: 'u001', name: '냉난방기' }],
     bench: [{ id: 'u001', name: '스마트벤치' }],
     door: [{ id: 'u001', name: '자동문' }],
+  },
+  c0103: {
+    lighting: [{ id: 'u001', name: 'LED 조명' }],
+    cooler: [{ id: 'u001', name: '냉난방기' }],
+    bench: [{ id: 'u001', name: '스마트벤치' }],
+    door: [{ id: 'u001', name: '자동문' }],
+    people_counter: [{ id: 'u001', name: '피플카운터' }],
   },
 };
 
@@ -92,5 +100,21 @@ export const clients: ClientData[] = [
       createDevice('door', clientUnits.c0102.door),
     ],
   },
-  // 추가 클라이언트는 필요 시 확장
+  {
+    id: 'c0103',
+    name: '부여군청',
+    location: '대한민국 충청남도 부여군 부여읍 사비로 33',
+    region: 'by',
+    city: '부여군',
+    type: 'sm-shelter',
+    latitude: 36.2754,
+    longitude: 126.9096,
+    devices: [
+      createDevice('lighting', clientUnits.c0103.lighting),
+      createDevice('cooler', clientUnits.c0103.cooler),
+      createDevice('bench', clientUnits.c0103.bench),
+      createDevice('door', clientUnits.c0103.door),
+      createDevice('people_counter', clientUnits.c0103.people_counter),
+    ],
+  },
 ];

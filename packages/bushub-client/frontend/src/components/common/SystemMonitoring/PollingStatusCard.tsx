@@ -101,7 +101,7 @@ const PollingStatusCard: React.FC<PollingStatusCardProps> = ({ data }) => {
           )}
 
           {/* 통계 정보 */}
-          <div className='pt-2 border-t space-y-2'>
+          <div className='pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2'>
             <div className='flex justify-between items-center'>
               <span className='text-xs text-muted-foreground'>총 호출</span>
               <span className='text-xs font-medium'>{data.stats.totalCalls.toLocaleString()}</span>
@@ -122,7 +122,7 @@ const PollingStatusCard: React.FC<PollingStatusCardProps> = ({ data }) => {
 
           {/* 에러 표시 */}
           {data.error && (
-            <div className='pt-2 border-t'>
+            <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
               <div className='text-xs text-red-600 bg-red-50 p-2 rounded'>
                 <strong>에러:</strong> {data.error}
               </div>

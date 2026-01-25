@@ -171,7 +171,7 @@ export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled =
   const isLoading = sendCommand.isPending || seasonalRead.isPending || seasonalSet.isPending;
 
   return (
-    <div className='space-y-6 relative'>
+    <div className='grid grid-cols-1 md:grid-cols-2 gap-6 relative'>
       {/* 절기 설정 카드 */}
       <Card>
         <CardHeader className='flex flex-row items-center justify-between'>
@@ -187,7 +187,7 @@ export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled =
               disabled={isLoading}
               variant='outline'
               size='sm'
-              className='flex items-center gap-2'
+              className='flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             >
               <RefreshCw className={`h-4 w-4 ${seasonalRead.isPending ? 'animate-spin' : ''}`} />
               계절 상태 읽기

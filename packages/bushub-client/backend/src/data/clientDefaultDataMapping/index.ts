@@ -1,6 +1,7 @@
 // 클라이언트별 기본값 import
 import { c0101Defaults } from './c0101';
 import { c0102Defaults } from './c0102';
+import { c0103Defaults } from './c0103';
 
 // 디바이스별 기본 초기값 인터페이스
 export interface DeviceDefaultValues {
@@ -114,6 +115,19 @@ export interface DeviceDefaultValues {
       auto: boolean;
     };
   };
+  people_counter?: {
+    [unitId: string]: {
+      currentCount: number;
+      inCumulative: number;
+      outCumulative: number;
+      output1: boolean;
+      output2: boolean;
+      countEnabled: boolean;
+      buttonStatus: boolean;
+      sensorStatus: boolean;
+      limitExceeded: boolean;
+    };
+  };
 }
 
 // 클라이언트별 기본값 매핑
@@ -125,6 +139,7 @@ export interface ClientDefaultMapping {
 export const CLIENT_DEFAULT_MAPPING: ClientDefaultMapping = {
   c0101: c0101Defaults,
   c0102: c0102Defaults,
+  c0103: c0103Defaults,
 };
 
 // 기본값 조회 함수
@@ -241,6 +256,17 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_hour: 22,
       end_time_1_minute: 0,
       auto: true,
+    },
+    people_counter: {
+      currentCount: 0,
+      inCumulative: 0,
+      outCumulative: 0,
+      output1: false,
+      output2: false,
+      countEnabled: true,
+      buttonStatus: false,
+      sensorStatus: true,
+      limitExceeded: false,
     },
   };
 

@@ -1,4 +1,4 @@
-import { Leaf, Gauge, Thermometer, DoorOpen, Activity, ToggleLeft, Fan, RotateCcw, Wind } from 'lucide-react';
+import { Leaf, Gauge, Thermometer, DoorOpen, Activity, ToggleLeft, Fan, RotateCcw, Wind, Users } from 'lucide-react';
 import React from 'react';
 
 import { UnitValue } from '../types/database';
@@ -31,6 +31,8 @@ export function getDeviceTypeIcon(type: string) {
       return <RotateCcw />;
     case 'aircurtain':
       return <Wind />;
+    case 'people_counter':
+      return <Users />;
     // 기타 타입별 매핑 추가
     default:
       return <Gauge />;

@@ -10,5 +10,9 @@ export const clientStyles: Record<string, any> = {
     marker: 'shelter',
     icon: 'Leaf',
   },
-  // ...다른 클라이언트들 (필요 시 확장)
+  c0103: {
+    color: '#7b1fa2', // 보라
+    marker: 'shelter',
+    icon: 'Leaf',
+  },
 };

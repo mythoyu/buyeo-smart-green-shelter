@@ -841,4 +841,18 @@ export const deviceSpecs = [
       },
     ],
   },
+  {
+    deviceId: 'd082',
+    deviceType: 'people_counter',
+    deviceName: '피플카운터',
+    styles: {
+      icon: 'Users',
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-50',
+      cardColor: 'text-blue-700',
+      cardBg: 'bg-blue-100',
+      cardIconColor: 'text-blue-600',
+    },
+    commands: [],
+  },
 ];

@@ -156,9 +156,9 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ data }) => {
             </div>
           </div>
 
-          {/* 프로세스 정보 */}
-          <div className='pt-2 border-t'>
-            <div className='text-xs text-muted-foreground space-y-1'>
+          {/* 프로세스 정보 (3열, 가운데 정렬) */}
+          <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
+            <div className='grid grid-cols-3 gap-2 text-xs text-muted-foreground text-center'>
               <div>PID: {data.process.pid}</div>
               <div>Node.js {data.process.version}</div>
               <div>

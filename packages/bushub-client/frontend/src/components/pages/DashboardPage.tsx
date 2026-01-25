@@ -26,7 +26,8 @@ const DEVICE_TYPE_MAP: Record<string, string> = {
   d051: 'door',
   d061: 'integrated_sensor',
   d081: 'externalsw',
-} as const;
+  d082: 'people_counter',
+};
 
 const DashboardPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -222,21 +223,23 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* 장비 목록 */}
+      {/* 통합 그리드: 장비 목록 (피플카운터는 기존 DeviceCard 스타일로 표시) */}
       {filteredDevices.length === 0 && devices.length > 0 ? (
         <div className='text-center py-12 space-y-2'>
           <p className='text-gray-500 font-medium'>선택한 필터 조건에 맞는 장비가 없습니다.</p>
           <p className='text-sm text-gray-400'>필터를 변경해보세요.</p>
         </div>
       ) : (
-        <DeviceListShowDetail
-          ref={deviceListRef}
-          devices={filteredDevices as any[]}
-          deviceSpecs={deviceSpecs}
-          deviceStyles={deviceStyles}
-          onExecuteAction={executeDeviceAction}
-          getAvailableActions={getAvailableActions}
-        />
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+          <DeviceListShowDetail
+            ref={deviceListRef}
+            devices={filteredDevices as any[]}
+            deviceSpecs={deviceSpecs}
+            deviceStyles={deviceStyles}
+            onExecuteAction={executeDeviceAction}
+            getAvailableActions={getAvailableActions}
+          />
+        </div>
       )}
 
       {/* Toast 알림 */}

@@ -7,6 +7,7 @@ export const deviceMapping = {
   d051: 'door',
   d061: 'integrated_sensor',
   d081: 'externalsw',
+  d082: 'people_counter',
 };
 
 export const deviceMappingHelpers = {

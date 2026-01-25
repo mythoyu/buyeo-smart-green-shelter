@@ -149,4 +149,110 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
       }
     },
   );
+
+  /**
+   * POST /system/people-counter/reset
+   * 피플카운터 리셋 (현재 인원, 입실 누적, 퇴실 누적)
+   */
+  fastify.post(
+    '/system/people-counter/reset',
+    {
+      preHandler: [fastify.requireAuth],
+      schema: {
+        body: {
+          type: 'object',
+          required: ['type'],
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['current', 'in', 'out', 'all'],
+            },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+          409: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+          500: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+              error: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        // peopleCounterEnabled 체크
+        const state = await systemService.getPeopleCounterState(false);
+        if (!state?.peopleCounterEnabled) {
+          return (reply as any).code(409).send({
+            success: false,
+            message: '피플카운터가 비활성화되어 있습니다.',
+          });
+        }
+
+        // type 검증
+        const { type } = request.body as { type: string };
+        if (!type || !['current', 'in', 'out', 'all'].includes(type)) {
+          return (reply as any).code(400).send({
+            success: false,
+            message: 'type은 current, in, out, all 중 하나여야 합니다.',
+          });
+        }
+
+        // QueueService 획득 및 리셋 실행
+        const queueService = serviceContainer.getPeopleCounterQueueService();
+        if (!queueService) {
+          return (reply as any).code(500).send({
+            success: false,
+            message: '피플카운터 큐 서비스를 찾을 수 없습니다.',
+          });
+        }
+
+        try {
+          await queueService.enqueueReset(type as 'current' | 'in' | 'out' | 'all');
+          return reply.send({
+            success: true,
+            message: '리셋 완료',
+          });
+        } catch (error) {
+          logger.error(`[People Counter API] 리셋 실패: ${error}`);
+          return (reply as any).code(500).send({
+            success: false,
+            message: '피플카운터 리셋에 실패했습니다',
+            error: String(error),
+          });
+        }
+      } catch (error) {
+        logger.error(`[People Counter API] 리셋 오류: ${error}`);
+        return (reply as any).code(500).send({
+          success: false,
+          message: '내부 서버 오류',
+          error: String(error),
+        });
+      }
+    },
+  );
 }

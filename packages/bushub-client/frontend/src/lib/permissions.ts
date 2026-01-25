@@ -6,6 +6,7 @@ export const PERMISSIONS = {
   SYSTEM_SETTINGS: 'system:settings',
   SYSTEM_MONITORING: 'system:monitor',
   USER_MANAGEMENT: 'user:manage',
+  USER_STATISTICS: 'user:statistics',
 } as const;
 
 // 역할별 권한 매핑
@@ -30,6 +31,7 @@ export const PAGE_PERMISSIONS = {
   '/system-settings': PERMISSIONS.SYSTEM_SETTINGS,
   '/system-monitoring': PERMISSIONS.SYSTEM_MONITORING,
   '/users': PERMISSIONS.USER_MANAGEMENT,
+  '/user-statistics': PERMISSIONS.USER_STATISTICS,
 } as const;
 
 // 페이지 접근 권한 체크

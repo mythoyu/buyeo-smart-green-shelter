@@ -641,6 +641,10 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
               webSocketService: { available: !!rawDomainStatus.systemDomain?.webSocketService, status: 'active' },
               unifiedLogService: { available: !!rawDomainStatus.systemDomain?.unifiedLogService, status: 'active' },
               ddcTimeSyncService: { available: !!rawDomainStatus.systemDomain?.ddcTimeSyncService, status: 'active' },
+              pollingAutoRecoveryService: {
+                available: !!rawDomainStatus.systemDomain?.pollingAutoRecoveryService,
+                status: 'active',
+              },
             },
             userDomain: {
               userService: { available: !!rawDomainStatus.userDomain?.userService, status: 'active' },
@@ -676,8 +680,16 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
           timestamp: new Date().toISOString(),
         };
 
-        // 전체 시스템 상태 계산
-        const overallStatus = calculateOverallStatus(serverStatus, dbStatus, domainStatus, hardwareStatus);
+        // 전체 시스템 상태 계산 (polling, pollingRecovery, ddcTimeSync 포함)
+        const overallStatus = calculateOverallStatus(
+          serverStatus,
+          dbStatus,
+          domainStatus,
+          hardwareStatus,
+          pollingStatus,
+          pollingRecoveryStatus,
+          ddcTimeSyncStatus,
+        );
 
         const monitoringData = {
           server: serverStatus,
@@ -828,18 +840,38 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
   );
 }
 
-// 전체 시스템 상태 계산
-function calculateOverallStatus(serverStatus: any, dbStatus: any, domainStatus: any, hardwareStatus: any): string {
+// 전체 시스템 상태 계산 (polling, pollingRecovery, ddcTimeSync 반영)
+function calculateOverallStatus(
+  serverStatus: any,
+  dbStatus: any,
+  domainStatus: any,
+  hardwareStatus: any,
+  pollingStatus?: { error?: string },
+  pollingRecoveryStatus?: { error?: string },
+  ddcTimeSyncStatus?: { error?: string },
+): string {
   const serverHealthy = serverStatus.status === 'healthy';
   const dbHealthy = dbStatus.status === 'connected';
   const servicesHealthy = Object.values(domainStatus).every((domain: any) =>
     Object.values(domain).every((service: any) => service && service.available !== false),
   );
   const hardwareHealthy = hardwareStatus.ddc.connected && hardwareStatus.modbus.isConnected;
+  const pollingHealthy = !pollingStatus?.error;
+  const pollingRecoveryHealthy = !pollingRecoveryStatus?.error;
+  const ddcTimeSyncHealthy = !ddcTimeSyncStatus?.error;
 
-  if (serverHealthy && dbHealthy && servicesHealthy && hardwareHealthy) {
+  if (
+    serverHealthy &&
+    dbHealthy &&
+    servicesHealthy &&
+    hardwareHealthy &&
+    pollingHealthy &&
+    pollingRecoveryHealthy &&
+    ddcTimeSyncHealthy
+  ) {
     return 'healthy';
-  } else if (serverHealthy && dbHealthy) {
+  }
+  if (serverHealthy && dbHealthy) {
     return 'degraded';
   }
   return 'critical';

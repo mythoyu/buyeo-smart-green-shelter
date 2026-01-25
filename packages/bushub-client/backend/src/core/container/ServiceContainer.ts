@@ -55,6 +55,7 @@ import { LogSchedulerService } from '../services/LogSchedulerService';
 import { ModbusCommandQueue } from '../services/ModbusCommandQueue';
 import { ModbusService } from '../services/ModbusService';
 import { PeopleCounterPollerService } from '../services/PeopleCounterPollerService';
+import { PeopleCounterQueueService } from '../services/PeopleCounterQueueService';
 import { PollingDataPersistenceService } from '../services/PollingDataPersistenceService';
 import { SecurityService } from '../services/SecurityService';
 import { StatusService } from '../services/StatusService';
@@ -286,6 +287,10 @@ export class ServiceContainer {
     const pollingAutoRecoveryService = new PollingAutoRecoveryService(this.services.get('logger'));
     this.services.set('pollingAutoRecoveryService', pollingAutoRecoveryService);
 
+    // 피플카운터 큐 서비스 (ttyS1 직렬화)
+    const peopleCounterQueueService = new PeopleCounterQueueService(logger);
+    this.services.set('peopleCounterQueueService', peopleCounterQueueService);
+
     // 피플카운터 폴러 (ttyS1, APC100)
     const peopleCounterPoller = new PeopleCounterPollerService(logger);
     peopleCounterPoller.initialize(this);
@@ -330,6 +335,10 @@ export class ServiceContainer {
 
   public getDataApplyService(): DataApplyService {
     return this.services.get('dataApplyService');
+  }
+
+  public getPeopleCounterQueueService(): PeopleCounterQueueService {
+    return this.services.get('peopleCounterQueueService');
   }
 
   public getPeopleCounterPoller(): PeopleCounterPollerService {

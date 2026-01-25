@@ -37,39 +37,8 @@ const SystemMonitoringPage = () => {
 
   const { data, isLoading, error, refetch } = useGetSystemMonitoring();
 
-  // 전체 시스템 상태 계산
-  const overallStatus = useMemo(() => {
-    if (!data) return 'unknown';
-
-    const serverHealthy = data.server?.status === 'healthy';
-    const dbHealthy = data.database?.status === 'connected';
-    const servicesHealthy = data.services
-      ? Object.values(data.services).every(domain =>
-          Object.values(domain).every(service => service && service.available !== false)
-        )
-      : false;
-    const hardwareHealthy = data.hardware?.ddc?.connected && data.hardware?.modbus?.isConnected;
-
-    // 🆕 새로운 모니터링 데이터 반영
-    const pollingHealthy = data.polling ? !data.polling.error : true;
-    const pollingRecoveryHealthy = data.pollingRecovery ? !data.pollingRecovery.error : true;
-    const ddcTimeSyncHealthy = data.ddcTimeSync ? !data.ddcTimeSync.error : true;
-
-    if (
-      serverHealthy &&
-      dbHealthy &&
-      servicesHealthy &&
-      hardwareHealthy &&
-      pollingHealthy &&
-      pollingRecoveryHealthy &&
-      ddcTimeSyncHealthy
-    ) {
-      return 'healthy';
-    } else if (serverHealthy && dbHealthy) {
-      return 'degraded';
-    }
-    return 'critical';
-  }, [data]);
+  // 백엔드 calculateOverallStatus 사용 (server, db, services, hardware, polling, pollingRecovery, ddcTimeSync 반영)
+  const overallStatus = data?.overall?.status ?? 'unknown';
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -174,7 +143,11 @@ const SystemMonitoringPage = () => {
               {error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'}
             </div>
             <div className='flex justify-center'>
-              <Button onClick={() => refetch()} variant='outline'>
+              <Button
+                onClick={() => refetch()}
+                variant='outline'
+                className='border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              >
                 <RefreshCw className='h-4 w-4 mr-2' />
                 다시 시도
               </Button>
@@ -263,7 +236,7 @@ const SystemMonitoringPage = () => {
                   {data?.database?.status === 'connected' ? '연결됨' : '연결안됨'}
                 </Badge>
               </div>
-              <div className='pt-2 border-t text-xs text-muted-foreground space-y-1'>
+              <div className='pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-muted-foreground space-y-1'>
                 <div className='flex justify-between'>
                   <span>전체 메모리</span>
                   <span>{data?.server?.system?.totalMemory}GB</span>

@@ -75,9 +75,66 @@ function validateAndParseRequest(request: FastifyRequest) {
   return { clientId, initialize };
 }
 
+/** c0103 등 정의상 people_counter가 있으나 DB에 d082가 없으면 생성 */
+async function ensurePeopleCounterIfNeeded(clientId: string): Promise<void> {
+  const info = clientUnits[clientId as keyof typeof clientUnits];
+  if (!info || !('people_counter' in info)) return;
+
+  const exists = await DeviceSchema.exists({ clientId, deviceId: 'd082' });
+  if (exists) return;
+
+  logInfo(`[동기화] ${clientId}에 피플카운터(d082) 누락 → DB 생성`);
+
+  const units = (info as any).people_counter as { id: string; name: string }[];
+  const deviceName = '피플카운터';
+
+  await DeviceSchema.create({
+    deviceId: 'd082',
+    clientId,
+    name: deviceName,
+    type: 'people_counter',
+  });
+  await StatusSchema.create({
+    deviceId: 'd082',
+    clientId,
+    status: 0,
+    lastUpdated: new Date(),
+  });
+  await DataSchema.create({
+    clientId,
+    deviceId: 'd082',
+    type: 'people_counter',
+    units: units.map((u) => ({
+      unitId: u.id,
+      data: generateRealOperationData(clientId, 'people_counter', u.id),
+    })),
+    updatedAt: new Date(),
+  });
+  await ErrorSchema.create({
+    deviceId: 'd082',
+    clientId,
+    units: [],
+    updatedAt: new Date(),
+  });
+  for (const u of units) {
+    await UnitSchema.create({
+      unitId: u.id,
+      deviceId: 'd082',
+      clientId,
+      name: u.name,
+      status: 0,
+      type: 'people_counter',
+      data: {},
+    });
+  }
+  logInfo(`[동기화] 피플카운터(d082) 생성 완료`);
+}
+
 // 기존 클라이언트 처리 함수
 async function handleExistingClient(existingClient: any, reply: FastifyReply) {
   logInfo(`기존 클라이언트 설정 유지: ${existingClient.id}`);
+
+  await ensurePeopleCounterIfNeeded(existingClient.id);
 
   // 기존 장비 정보 조회하여 응답
   const savedDevices = await DeviceSchema.find({ clientId: existingClient.id }).lean();
@@ -290,7 +347,7 @@ async function createDevicesAndUnits(savedClient: any, clientUnitInfo: any, init
       }
 
       // 장비 이름 자동 생성
-      const deviceNames = {
+      const deviceNames: Record<string, string> = {
         lighting: '조명',
         cooler: '냉난방기',
         exchanger: '전열교환기',
@@ -299,6 +356,7 @@ async function createDevicesAndUnits(savedClient: any, clientUnitInfo: any, init
         door: '자동문',
         integrated_sensor: '통합센서',
         externalsw: '자동문외부스위치',
+        people_counter: '피플카운터',
       };
 
       const deviceName = deviceNames[deviceType as keyof typeof deviceNames] || deviceType;
@@ -474,6 +532,8 @@ async function clientRoutes(app: FastifyInstance) {
           logInfo('클라이언트 정보를 찾을 수 없습니다.');
           return handleHttpSuccess(ErrorMessages.TEST_CLIENT_NOT_FOUND, null, reply);
         }
+
+        await ensurePeopleCounterIfNeeded(client.id);
 
         // 장비 조회
         const devices = await DeviceSchema.find({ clientId: client.id }).lean();

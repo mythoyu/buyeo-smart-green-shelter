@@ -218,7 +218,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
       deviceName: device.name,
       deviceType: device.type,
       commands: device.commands || [], // 모드버스 commands 추가
-      units: device.units.map((unit: any) => ({
+      units: (device.units || []).map((unit: any) => ({
         unitId: unit.id,
         unitName: unit.name,
         unitType: device.type,
@@ -266,7 +266,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
     const newModbus: Record<string, any> = {};
 
     groupedDevices.forEach((device: any) => {
-      device.units.forEach((unit: any) => {
+      (device.units || []).forEach((unit: any) => {
         // 백엔드에서 가져온 모드버스 commands 기반으로 초기값 설정
         const deviceCommands = device.commands || [];
         const initialConfig: Record<string, any> = {};
@@ -348,7 +348,7 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
         name: device.deviceName,
         type: device.deviceType,
         commands: device.commands || [],
-        units: device.units.map((unit: any) => ({
+        units: (device.units || []).map((unit: any) => ({
           id: unit.unitId,
           name: unit.unitName,
           type: unit.unitType,
