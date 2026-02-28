@@ -288,7 +288,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className='min-h-screen bg-background'>
       {/* 헤더 */}
-      <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 md:pl-0 md:pr-2 bg-card shadow-sm border-b border-border/50'>
+      <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-2 md:pl-0 md:pr-2 bg-card shadow-sm border-b border-border/50'>
         {/* 왼쪽: 햄버거(좌측 네비와 동일 폭 w-20) + 아이콘·현장 주소(pl-4) */}
         <div className='flex items-center min-w-0'>
           {/* 메뉴 버튼 - 데스크탑에서 좌측 네비와 동일 가로(w-20) */}

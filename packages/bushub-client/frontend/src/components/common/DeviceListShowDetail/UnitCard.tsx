@@ -410,7 +410,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
               </div>
             ) : (
               getCommands.length > 0 && (
-                <div className='grid grid-cols-4 gap-2'>
+                <div className='grid grid-cols-3 md:grid-cols-4 gap-2'>
                   {getCommands.map((cmd: any) => {
                     const value = unit.data?.[cmd.key];
 
