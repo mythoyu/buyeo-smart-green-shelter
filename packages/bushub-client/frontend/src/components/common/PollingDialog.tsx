@@ -43,10 +43,10 @@ export const PollingDialog: React.FC<PollingDialogProps> = ({ isOpen, title, mes
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className='border-gray-200 dark:border-gray-700'>
         <AlertDialogHeader>
-          <AlertDialogTitle className='flex items-center gap-2'>
-            <div className='w-3 h-3 bg-green-500 rounded-full animate-pulse'></div>
+          <AlertDialogTitle className='flex items-center gap-2 text-gray-900 dark:text-gray-100'>
+            <div className='w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full animate-pulse'></div>
             {title}
           </AlertDialogTitle>
           <AlertDialogDescription className='space-y-2'>
