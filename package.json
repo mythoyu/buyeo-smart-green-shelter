@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "pnpm -r run dev",
+    "dev:frontend": "pnpm --filter @bushub-client/frontend run dev",
+    "dev:backend": "pnpm --filter @bushub-client/backend run dev",
     "build": "pnpm -r run build:production",
+    "build:frontend": "pnpm --filter @bushub-client/frontend run build",
+    "build:backend": "pnpm --filter @bushub-client/backend run build",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
     "test": "pnpm -r run test",

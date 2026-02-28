@@ -1,6 +1,3 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
 import { FastifyInstance } from 'fastify';
 
 // API 엔드포인트 상수
@@ -39,10 +36,10 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
   // System 도메인 서비스들 가져오기
   const systemServices = serviceContainer.getSystemDomainServices();
   const { systemService } = systemServices;
-
   const { logSchedulerService } = systemServices;
   const { webSocketService } = systemServices;
   const { unifiedLogService } = systemServices;
+  const rebootSchedulerService = ServiceContainer.getInstance().getRebootSchedulerService();
 
   // 시스템 전체 설정 조회
   app.get(SYSTEM_GENERAL_ENDPOINTS.SYSTEM, { preHandler: [app.requireAuth] }, async (request, reply) => {
@@ -63,7 +60,16 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
   // action 기반 시스템 명령 처리
   app.post(SYSTEM_GENERAL_ENDPOINTS.SYSTEM, { preHandler: [app.requireAuth] }, async (request, reply) => {
     try {
-      const { action, backupPath } = request.body as { action: string; backupPath?: string };
+      const { action, backupPath, rebootSchedule } = request.body as {
+        action: string;
+        backupPath?: string;
+        rebootSchedule?: {
+          enabled?: boolean;
+          mode?: string;
+          hour?: number;
+          daysOfWeek?: number[];
+        };
+      };
 
       logInfo(`[POST /system] action: ${action} 요청`);
 
@@ -96,38 +102,75 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
             reply,
           );
 
-        case 'restart':
-          // 호스트 PC 재기동 명령 실행
-          const execAsync = promisify(exec);
-
-          try {
-            // WebSocket으로 재기동 알림 전송
-            const webSocketService = serviceContainer.getWebSocketService();
-            webSocketService?.broadcastLog(
-              'info',
-              'system',
-              '호스트 PC 재기동을 시작합니다. 잠시 후 시스템이 재시작됩니다.',
+        case 'update-reboot-schedule': {
+          if (!rebootSchedule) {
+            return handleHttpError(
+              new HttpValidationError('rebootSchedule 객체가 필요합니다.'),
+              reply,
             );
+          }
 
-            // 비동기로 재기동 실행 (응답 후 실행)
-            setTimeout(async () => {
-              try {
-                // 컨테이너 환경에서는 호스트 재부팅이 제한됨
-                // 실제 재부팅은 호스트에서 직접 실행해야 함
-                logInfo('호스트 PC 재기동 요청됨 - 컨테이너 환경에서는 호스트에서 직접 재부팅이 필요합니다.');
+          const { enabled, mode, hour, daysOfWeek } = rebootSchedule;
 
-                // 컨테이너 내에서 시도 (실패할 가능성이 높음)
-                try {
-                  await execAsync('reboot');
-                } catch (rebootError) {
-                  logInfo(`컨테이너 내 재부팅 시도 실패: ${rebootError}`);
-                  logInfo('호스트에서 직접 재부팅을 실행해주세요: sudo reboot');
-                }
-              } catch (error) {
-                logInfo(`호스트 PC 재기동 실행 중 오류: ${error}`);
-              }
-            }, 1000);
+          if (typeof enabled !== 'boolean') {
+            return handleHttpError(
+              new HttpValidationError('rebootSchedule.enabled는 boolean이어야 합니다.'),
+              reply,
+            );
+          }
 
+          if (mode !== 'daily' && mode !== 'weekly') {
+            return handleHttpError(
+              new HttpValidationError("rebootSchedule.mode는 'daily' 또는 'weekly' 여야 합니다."),
+              reply,
+            );
+          }
+
+          if (!Number.isInteger(hour ?? NaN) || hour! < 0 || hour! > 23) {
+            return handleHttpError(
+              new HttpValidationError('rebootSchedule.hour는 0~23 사이의 정수여야 합니다.'),
+              reply,
+            );
+          }
+
+          if (mode === 'weekly') {
+            if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
+              return handleHttpError(
+                new HttpValidationError(
+                  'rebootSchedule.mode가 weekly일 때 daysOfWeek는 0~6 값의 배열이어야 합니다.',
+                ),
+                reply,
+              );
+            }
+
+            const invalidDay = daysOfWeek.find(
+              (d) => !Number.isInteger(d) || d < 0 || d > 6,
+            );
+            if (invalidDay !== undefined) {
+              return handleHttpError(
+                new HttpValidationError('daysOfWeek 값은 0~6 사이의 정수여야 합니다.'),
+                reply,
+              );
+            }
+          }
+
+          const updated = await systemService.updateRebootSchedule({
+            enabled,
+            mode,
+            hour: hour as number,
+            daysOfWeek,
+          });
+
+          return reply.send(
+            createSuccessResponse('자동 재부팅 스케줄이 업데이트되었습니다.', {
+              rebootSchedule: updated?.runtime?.rebootSchedule,
+            }),
+          );
+        }
+
+        case 'restart':
+          try {
+            await rebootSchedulerService.triggerHostReboot('manual');
             return reply.send(
               createSuccessResponse(
                 '호스트 PC 재기동 요청이 접수되었습니다. 컨테이너 환경에서는 호스트에서 직접 재부팅이 필요할 수 있습니다.',

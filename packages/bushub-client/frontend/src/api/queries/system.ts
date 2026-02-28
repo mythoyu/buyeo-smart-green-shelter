@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { internalApi, networkControlApi } from '../axiosInstance';
 
@@ -17,6 +17,13 @@ interface SeasonalData {
   october: number;
   november: number;
   december: number;
+}
+
+export interface RebootSchedule {
+  enabled: boolean;
+  mode: 'daily' | 'weekly';
+  hour: number; // 0~23, 예: 3 → 새벽 3시
+  daysOfWeek?: number[];
 }
 
 // 절기 설정 응답 타입
@@ -94,6 +101,11 @@ const updateSystemSettings = async (settings: any): Promise<any> => {
   return internalApi.post('/system', settings).then(res => res.data);
 };
 
+// 서버 현재 시간 조회
+const getSystemTime = async (): Promise<any> => {
+  return internalApi.get('/system/time').then(res => res.data);
+};
+
 const getNtpStatus = async (): Promise<any> => {
   return networkControlApi.get('/ntp/status').then(res => res.data.data);
 };
@@ -130,6 +142,20 @@ const restartHostSystem = async (): Promise<any> => {
 // 백엔드 재기동
 const restartBackend = async (): Promise<any> => {
   return internalApi.post('/system', { action: 'restart-backend' }).then(res => res.data);
+};
+
+const getRebootSchedule = async (): Promise<RebootSchedule | undefined> => {
+  const settings = await getSystemSettings();
+  return settings?.runtime?.rebootSchedule as RebootSchedule | undefined;
+};
+
+const updateRebootScheduleApi = async (schedule: RebootSchedule): Promise<any> => {
+  return internalApi
+    .post('/system', {
+      action: 'update-reboot-schedule',
+      rebootSchedule: schedule,
+    })
+    .then(res => res.data);
 };
 
 // 절기 설정 저장 (season 필드 제외 - readonly)
@@ -176,6 +202,29 @@ export const useGetSystemSettings = () =>
 export const useUpdateSystemSettings = () =>
   useMutation({
     mutationFn: updateSystemSettings,
+  });
+
+export const useGetRebootSchedule = () =>
+  useQuery<RebootSchedule | undefined>({
+    queryKey: ['system', 'reboot-schedule'],
+    queryFn: getRebootSchedule,
+  });
+
+export const useUpdateRebootSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateRebootScheduleApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['system', 'reboot-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['system', 'settings'] });
+    },
+  });
+};
+
+export const useGetSystemTime = () =>
+  useQuery({
+    queryKey: ['system', 'time'],
+    queryFn: getSystemTime,
   });
 
 export const useGetNtpStatus = () =>

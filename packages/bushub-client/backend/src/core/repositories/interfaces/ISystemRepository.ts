@@ -31,6 +31,13 @@ export interface SystemSettings {
     pollingInterval: number; // 이동됨
     applyInProgress: boolean;
     peopleCounterEnabled?: boolean;
+    rebootSchedule?: {
+      enabled: boolean;
+      mode: 'daily' | 'weekly';
+      hour: number;
+      daysOfWeek?: number[];
+      lastExecutedAt?: Date;
+    };
   };
 
   // 🎯 DDC 시간 설정 추가
@@ -81,6 +88,13 @@ export interface SystemUpdateParams {
     pollingInterval?: number; // 이동됨
     applyInProgress?: boolean;
     peopleCounterEnabled?: boolean;
+    rebootSchedule?: {
+      enabled?: boolean;
+      mode?: 'daily' | 'weekly';
+      hour?: number;
+      daysOfWeek?: number[];
+      lastExecutedAt?: Date;
+    };
   };
   seasonal?: {
     season: number;

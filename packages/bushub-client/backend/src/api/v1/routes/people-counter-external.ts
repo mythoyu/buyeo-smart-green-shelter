@@ -10,6 +10,7 @@ import fp from 'fastify-plugin';
 import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import { Client as ClientSchema } from '../../../models/schemas/ClientSchema';
 import { PeopleCounterRaw } from '../../../models/schemas/PeopleCounterRawSchema';
+import { getPeopleCounterHourlyStats } from '../../../core/services/PeopleCounterAggregationService';
 import { createSuccessResponse, handleRouteError } from '../../../shared/utils/responseHelper';
 import logger from '../../../logger';
 
@@ -119,6 +120,58 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
       } catch (error) {
         logger.error(`[People Counter External] stats 오류: ${error}`);
         return handleRouteError(error, reply, 'people-counter', '통계 조회 중 오류가 발생했습니다.');
+      }
+    },
+  );
+
+  app.get(
+    '/people-counter/hourly-stats',
+    { preHandler: [app.requireAuth] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const systemService = ServiceContainer.getInstance().getSystemService();
+        const pcState = await systemService.getPeopleCounterState(false);
+        if (!pcState?.peopleCounterEnabled) {
+          return reply.code(404).send({
+            success: false,
+            message: '피플카운터가 비활성화되어 있습니다.',
+          });
+        }
+
+        const q = request.query as { date?: string; clientId?: string };
+        if (!q.date) {
+          return reply.code(400).send({
+            success: false,
+            message: 'date(YYYY-MM-DD) 쿼리 파라미터가 필요합니다.',
+          });
+        }
+
+        // YYYY-MM-DD 형식을 기준으로 로컬 타임존의 0시를 계산
+        const baseDate = new Date(`${q.date}T00:00:00`);
+        if (Number.isNaN(baseDate.getTime())) {
+          return reply.code(400).send({
+            success: false,
+            message: '유효한 date(YYYY-MM-DD) 값을 입력해주세요.',
+          });
+        }
+
+        const params: { date: Date; clientId?: string } = { date: baseDate };
+        if (q.clientId) {
+          params.clientId = q.clientId;
+        }
+
+        const stats = await getPeopleCounterHourlyStats(params);
+
+        return reply.send(
+          createSuccessResponse('피플카운터 시간대별 통계 조회 성공', {
+            date: stats.date,
+            timezone: stats.timezone,
+            buckets: stats.buckets,
+          }),
+        );
+      } catch (error) {
+        logger.error(`[People Counter External] hourly-stats 오류: ${error}`);
+        return handleRouteError(error, reply, 'people-counter', '시간대별 통계 조회 중 오류가 발생했습니다.');
       }
     },
   );

@@ -364,6 +364,55 @@ export class SystemService implements ISystemService {
     }
   }
 
+  async updateRebootSchedule(rebootSchedule: {
+    enabled: boolean;
+    mode: 'daily' | 'weekly';
+    hour: number;
+    daysOfWeek?: number[];
+  }): Promise<SystemSettings | null> {
+    try {
+      this.logger?.info(
+        `호스트 자동 재부팅 스케줄 업데이트: ${JSON.stringify(rebootSchedule)}`,
+      );
+
+      const currentSettings = await this.getSettings();
+      const currentRuntime =
+        currentSettings?.runtime || {
+          pollingEnabled: false,
+          pollingInterval: 30000,
+          applyInProgress: false,
+          peopleCounterEnabled: false,
+        };
+
+      const updated = await this.systemRepository.updateSettings({
+        runtime: {
+          ...currentRuntime,
+          rebootSchedule: {
+            ...rebootSchedule,
+            // lastExecutedAt는 스케줄러에서 관리하므로 여기서는 유지
+            ...(currentRuntime as any).rebootSchedule &&
+              (currentRuntime as any).rebootSchedule.lastExecutedAt && {
+                lastExecutedAt: (currentRuntime as any).rebootSchedule.lastExecutedAt,
+              },
+          },
+        },
+      });
+
+      if (updated?.runtime?.rebootSchedule) {
+        this.logger?.info(
+          `호스트 자동 재부팅 스케줄 업데이트 완료: ${JSON.stringify(
+            updated.runtime.rebootSchedule,
+          )}`,
+        );
+      }
+
+      return updated;
+    } catch (error) {
+      this.logger?.error(`호스트 자동 재부팅 스케줄 업데이트 중 오류 발생: ${error}`);
+      throw error;
+    }
+  }
+
   // ==================== 🆕 CLIENT_PORT_MAPPINGS 기반 AUTO 명령 처리 ====================
 
   /**

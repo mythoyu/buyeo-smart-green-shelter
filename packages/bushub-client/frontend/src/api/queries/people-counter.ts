@@ -42,6 +42,22 @@ export interface PeopleCounterRawData {
   limitStatus: number;
 }
 
+export interface PeopleCounterHourlyBucket {
+  start: string;
+  end: string;
+  inCount: number;
+  outCount: number;
+  peakCount: number;
+  avgCount: number;
+  dataPoints: number;
+}
+
+export interface PeopleCounterHourlyStats {
+  date: string;
+  timezone: string;
+  buckets: PeopleCounterHourlyBucket[];
+}
+
 export const useGetPeopleCounterState = (options?: { enabled?: boolean }) => {
   return useQuery<PeopleCounterState>({
     queryKey: ['people-counter', 'state'],
@@ -90,6 +106,23 @@ export const useGetPeopleCounterStats = (options?: {
   });
 };
 
+export const useGetPeopleCounterHourlyStats = (options: {
+  date: string;
+  enabled?: boolean;
+}) => {
+  return useQuery<PeopleCounterHourlyStats>({
+    queryKey: ['people-counter', 'hourly-stats', options.date],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('date', options.date);
+      const response = await externalApi.get(`/people-counter/hourly-stats?${params.toString()}`);
+      return response.data.data;
+    },
+    staleTime: 10000,
+    enabled: (options.enabled ?? true) && !!options.date,
+  });
+};
+
 export const useGetPeopleCounterRaw = (options?: {
   startDate?: string;
   endDate?: string;
@@ -108,6 +141,22 @@ export const useGetPeopleCounterRaw = (options?: {
     },
     staleTime: 10000, // 10초
     enabled: options?.enabled ?? true,
+  });
+};
+
+export const useResetPeopleCounterData = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const response = await internalApi.post('/system/people-counter/reset-data');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['people-counter', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['people-counter', 'hourly-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['people-counter', 'raw'] });
+      queryClient.invalidateQueries({ queryKey: ['clientData'] });
+    },
   });
 };
 

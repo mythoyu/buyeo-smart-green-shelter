@@ -6,6 +6,7 @@ import systemGeneralRoutes from './general';
 import peopleCounterRoutes from './people-counter';
 import systemPollingRoutes from './polling';
 import systemSeasonalRoutes from './seasonal';
+import systemTimeRoutes from './time';
 
 export default async function systemRoutes(app: FastifyInstance) {
   // 각 시스템 라우트 모듈 등록
@@ -15,4 +16,5 @@ export default async function systemRoutes(app: FastifyInstance) {
   await systemPollingRoutes(app);
   await systemDeviceAdvancedRoutes(app);
   await peopleCounterRoutes(app);
+  await systemTimeRoutes(app);
 }

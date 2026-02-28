@@ -62,7 +62,7 @@ function createDevice(deviceType: keyof typeof commonDevices, units: UnitData[])
     name: device.name,
     type: deviceType,
     units,
-    commands,
+    commands: [...commands],
   };
 }
 

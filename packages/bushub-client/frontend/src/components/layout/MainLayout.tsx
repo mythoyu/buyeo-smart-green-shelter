@@ -288,13 +288,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className='min-h-screen bg-background'>
       {/* 헤더 */}
-      <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 bg-card shadow-sm border-b border-border/50'>
-        {/* 왼쪽: 네비게이션 버튼과 모바일 그린 쉼터 아이콘 */}
-        <div className='flex items-center gap-4'>
-          {/* 메뉴 버튼 */}
-          <Button onClick={() => setSidebarOpen(!sidebarOpen)} size='icon' variant='ghost'>
-            <Menu size={20} />
-          </Button>
+      <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 md:pl-0 md:pr-2 bg-card shadow-sm border-b border-border/50'>
+        {/* 왼쪽: 햄버거(좌측 네비와 동일 폭 w-20) + 아이콘·현장 주소(pl-4) */}
+        <div className='flex items-center min-w-0'>
+          {/* 메뉴 버튼 - 데스크탑에서 좌측 네비와 동일 가로(w-20) */}
+          <div className='flex items-center justify-center flex-shrink-0 w-12 md:w-20'>
+            <Button onClick={() => setSidebarOpen(!sidebarOpen)} size='icon' variant='ghost'>
+              <Menu size={20} />
+            </Button>
+          </div>
 
           {/* 모바일: 그린 쉼터 아이콘 (메뉴 버튼 바로 오른쪽) */}
           <Popover>
@@ -314,14 +316,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </div>
             </PopoverContent>
           </Popover>
-        </div>
 
-        {/* 가운데: 데스크탑 그린 쉼터 이름 표시 (화면 정중앙) */}
-        <div className='absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3'>
-          {getClientIcon()}
-          <div className='text-center'>
-            <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
-            <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>
+          {/* 데스크탑: 아이콘 + 현장 주소 왼쪽 정렬, 햄버거와 pl-4 간격 */}
+          <div className='hidden md:flex items-center gap-3 pl-4'>
+            {getClientIcon()}
+            <div>
+              <h1 className='text-lg font-bold'>{client?.name || '스마트 그린 쉼터'}</h1>
+              <p className='text-xs text-muted-foreground'>{client?.location || '클라이언트'}</p>
+            </div>
           </div>
         </div>
 

@@ -410,7 +410,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
               </div>
             ) : (
               getCommands.length > 0 && (
-                <div className='flex flex-wrap gap-1'>
+                <div className='grid grid-cols-4 gap-2'>
                   {getCommands.map((cmd: any) => {
                     const value = unit.data?.[cmd.key];
 
@@ -421,13 +421,13 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                       <Badge
                         key={cmd.key}
                         variant={badgeVariant}
-                        className={`${badgeClassName} transition-all duration-300 hover:scale-105`}
+                        className={`w-full min-w-0 ${badgeClassName} transition-all duration-300 hover:scale-105`}
                         onClick={e => e.stopPropagation()}
                         title={`${cmd.label}: ${displayValue}`}
                       >
-                        <div className='flex flex-col items-center'>
-                          <span className='text-xs text-gray-500 font-medium leading-none'>{cmd.label}</span>
-                          <span className='text-xs font-bold leading-none mt-0.5'>{displayValue}</span>
+                        <div className='flex flex-col items-center w-full min-w-0'>
+                          <span className='text-xs text-gray-500 font-medium leading-none truncate max-w-full'>{cmd.label}</span>
+                          <span className='text-xs font-bold leading-none mt-0.5 truncate max-w-full'>{displayValue}</span>
                         </div>
                       </Badge>
                     );

@@ -34,6 +34,7 @@ import { DataSyncService } from '../services/DataSyncService';
 import { DdcTimeSyncService } from '../services/DdcTimeSyncService';
 import { ErrorService } from '../services/ErrorService';
 import { PollingAutoRecoveryService } from '../services/PollingAutoRecoveryService';
+import { RebootSchedulerService } from '../services/RebootSchedulerService';
 import { IApiKeyService } from '../services/interfaces/IApiKeyService';
 import { IClientService } from '../services/interfaces/IClientService';
 import { ICommandLogService } from '../services/interfaces/ICommandLogService';
@@ -287,6 +288,14 @@ export class ServiceContainer {
     const pollingAutoRecoveryService = new PollingAutoRecoveryService(this.services.get('logger'));
     this.services.set('pollingAutoRecoveryService', pollingAutoRecoveryService);
 
+    const rebootSchedulerService = new RebootSchedulerService(
+      systemService,
+      systemRepository,
+      webSocketService,
+      logger,
+    );
+    this.services.set('rebootSchedulerService', rebootSchedulerService);
+
     // 피플카운터 큐 서비스 (ttyS1 직렬화)
     const peopleCounterQueueService = new PeopleCounterQueueService(logger);
     this.services.set('peopleCounterQueueService', peopleCounterQueueService);
@@ -435,6 +444,10 @@ export class ServiceContainer {
     return this.services.get('pollingAutoRecoveryService');
   }
 
+  public getRebootSchedulerService(): RebootSchedulerService {
+    return this.services.get('rebootSchedulerService');
+  }
+
   public getErrorService(): IErrorService {
     return this.services.get('errorService');
   }
@@ -490,6 +503,7 @@ export class ServiceContainer {
       unifiedLogService: this.getUnifiedLogService(),
       ddcTimeSyncService: this.getDdcTimeSyncService(),
       pollingAutoRecoveryService: this.getPollingAutoRecoveryService(),
+      rebootSchedulerService: this.getRebootSchedulerService(),
     };
   }
 

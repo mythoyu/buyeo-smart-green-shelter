@@ -3,16 +3,14 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { toast } from 'sonner';
 
-import { useGetPeopleCounterState, useGetPeopleCounterStats, type Period } from '../../api/queries/people-counter';
-import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import {
-  aggregateByDay,
-  aggregateByWeek,
-  aggregateByMonth,
-  findPeakHours,
-  calculateHourlyNetIn,
-  type RawDataPoint,
-} from '../../utils/peopleCounterHelpers';
+  useGetPeopleCounterState,
+  useGetPeopleCounterStats,
+  useGetPeopleCounterHourlyStats,
+  type Period,
+} from '../../api/queries/people-counter';
+import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
+import { aggregateByDay, aggregateByWeek, aggregateByMonth, findPeakHours, type RawDataPoint } from '../../utils/peopleCounterHelpers';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -77,6 +75,21 @@ const UserStatisticsPage: React.FC = () => {
     ...(customStartDateTime && customEndDateTime
       ? { startDate: customStartDateTime, endDate: customEndDateTime }
       : { period: selectedPeriod }),
+    enabled: pcState?.peopleCounterEnabled === true,
+  });
+
+  // 하루 기준 1시간 단위 통계 (hourly-stats)
+  const currentDateForHourly = useMemo(() => {
+    // customStartDateTime이 있으면 그 날짜를 기준으로, 없으면 오늘 날짜 사용
+    const base = customStartDateTime ? new Date(customStartDateTime) : new Date();
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, '0');
+    const d = String(base.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [customStartDateTime]);
+
+  const { data: hourlyStats } = useGetPeopleCounterHourlyStats({
+    date: currentDateForHourly,
     enabled: pcState?.peopleCounterEnabled === true,
   });
 
@@ -188,7 +201,19 @@ const UserStatisticsPage: React.FC = () => {
   const weeklyData = useMemo(() => aggregateByWeek(rawData), [rawData]);
   const monthlyData = useMemo(() => aggregateByMonth(rawData), [rawData]);
   const peakHours = useMemo(() => findPeakHours(rawData, 5), [rawData]);
-  const hourlyNetIn = useMemo(() => calculateHourlyNetIn(rawData), [rawData]);
+  const hourlyNetIn = useMemo(() => {
+    if (!hourlyStats?.buckets) return [];
+    // 서버에서 계산된 1시간 단위 버킷을 프론트 차트용 형식으로 변환
+    return hourlyStats.buckets.map((bucket, index) => {
+      // 표시용 라벨: "HH:00" 형식 (0~23시)
+      const hourLabel = `${String(index).padStart(2, '0')}:00`;
+      return {
+        hour: hourLabel,
+        입실: bucket.inCount,
+        퇴실: bucket.outCount,
+      };
+    });
+  }, [hourlyStats?.buckets]);
 
   // 오른쪽 사이드바 설정
   const sidebarContent = useMemo(
@@ -609,6 +634,24 @@ const UserStatisticsPage: React.FC = () => {
         </Card>
       )}
 
+      {/* 요일·시간대 Hotspot (향후 Heatmap 자리) */}
+      <Card className='md:col-span-2'>
+        <CardHeader>
+          <CardTitle className='text-sm font-medium'>요일·시간대 Hotspot (설계용)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className='text-sm text-muted-foreground mb-2'>
+            주간/월간 데이터를 기반으로 요일·시간대별 혼잡도를 Heatmap으로 표현할 수 있습니다. 현재는 상위
+            통합플랫폼 설계를 위한 개념용 섹션입니다.
+          </p>
+          <ul className='list-disc list-inside text-xs text-muted-foreground space-y-1'>
+            <li>가로축: 요일(월~일), 세로축: 시간대(0~23시)</li>
+            <li>셀 색상: 해당 요일·시간대 평균 재실 인원 또는 입실 인원</li>
+            <li>상위 플랫폼에서 혼잡 경보/알림 기준으로 활용 가능</li>
+          </ul>
+        </CardContent>
+      </Card>
+
       {/* 데이터 없음 안내 */}
       {(!statsData?.rawData || statsData.rawData.length === 0) && (
         <Card className='md:col-span-2'>
@@ -622,6 +665,71 @@ const UserStatisticsPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
+      </div>
+
+      {/* 상위 통합플랫폼 연동/API 미리보기 섹션 */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <Card>
+          <CardHeader>
+            <CardTitle className='text-sm font-medium'>API 응답 미리보기</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='text-xs text-muted-foreground mb-2'>
+              상위 통합플랫폼에서 사용할 수 있는 통계/시간대별 API 응답 구조를 미리 확인할 수 있습니다.
+            </p>
+            <pre className='bg-muted rounded-md p-2 text-[10px] overflow-x-auto'>
+              {JSON.stringify(
+                {
+                  stats: statsData
+                    ? {
+                        period: statsData.period,
+                        startDate: statsData.startDate,
+                        endDate: statsData.endDate,
+                        inCount: statsData.stats.inCount,
+                        outCount: statsData.stats.outCount,
+                        peakCount: statsData.stats.peakCount,
+                        avgCount: statsData.stats.avgCount,
+                      }
+                    : null,
+                  hourly:
+                    hourlyStats && hourlyStats.buckets
+                      ? hourlyStats.buckets.slice(0, 3)
+                      : null,
+                },
+                null,
+                2,
+              )}
+            </pre>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className='text-sm font-medium'>상위 연동/검증 시나리오</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='text-xs text-muted-foreground mb-2'>
+              상위 통합플랫폼 연동 시 고려할 전송/검증 시나리오 예시입니다.
+            </p>
+            <ul className='list-disc list-inside text-xs text-muted-foreground space-y-1'>
+              <li>
+                1시간 배치: 매 정시마다 직전 1시간 구간에 대해 <code>/people-counter/hourly-stats</code> 호출/전송
+              </li>
+              <li>
+                일 단위 배치: 매일 00:10에 전일 전체에 대해 <code>/people-counter/stats?period=day</code> 호출/전송
+              </li>
+              <li>
+                검증: 동일 일자에 대해 hourly-stats 합계(in/out)가 stats(day)의 inCount/outCount와 일치하는지 확인
+              </li>
+              <li>
+                Mock 모드: <code>PEOPLE_COUNTER_MOCK_ENABLED=true</code>에서 시간대별 패턴이 정상적으로 반영되는지 확인
+              </li>
+              <li>
+                비활성 시: <code>peopleCounterEnabled = false</code>일 때 관련 API가 404/비표시로 안정적으로 동작하는지 확인
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 커스텀 날짜 선택 Dialog */}

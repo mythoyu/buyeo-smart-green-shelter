@@ -19,6 +19,7 @@ export interface InitStatus {
   modbusService: boolean;
   ddcTimeSync: boolean; // 🎯 추가
   pollingRecovery: boolean; // 🔄 추가
+  hostRebootScheduler: boolean; // 🖥️ 자동 재부팅 스케줄러
 }
 
 export class ServerInitializer {
@@ -158,6 +159,20 @@ export class ServerInitializer {
     }
   }
 
+  private async startHostRebootScheduler(): Promise<void> {
+    try {
+      logInfo('🖥️ 호스트 자동 재부팅 스케줄러 시작 중...');
+      const rebootSchedulerService = this.serviceContainer.getRebootSchedulerService();
+      rebootSchedulerService.start();
+      logInfo('✅ 호스트 자동 재부팅 스케줄러 시작 완료');
+      this.updateInitStatus('hostRebootScheduler', true);
+    } catch (error) {
+      logError(`❌ 호스트 자동 재부팅 스케줄러 시작 실패: ${error}`);
+      logWarn('⚠️ 호스트 자동 재부팅 스케줄러 없이 계속 진행합니다.');
+      this.updateInitStatus('hostRebootScheduler', false);
+    }
+  }
+
   /**
    * DDC 폴링 시작 (DB 상태 기반)
    */
@@ -292,6 +307,9 @@ export class ServerInitializer {
 
     // 8단계: 로그 스케줄러 시작
     await this.startLogScheduler();
+
+    // 8-1단계: 호스트 자동 재부팅 스케줄러 시작
+    await this.startHostRebootScheduler();
 
     // 9단계: SNGIL DDC 폴링 시작
     await this.startDDCPolling();

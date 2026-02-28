@@ -75,14 +75,25 @@ export class MongoSystemRepository implements ISystemRepository {
         if (settingsData.runtime) {
           logInfo(`🔧 [MongoSystemRepository] runtime 필드 특별 처리`);
           const runtimeSet: Record<string, unknown> = {
-            'runtime.pollingEnabled': settingsData.runtime.pollingEnabled,
-            'runtime.pollingInterval': settingsData.runtime.pollingInterval,
-            'runtime.applyInProgress': settingsData.runtime.applyInProgress,
             updatedAt: new Date(),
           };
+
+          if (settingsData.runtime.pollingEnabled !== undefined) {
+            runtimeSet['runtime.pollingEnabled'] = settingsData.runtime.pollingEnabled;
+          }
+          if (settingsData.runtime.pollingInterval !== undefined) {
+            runtimeSet['runtime.pollingInterval'] = settingsData.runtime.pollingInterval;
+          }
+          if (settingsData.runtime.applyInProgress !== undefined) {
+            runtimeSet['runtime.applyInProgress'] = settingsData.runtime.applyInProgress;
+          }
           if (settingsData.runtime.peopleCounterEnabled !== undefined) {
             runtimeSet['runtime.peopleCounterEnabled'] = settingsData.runtime.peopleCounterEnabled;
           }
+          if (settingsData.runtime.rebootSchedule !== undefined) {
+            runtimeSet['runtime.rebootSchedule'] = settingsData.runtime.rebootSchedule;
+          }
+
           result = await SystemSchema.findByIdAndUpdate(
             existing._id,
             { $set: runtimeSet },

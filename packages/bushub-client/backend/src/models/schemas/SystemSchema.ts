@@ -15,6 +15,13 @@ export interface ISystem extends Document {
     pollingInterval: number; // 이동됨
     applyInProgress: boolean;
     peopleCounterEnabled?: boolean;
+    rebootSchedule?: {
+      enabled: boolean;
+      mode: 'daily' | 'weekly';
+      hour: number;
+      daysOfWeek?: number[];
+      lastExecutedAt?: Date;
+    };
   };
 
   // 🌸 절기 설정
@@ -85,6 +92,13 @@ const SystemSchema = new Schema<ISystem>(
       },
       applyInProgress: { type: Boolean, default: false },
       peopleCounterEnabled: { type: Boolean },
+      rebootSchedule: {
+        enabled: { type: Boolean },
+        mode: { type: String, enum: ['daily', 'weekly'] },
+        hour: { type: Number, min: 0, max: 23 },
+        daysOfWeek: { type: [Number] },
+        lastExecutedAt: { type: Date },
+      },
     },
     // 🌸 절기 설정
     seasonal: {
@@ -129,6 +143,7 @@ SystemSchema.statics.getDefaultSettings = function () {
       pollingInterval: 20000,
       applyInProgress: false,
       peopleCounterEnabled: false,
+      // rebootSchedule는 사용자가 명시적으로 설정하기 전까지 없음
     },
     // 🌸 절기 설정 기본값
     seasonal: {

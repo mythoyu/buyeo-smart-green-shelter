@@ -37,6 +37,8 @@ services:
       - backend_logs:/app/logs
       # 시리얼 포트 마운트 (Modbus 통신용)
       - /dev/ttyS0:/dev/ttyS0:rw
+      # (선택) 피플카운터(APC100) 사용 시에만 ttyS1 마운트
+      # - /dev/ttyS1:/dev/ttyS1:rw
       # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
     privileged: true

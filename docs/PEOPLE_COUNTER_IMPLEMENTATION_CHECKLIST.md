@@ -20,10 +20,10 @@
 
 #### 1.1 `docs/PEOPLE_COUNTER_SPEC.md` 수정
 
-- [ ] **7. 환경 설정** 섹션에 시스템 설정 UI 방식 추가
-- [ ] 환경 변수 방식은 선택사항으로 변경
-- [ ] **11. 참고사항**에 "선택적 기능" 섹션 추가
-- [ ] 피플카운터 없이도 릴리즈 가능 명시
+- [x] **7. 환경 설정** 섹션에 시스템 설정 UI 방식 추가
+- [x] 환경 변수 방식은 선택사항으로 변경
+- [x] **11. 참고사항**에 "선택적 기능" 섹션 추가
+- [x] 피플카운터 없이도 릴리즈 가능 명시
 
 **수정 위치:**
 - `## 7. 환경 설정` → 시스템 설정 UI 방식 추가
@@ -37,9 +37,9 @@
 
 **파일**: `packages/bushub-client/backend/src/models/schemas/SystemSchema.ts`
 
-- [ ] `ISystem` 인터페이스의 `runtime` 타입에 `peopleCounterEnabled?: boolean` 추가
-- [ ] `SystemSchema`의 `runtime` 스키마에 `peopleCounterEnabled: { type: Boolean }` 추가
-- [ ] `getDefaultSettings()` 정적 메서드에 `peopleCounterEnabled: false` 추가
+- [x] `ISystem` 인터페이스의 `runtime` 타입에 `peopleCounterEnabled?: boolean` 추가
+- [x] `SystemSchema`의 `runtime` 스키마에 `peopleCounterEnabled: { type: Boolean }` 추가
+- [x] `getDefaultSettings()` 정적 메서드에 `peopleCounterEnabled: false` 추가
 
 **예시:**
 ```typescript
@@ -57,7 +57,7 @@ runtime: {
 
 **파일**: `packages/bushub-client/backend/src/core/repositories/interfaces/ISystemRepository.ts`
 
-- [ ] `SystemUpdateParams` 인터페이스의 `runtime` 타입에 `peopleCounterEnabled?: boolean` 추가
+- [x] `SystemUpdateParams` 인터페이스의 `runtime` 타입에 `peopleCounterEnabled?: boolean` 추가
 
 **예시:**
 ```typescript
@@ -75,12 +75,12 @@ runtime?: {
 
 **파일**: `packages/bushub-client/backend/src/core/services/SystemService.ts`
 
-- [ ] `getPeopleCounterState(initializeIfMissing = false)` 메서드 추가
+- [x] `getPeopleCounterState(initializeIfMissing = false)` 메서드 추가
   - `getSettings()` 호출
   - `runtime.peopleCounterEnabled` 반환
   - 없으면 `initializeIfMissing`이 true일 때 기본값 `false`로 초기화
 
-- [ ] `updatePeopleCounterState(enabled: boolean)` 메서드 추가
+- [x] `updatePeopleCounterState(enabled: boolean)` 메서드 추가
   - 기존 `runtime` 설정 유지하면서 `peopleCounterEnabled`만 업데이트
   - `updateSettings({ runtime: { ...currentRuntime, peopleCounterEnabled: enabled } })` 호출
 
@@ -103,8 +103,8 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 **파일**: `packages/bushub-client/backend/src/core/services/interfaces/ISystemService.ts`
 
-- [ ] `getPeopleCounterState(initializeIfMissing?: boolean)` 메서드 시그니처 추가
-- [ ] `updatePeopleCounterState(enabled: boolean)` 메서드 시그니처 추가
+- [x] `getPeopleCounterState(initializeIfMissing?: boolean)` 메서드 시그니처 추가
+- [x] `updatePeopleCounterState(enabled: boolean)` 메서드 시그니처 추가
 
 ---
 
@@ -112,11 +112,11 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 **파일**: `packages/bushub-client/backend/src/api/v1/routes/system/people-counter.ts` (신규 생성)
 
-- [ ] `GET /system/people-counter/state` 엔드포인트 추가
+- [x] `GET /system/people-counter/state` 엔드포인트 추가
   - `systemService.getPeopleCounterState(true)` 호출
   - `{ success: true, data: { peopleCounterEnabled } }` 반환
 
-- [ ] `POST /system/people-counter` 엔드포인트 추가
+- [x] `POST /system/people-counter` 엔드포인트 추가
   - Request body: `{ peopleCounterEnabled: boolean }`
   - `systemService.updatePeopleCounterState(peopleCounterEnabled)` 호출
   - 성공 시 `PeopleCounterPollerService` 재시작/중지 로직 호출 (선택사항)
@@ -129,7 +129,7 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 **파일**: `packages/bushub-client/backend/src/api/v1/routes/system/index.ts` (또는 해당 라우트 등록 파일)
 
-- [ ] `people-counter` 라우트 등록
+- [x] `people-counter` 라우트 등록
   ```typescript
   import peopleCounterRoutes from './people-counter';
   await fastify.register(peopleCounterRoutes);
@@ -141,10 +141,11 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 **파일**: `packages/bushub-client/backend/src/core/services/PeopleCounterPollerService.ts` (신규 생성 예정)
 
-- [ ] 서비스 초기화 시 `getPeopleCounterState()` 확인
-- [ ] `peopleCounterEnabled === true`일 때만 폴링 시작
-- [ ] 폴링 루프에서 주기적으로 상태 확인
-- [ ] `peopleCounterEnabled === false`로 변경되면 폴링 중지
+- [x] 서비스 초기화 시 `getPeopleCounterState()` 확인  
+      (`initializeDataDocument()` 및 `tick()` 내부에서 상태 확인)
+- [x] `peopleCounterEnabled === true`일 때만 실제 통신/저장 로직 수행  
+      (`peopleCounterEnabled === false`인 경우 `tick()`에서 즉시 return)
+- [x] 폴링 루프에서 주기적으로 상태 확인 (`tick()` 호출 시마다 상태 조회)
 
 **예시:**
 ```typescript
@@ -164,9 +165,9 @@ async startPolling() {
 
 **파일**: `packages/bushub-client/backend/src/core/ServerInitializer.ts`
 
-- [ ] `PeopleCounterPollerService` 초기화 시 `getPeopleCounterState()` 확인
-- [ ] `peopleCounterEnabled === true`일 때만 서비스 시작
-- [ ] 서비스 초기화 실패 시에도 시스템 중단 없이 계속 진행
+- [x] `PeopleCounterPollerService`를 서버 초기화 시점에 시작 (`startPeopleCounterPoller()`)  
+      (폴러 내부에서 `peopleCounterEnabled` 상태를 확인하여 실질 동작 여부를 결정)
+- [x] 서비스 초기화 실패 시에도 로그만 남기고 시스템 중단 없이 계속 진행
 
 ---
 
@@ -176,12 +177,11 @@ async startPolling() {
 
 **파일**: `packages/bushub-client/frontend/src/api/queries/people-counter.ts` (신규 생성)
 
-- [ ] `useGetPeopleCounterState()` 훅 추가
+- [x] `useGetPeopleCounterState()` 훅 추가
   - `GET /system/people-counter/state` 호출
-  - `refetchInterval: 5000` (5초마다 상태 확인)
-  - `staleTime: 3000`
+  - React Query를 활용해 상태 캐싱/자동 갱신
 
-- [ ] `useUpdatePeopleCounterState()` 훅 추가
+- [x] `useUpdatePeopleCounterState()` 훅 추가
   - `POST /system/people-counter` 호출
   - 성공 시 `['people-counter', 'state']` 쿼리 무효화
 
@@ -193,7 +193,7 @@ async startPolling() {
 
 **파일**: `packages/bushub-client/frontend/src/api/queries/people-counter.ts`
 
-- [ ] `PeopleCounterState` 인터페이스 정의
+- [x] `PeopleCounterState` 인터페이스 정의
   ```typescript
   export interface PeopleCounterState {
     peopleCounterEnabled: boolean;
@@ -206,9 +206,9 @@ async startPolling() {
 
 **파일**: `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
 
-- [ ] `useGetPeopleCounterState`, `useUpdatePeopleCounterState` 훅 import
-- [ ] 피플카운터 상태 조회 및 업데이트 로직 추가
-- [ ] 새로운 `SettingsCard` 추가 (DDC 폴링 간격 설정 다음에 배치)
+- [x] `useGetPeopleCounterState`, `useUpdatePeopleCounterState` 훅 import
+- [x] 피플카운터 상태 조회 및 업데이트 로직 추가
+- [x] 새로운 `SettingsCard` 추가 (DDC 폴링 간격 설정 다음에 배치)
 
 **UI 구조:**
 ```tsx
@@ -255,7 +255,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 **파일**: `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
 
-- [ ] `lucide-react`에서 적절한 아이콘 import (예: `Users`, `UserCheck`, `UsersRound`)
+- [x] `lucide-react`에서 적절한 아이콘 import (예: `Users`, `UserCheck`, `UsersRound`)
 
 ---
 
@@ -265,19 +265,19 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 **파일**: `packages/bushub-client/backend/src/api/v1/routes/data.ts`
 
-- [ ] `GET /data` 엔드포인트에서 피플카운터 데이터 조회 시
+- [x] `GET /data` 엔드포인트에서 피플카운터 데이터 조회 시
   - `getPeopleCounterState()` 확인
   - `peopleCounterEnabled === false`이면 피플카운터 장비(`d082`) 제외
 
 ---
 
-**파일**: `packages/bushub-client/backend/src/api/v1/routes/people-counter.ts` (신규, 통계/로우데이터 엔드포인트)
+**파일**: `packages/bushub-client/backend/src/api/v1/routes/people-counter-external.ts` (통계/로우데이터 엔드포인트)
 
-- [ ] `GET /people-counter/stats` 엔드포인트
+- [x] `GET /people-counter/stats` 엔드포인트
   - `getPeopleCounterState()` 확인
   - `peopleCounterEnabled === false`이면 `404` 또는 빈 응답 반환
 
-- [ ] `GET /people-counter/raw` 엔드포인트
+- [x] `GET /people-counter/raw` 엔드포인트
   - `getPeopleCounterState()` 확인
   - `peopleCounterEnabled === false`이면 `404` 또는 빈 응답 반환
 
@@ -287,7 +287,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 **파일**: `packages/bushub-client/backend/src/core/services/PeopleCounterService.ts` (신규 생성 예정)
 
-- [ ] 시리얼 포트 연결 실패 시
+- [x] 시리얼 포트 연결 실패 시
   - 로그만 기록하고 시스템 중단 없이 계속 진행
   - `peopleCounterEnabled === false`로 자동 변경하지 않음 (사용자가 수동으로 변경)
 
@@ -297,8 +297,8 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 **파일**: `packages/bushub-client/docker-compose.integrated.yml`
 
-- [ ] `ttyS1` 마운트는 선택사항으로 명시
-- [ ] 피플카운터 없을 때는 마운트 없어도 정상 동작
+- [x] `ttyS1` 마운트는 선택사항으로 명시
+- [x] 피플카운터 없을 때는 마운트 없어도 정상 동작
 
 ---
 
@@ -306,16 +306,16 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 #### 5.1 `docs/PEOPLE_COUNTER_SPEC.md` 수정
 
-- [ ] **7. 환경 설정** 섹션 수정
+- [x] **7. 환경 설정** 섹션 수정
   - 시스템 설정 UI 방식 추가
   - 환경 변수는 선택사항으로 변경
 
-- [ ] **11. 참고사항** 섹션에 추가
+- [x] **11. 참고사항** 섹션에 추가
   - 선택적 기능 명시
   - 피플카운터 없이도 릴리즈 가능
   - 기본값 `false` (비활성화)
 
-- [ ] **12. 선택적 기능** 섹션 신규 추가 (선택사항)
+- [x] **12. 선택적 기능** 섹션 신규 추가 (선택사항)
   - 시스템 설정에서 활성화/비활성화 방법
   - 피플카운터 없는 제품 릴리즈 가이드
 
@@ -377,4 +377,4 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 ---
 
 **문서 작성일**: 2025-01-09
-**최종 수정일**: 2025-01-09
+**최종 수정일**: 2026-02-24

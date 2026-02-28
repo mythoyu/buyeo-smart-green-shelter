@@ -2,7 +2,7 @@ import { Wifi, Network, Clock, Sun, Cpu, Loader2, RefreshCcw, Users, RotateCw, A
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { useGetPeopleCounterState, useUpdatePeopleCounterState } from '../../api/queries/people-counter';
+import { useGetPeopleCounterState, useUpdatePeopleCounterState, useResetPeopleCounterData } from '../../api/queries/people-counter';
 import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { SETTINGS_NAV } from '../../constants/sidebarConfig';
 import {
@@ -16,6 +16,9 @@ import {
   useRestartHostSystem,
   useRestartBackend,
   useRefreshDdcTime,
+  useGetSystemTime,
+  useGetRebootSchedule,
+  useUpdateRebootSchedule,
 } from '../../api/queries/system';
 import {
   useSetNtp,
@@ -43,6 +46,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import type { NtpSettings, NetworkSettings, SoftapSettings } from '../../types/systemSettings';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 // 월별 이름 매핑
 const monthNames = {
@@ -104,7 +108,12 @@ const SystemSettingsPage: React.FC = () => {
   const SETTINGS_GROUPS = [
     { id: 'all', label: '전체', icon: Activity },
     { id: 'network', label: '네트\n워크', icon: Network, cardIds: ['settings-softap', 'settings-network', 'settings-ntp'] },
-    { id: 'system', label: '시스템', icon: Settings, cardIds: ['settings-ddc-time', 'settings-seasonal', 'settings-polling', 'settings-people-counter'] },
+    {
+      id: 'system',
+      label: '시스템',
+      icon: Settings,
+      cardIds: ['settings-system-time', 'settings-ddc-time', 'settings-seasonal', 'settings-polling', 'settings-people-counter'],
+    },
     { id: 'reboot', label: '재기동', icon: RotateCw, cardIds: ['settings-reboot'] },
   ] as const;
 
@@ -125,6 +134,13 @@ const SystemSettingsPage: React.FC = () => {
 
   // 🔄 폴링 간격 설정 조회
   const { data: pollingIntervalData } = useGetPollingInterval();
+
+  // 🕒 서버 시스템 시간 조회
+  const {
+    data: systemTimeData,
+    refetch: refetchSystemTime,
+    isFetching: isSystemTimeFetching,
+  } = useGetSystemTime();
 
   // 🔄 호스트 PC 재기동 훅
   const restartHostSystemMutation = useRestartHostSystem();
@@ -237,6 +253,13 @@ const SystemSettingsPage: React.FC = () => {
   // 폴링 간격 상태
   const [pollingIntervalInput, setPollingIntervalInput] = useState<number>(20000);
 
+  // 호스트 자동 재부팅 스케줄 상태
+  const { data: rebootSchedule } = useGetRebootSchedule();
+  const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(false);
+  const [autoRebootMode, setAutoRebootMode] = useState<'daily' | 'weekly'>('daily');
+  const [autoRebootHour, setAutoRebootHour] = useState<number>(3);
+  const [autoRebootDaysOfWeek, setAutoRebootDaysOfWeek] = useState<number[]>([1]); // 기본: 월요일
+
   // 현재 시간 상태 (1초마다 업데이트)
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
@@ -250,6 +273,9 @@ const SystemSettingsPage: React.FC = () => {
   const setPollingIntervalMutation = useSetPollingInterval();
   const { data: peopleCounterData } = useGetPeopleCounterState();
   const updatePeopleCounterMutation = useUpdatePeopleCounterState();
+  const resetPeopleCounterDataMutation = useResetPeopleCounterData();
+  const [openResetDialog, setOpenResetDialog] = useState(false);
+  const updateRebootScheduleMutation = useUpdateRebootSchedule();
 
   // 🌸 절기 설정 초기 로드 (저장된 설정이 있으면 불러오기)
   useEffect(() => {
@@ -264,6 +290,22 @@ const SystemSettingsPage: React.FC = () => {
       setPollingIntervalInput(pollingIntervalData.data.pollingInterval);
     }
   }, [pollingIntervalData]);
+
+  // 🔁 호스트 자동 재부팅 스케줄 초기 로드
+  useEffect(() => {
+    if (rebootSchedule) {
+      setAutoRebootEnabled(!!rebootSchedule.enabled);
+      setAutoRebootMode(rebootSchedule.mode || 'daily');
+      setAutoRebootHour(
+        typeof rebootSchedule.hour === 'number' && rebootSchedule.hour >= 0 && rebootSchedule.hour <= 23
+          ? rebootSchedule.hour
+          : 3,
+      );
+      if (Array.isArray(rebootSchedule.daysOfWeek) && rebootSchedule.daysOfWeek.length > 0) {
+        setAutoRebootDaysOfWeek(rebootSchedule.daysOfWeek);
+      }
+    }
+  }, [rebootSchedule]);
 
   // 🌐 네트워크 설정 초기 로드 (선택된 인터페이스의 현재 설정으로 자동 채우기)
   useEffect(() => {
@@ -591,6 +633,34 @@ const SystemSettingsPage: React.FC = () => {
     }
   };
 
+  const toggleAutoRebootDay = (day: number) => {
+    setAutoRebootDaysOfWeek(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort(),
+    );
+  };
+
+  const handleSaveAutoRebootSchedule = () => {
+    updateRebootScheduleMutation.mutate(
+      {
+        enabled: autoRebootEnabled,
+        mode: autoRebootMode,
+        hour: autoRebootHour,
+        daysOfWeek: autoRebootMode === 'weekly' ? autoRebootDaysOfWeek : undefined,
+      },
+      {
+        onSuccess: (res: any) => {
+          const message = res?.message || '자동 재부팅 스케줄이 저장되었습니다.';
+          toast.success(message, { id: 'system-auto-reboot-save-success' });
+        },
+        onError: (error: any) => {
+          const msg =
+            error?.response?.data?.message || error?.response?.data?.error || '자동 재부팅 스케줄 저장에 실패했습니다.';
+          toast.error(msg, { id: 'system-auto-reboot-save-error' });
+        },
+      },
+    );
+  };
+
   // 현재 시간을 1초마다 업데이트하는 useEffect
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -608,7 +678,17 @@ const SystemSettingsPage: React.FC = () => {
   // 선택된 그룹에 해당하는 카드 ID 목록
   const visibleCardIds = useMemo(() => {
     if (selectedSettingsId === 'all') {
-      return ['settings-softap', 'settings-network', 'settings-ntp', 'settings-ddc-time', 'settings-seasonal', 'settings-polling', 'settings-people-counter', 'settings-reboot'];
+      return [
+        'settings-softap',
+        'settings-network',
+        'settings-ntp',
+        'settings-system-time',
+        'settings-ddc-time',
+        'settings-seasonal',
+        'settings-polling',
+        'settings-people-counter',
+        'settings-reboot',
+      ];
     }
     const group = SETTINGS_GROUPS.find(g => g.id === selectedSettingsId);
     return group?.cardIds || [];
@@ -837,6 +917,67 @@ const SystemSettingsPage: React.FC = () => {
         </div>
         )}
 
+        {/* 시스템 시간 테스트 (서버 시간만 표시) */}
+        {visibleCardIds.includes('settings-system-time') && (
+        <div
+          id='settings-system-time'
+          style={{
+            animationDelay: '200ms',
+            animation: 'fadeInUp 0.6s ease-out forwards',
+          }}
+        >
+          <SettingsCard
+            icon={Clock}
+            title='시스템 시간 테스트'
+            description='백엔드 서버가 인식하는 현재 시간을 확인합니다'
+            currentSettings={null}
+            isLoading={false}
+            headerExtra={
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={async () => {
+                  try {
+                    await refetchSystemTime();
+                    toast.success('서버 시간을 새로고침했습니다.', { id: 'system-time-refresh-success' });
+                  } catch (error: any) {
+                    const msg =
+                      error?.response?.data?.message ||
+                      error?.response?.data?.error ||
+                      '서버 시간 새로고침에 실패했습니다.';
+                    toast.error(msg, { id: 'system-time-refresh-error' });
+                  }
+                }}
+                disabled={isSystemTimeFetching}
+              >
+                <RefreshCcw className={cn('h-4 w-4', isSystemTimeFetching && 'animate-spin')} />
+              </Button>
+            }
+          >
+            <div className='p-3 bg-muted rounded-lg space-y-2'>
+              <div className='flex justify-between items-center'>
+                <span className='text-sm font-medium'>서버 현재 시간 (UTC, ISO)</span>
+                <span className='text-sm text-muted-foreground'>
+                  {systemTimeData?.data?.nowIso || '로딩 중...'}
+                </span>
+              </div>
+              <div className='flex justify-between items-center'>
+                <span className='text-sm font-medium'>서버 현재 시간 (KST)</span>
+                <span className='text-sm text-muted-foreground'>
+                  {systemTimeData?.data?.kst
+                    ? `${systemTimeData.data.kst.year}-${String(systemTimeData.data.kst.month).padStart(2, '0')}-${String(
+                        systemTimeData.data.kst.day,
+                      ).padStart(2, '0')} ${String(systemTimeData.data.kst.hour).padStart(2, '0')}:${String(
+                        systemTimeData.data.kst.minute,
+                      ).padStart(2, '0')}:${String(systemTimeData.data.kst.second).padStart(2, '0')} (KST)`
+                    : '로딩 중...'}
+                </span>
+              </div>
+            </div>
+          </SettingsCard>
+        </div>
+        )}
+
         {/* NTP 설정 */}
         {visibleCardIds.includes('settings-ntp') && (
         <div
@@ -888,13 +1029,6 @@ const SystemSettingsPage: React.FC = () => {
                     {ntpStatus.data.synchronized ? '✅ 동기화됨' : '❌ 동기화 안됨'}
                   </Badge>
                 </div>
-                {/* 현재 시간 */}
-                {ntpStatus.data.currentTime && (
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm font-medium'>현재 시간</span>
-                    <span className='text-sm text-muted-foreground'>{ntpStatus.data.currentTime}</span>
-                  </div>
-                )}
                 {/* 마지막 동기화 시간 */}
                 {ntpStatus.data.lastSync && (
                   <div className='flex justify-between items-center'>
@@ -1425,7 +1559,47 @@ const SystemSettingsPage: React.FC = () => {
             <p className='text-xs text-muted-foreground'>
               피플카운터 장비가 연결된 경우에만 활성화하세요. 비활성화 시 해당 기능이 동작하지 않습니다.
             </p>
+            <div className='mt-4 border-t pt-3 space-y-2'>
+              <p className='text-xs font-medium text-foreground'>데이터 관리</p>
+              <p className='text-[11px] text-muted-foreground'>
+                people_counter_raw 및 d082 실시간 데이터를 삭제하여 피플카운터 통계/히스토리를 초기화합니다. 장비 제어에는 영향을 주지 않습니다.
+              </p>
+              <div className='flex justify-end'>
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  className='text-[12px]'
+                  onClick={() => setOpenResetDialog(true)}
+                  disabled={resetPeopleCounterDataMutation.isPending}
+                >
+                  피플카운터 데이터 초기화
+                </Button>
+              </div>
+            </div>
           </SettingsCard>
+          <ConfirmDialog
+            open={openResetDialog}
+            onOpenChange={setOpenResetDialog}
+            title='피플카운터 데이터 초기화'
+            description='people_counter_raw와 d082 실시간 데이터를 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다.'
+            variant='danger'
+            confirmText='초기화'
+            cancelText='취소'
+            onConfirm={() => {
+              resetPeopleCounterDataMutation.mutate(undefined, {
+                onSuccess: (res: any) => {
+                  toast.success(res?.message || '피플카운터 데이터가 초기화되었습니다.');
+                },
+                onError: (error: any) => {
+                  const msg =
+                    error?.response?.data?.message ||
+                    error?.response?.data?.error ||
+                    '피플카운터 데이터 초기화에 실패했습니다.';
+                  toast.error(msg);
+                },
+              });
+            }}
+          />
         </div>
         )}
 
@@ -1504,6 +1678,113 @@ const SystemSettingsPage: React.FC = () => {
                 >
                   {restartBackendMutation.isPending ? '재기동 중...' : '백엔드 재기동'}
                 </Button>
+              </div>
+
+              {/* 자동 재부팅 스케줄 */}
+              <div className='mt-6 border-t pt-4 space-y-3'>
+                <h4 className='text-sm font-medium'>자동 재부팅 스케줄</h4>
+                <p className='text-xs text-muted-foreground'>
+                  매일 또는 지정한 요일에 설정된 시각(정시 기준)에 호스트 PC를 자동으로 재시작합니다. 운영 시간
+                  외(예: 새벽 3시)로 설정하는 것을 권장합니다.
+                </p>
+
+                {/* 사용 여부 토글 */}
+                <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
+                  <div>
+                    <span className='text-sm font-medium'>자동 재부팅 사용</span>
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      {autoRebootEnabled ? '사용 중' : '사용 안 함'}
+                    </p>
+                  </div>
+                  <OnOffToggleButton
+                    checked={autoRebootEnabled}
+                    onChange={setAutoRebootEnabled}
+                    labelOn='ON'
+                    labelOff='OFF'
+                  />
+                </div>
+
+                {/* 모드/시간/요일 설정 */}
+                <div className='grid grid-cols-1 gap-3'>
+                  {/* 모드 선택 */}
+                  <div className='flex items-center justify-between'>
+                    <span className='text-xs text-muted-foreground'>스케줄 모드</span>
+                    <div className='inline-flex gap-2'>
+                      <Button
+                        type='button'
+                        variant={autoRebootMode === 'daily' ? 'default' : 'outline'}
+                        size='sm'
+                        className='text-xs'
+                        onClick={() => setAutoRebootMode('daily')}
+                        disabled={!autoRebootEnabled}
+                      >
+                        매일
+                      </Button>
+                      <Button
+                        type='button'
+                        variant={autoRebootMode === 'weekly' ? 'default' : 'outline'}
+                        size='sm'
+                        className='text-xs'
+                        onClick={() => setAutoRebootMode('weekly')}
+                        disabled={!autoRebootEnabled}
+                      >
+                        요일별
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 시간 선택 */}
+                  <SelectWithLabel
+                    label='재부팅 시각 (정시 기준)'
+                    value={autoRebootHour.toString()}
+                    onValueChange={value => setAutoRebootHour(parseInt(value, 10))}
+                    placeholder='시각 선택'
+                    description='서버 로컬 시간 기준 0~23시 중 선택'
+                  >
+                    {Array.from({ length: 24 }).map((_, h) => (
+                      <SelectItem key={h} value={String(h)}>
+                        {h.toString().padStart(2, '0')}시
+                      </SelectItem>
+                    ))}
+                  </SelectWithLabel>
+
+                  {/* 요일 선택 (weekly 모드일 때만) */}
+                  {autoRebootMode === 'weekly' && (
+                    <div className='space-y-1'>
+                      <p className='text-xs text-muted-foreground'>재부팅할 요일 선택</p>
+                      <div className='grid grid-cols-7 gap-1'>
+                        {['일', '월', '화', '수', '목', '금', '토'].map((label, idx) => {
+                          const selected = autoRebootDaysOfWeek.includes(idx);
+                          return (
+                            <Button
+                              key={label}
+                              type='button'
+                              size='sm'
+                              variant={selected ? 'default' : 'outline'}
+                              className='text-[11px] px-0 py-1'
+                              onClick={() => toggleAutoRebootDay(idx)}
+                              disabled={!autoRebootEnabled}
+                            >
+                              {label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className='flex justify-end'>
+                  <Button
+                    type='button'
+                    size='sm'
+                    className='text-xs'
+                    onClick={handleSaveAutoRebootSchedule}
+                    disabled={updateRebootScheduleMutation.isPending}
+                  >
+                    {updateRebootScheduleMutation.isPending ? '저장 중...' : '스케줄 저장'}
+                  </Button>
+                </div>
               </div>
             </div>
           </SettingsCard>

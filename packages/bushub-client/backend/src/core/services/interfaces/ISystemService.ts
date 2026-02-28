@@ -41,6 +41,12 @@ export interface ISystemService {
   updatePeopleCounterState(peopleCounterEnabled: boolean): Promise<SystemSettings | null>;
   setApplyLock(applyInProgress: boolean): Promise<SystemSettings | null>;
   updatePollingInterval(pollingInterval: number): Promise<SystemSettings | null>;
+  updateRebootSchedule(rebootSchedule: {
+    enabled: boolean;
+    mode: 'daily' | 'weekly';
+    hour: number;
+    daysOfWeek?: number[];
+  }): Promise<SystemSettings | null>;
   exportSettings(): Promise<SystemSettings | null>;
   importSettings(settings: SystemSettings): Promise<SystemSettings | null>;
   resetToDefaults(): Promise<SystemSettings | null>;

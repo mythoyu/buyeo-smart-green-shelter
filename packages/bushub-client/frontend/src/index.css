@@ -1,3 +1,12 @@
+/* Noto Sans KR - Variable (패쇄망용 로컬) */
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/NotoSansKR-VariableFont_wght.ttf') format('truetype');
+}
+
 @import 'tailwindcss';
 
 /* 로컬 컴포넌트들 스캔 */
@@ -8,7 +17,7 @@
 /* 커스텀 CSS 변수들 */
 @theme {
   /* 기존 shared 테마 변수들을 여기로 이동 */
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Noto Sans KR', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'Courier New', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 
   /* 기본 색상 변수들 */

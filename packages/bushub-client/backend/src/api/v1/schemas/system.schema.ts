@@ -55,6 +55,38 @@ export const SystemSettingsResponseSchema = Type.Object({
       name: Type.String({ description: '클라이언트 이름' }),
       location: Type.String({ description: '위치' }),
     }),
+    runtime: Type.Optional(
+      Type.Object({
+        pollingEnabled: Type.Boolean({ description: '폴링 활성화 여부' }),
+        pollingInterval: Type.Number({ description: '폴링 간격(ms)' }),
+        applyInProgress: Type.Boolean({ description: '설정 적용 진행 여부' }),
+        peopleCounterEnabled: Type.Optional(
+          Type.Boolean({ description: '피플카운터 기능 활성화 여부' }),
+        ),
+        rebootSchedule: Type.Optional(
+          Type.Object({
+            enabled: Type.Boolean({ description: '자동 재부팅 사용 여부' }),
+            mode: Type.Union(
+              [Type.Literal('daily'), Type.Literal('weekly')],
+              { description: '스케줄 모드(daily/weekly)' },
+            ),
+            hour: Type.Number({
+              description: '재부팅 시각(시 단위, 0~23)',
+              minimum: 0,
+              maximum: 23,
+            }),
+            daysOfWeek: Type.Optional(
+              Type.Array(Type.Number({ minimum: 0, maximum: 6 }), {
+                description: '요일 배열(0:일요일 ~ 6:토요일)',
+              }),
+            ),
+            lastExecutedAt: Type.Optional(
+              Type.String({ description: '마지막 재부팅 실행 시각(ISO 문자열)' }),
+            ),
+          }),
+        ),
+      }),
+    ),
   }),
 });
 
@@ -136,6 +168,17 @@ export const SYSTEM_SETTINGS_RESPONSE_EXAMPLE = {
       id: 'c0101',
       name: '강릉시외버스터미널',
       location: '강원도 강릉시 하슬라로 27',
+    },
+    runtime: {
+      pollingEnabled: true,
+      pollingInterval: 20000,
+      applyInProgress: false,
+      peopleCounterEnabled: false,
+      rebootSchedule: {
+        enabled: false,
+        mode: 'daily',
+        hour: 3,
+      },
     },
   },
 };
