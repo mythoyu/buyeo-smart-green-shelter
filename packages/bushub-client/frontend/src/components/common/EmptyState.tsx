@@ -23,8 +23,8 @@ export function EmptyState({ title, description, icon, variant = 'default', acti
   return (
     <div className='flex flex-col items-center justify-center py-12 px-4'>
       {icon || getDefaultIcon()}
-      <h3 className='mt-4 text-lg font-medium text-gray-900'>{title}</h3>
-      {description && <p className='mt-2 text-sm text-gray-500 text-center max-w-sm'>{description}</p>}
+      <h3 className='mt-4 text-lg font-medium text-gray-900 dark:text-gray-100'>{title}</h3>
+      {description && <p className='mt-2 text-sm text-gray-500 dark:text-gray-400 text-center max-w-sm'>{description}</p>}
       {action && <div className='mt-6'>{action}</div>}
     </div>
   );

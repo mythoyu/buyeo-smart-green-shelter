@@ -131,7 +131,7 @@ const DeviceUnitDialog: React.FC<DeviceUnitDialogProps> = ({
       >
         {selectedClient && (
           <>
-            <DialogHeader className='flex-shrink-0 pb-4 border-b border-border/30'>
+            <DialogHeader className='flex-shrink-0 pb-4 border-b border-border/30 dark:border-gray-700'>
               <div className='flex justify-between items-center w-full'>
                 <DialogTitle>
                   <div className='flex flex-col items-start'>
@@ -158,7 +158,7 @@ const DeviceUnitDialog: React.FC<DeviceUnitDialogProps> = ({
               </div>
             </DialogHeader>
 
-            <div className='flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0 max-h-[calc(80vh-120px)]  scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
+            <div className='flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0 max-h-[calc(80vh-120px)]'>
               <DeviceUnitContent selectedClient={selectedClient} getGroupedDevices={getGroupedDevices} />
             </div>
           </>

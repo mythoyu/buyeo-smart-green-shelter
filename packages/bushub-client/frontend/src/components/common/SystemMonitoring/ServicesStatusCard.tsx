@@ -80,7 +80,7 @@ const ServicesStatusCard: React.FC<ServicesStatusCardProps> = ({ data }) => {
 
           {/* Device 도메인 */}
           <Collapsible>
-            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 rounded'>
+            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors'>
               <div className='flex items-center gap-2'>
                 <Badge variant={deviceStatus.healthy ? 'default' : 'destructive'} className='text-xs'>
                   {deviceStatus.available}/{deviceStatus.total}
@@ -103,7 +103,7 @@ const ServicesStatusCard: React.FC<ServicesStatusCardProps> = ({ data }) => {
 
           {/* System 도메인 */}
           <Collapsible>
-            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 rounded'>
+            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors'>
               <div className='flex items-center gap-2'>
                 <Badge variant={systemStatus.healthy ? 'default' : 'destructive'} className='text-xs'>
                   {systemStatus.available}/{systemStatus.total}
@@ -126,7 +126,7 @@ const ServicesStatusCard: React.FC<ServicesStatusCardProps> = ({ data }) => {
 
           {/* User 도메인 */}
           <Collapsible>
-            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 rounded'>
+            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors'>
               <div className='flex items-center gap-2'>
                 <Badge variant={userStatus.healthy ? 'default' : 'destructive'} className='text-xs'>
                   {userStatus.available}/{userStatus.total}

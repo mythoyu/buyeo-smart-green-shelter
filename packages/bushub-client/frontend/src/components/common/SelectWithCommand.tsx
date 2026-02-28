@@ -53,45 +53,45 @@ const SelectWithCommand = <T = any,>({
     setOpen(false);
   };
 
-  // 카테고리별 색상 매핑
+  // 카테고리별 색상 매핑 (라이트/다크)
   const getCategoryColor = (category?: string) => {
-    if (!category) return 'bg-gray-100 text-gray-800';
+    if (!category) return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
 
     const lowerCategory = category.toLowerCase();
 
     // 네트워크 인터페이스 상태별 색상
     if (lowerCategory.includes('-connected')) {
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200';
     }
     if (lowerCategory.includes('-disconnected')) {
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200';
     }
     if (lowerCategory.includes('-unavailable')) {
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
     if (lowerCategory.includes('-unmanaged')) {
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200';
     }
 
     // 기존 카테고리별 색상
     switch (lowerCategory) {
       case 'public':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200';
       case 'regional':
       case 'local':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200';
       case 'commercial':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200';
       case 'asia':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200';
       case 'global':
-        return 'bg-indigo-100 text-indigo-800';
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200';
       case 'ethernet':
-        return 'bg-cyan-100 text-cyan-800';
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200';
       case 'wifi':
-        return 'bg-pink-100 text-pink-800';
+        return 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
 
@@ -99,8 +99,8 @@ const SelectWithCommand = <T = any,>({
     <div className={`space-y-2 ${className}`}>
       {/* 라벨 */}
       <div className='flex items-center'>
-        <label className='text-sm font-medium text-gray-700'>{label}</label>
-        {description && <span className='text-xs text-gray-500 ml-2'>{description}</span>}
+        <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>{label}</label>
+        {description && <span className='text-xs text-gray-500 dark:text-gray-400 ml-2'>{description}</span>}
       </div>
 
       {/* Popover + Command */}
@@ -109,13 +109,13 @@ const SelectWithCommand = <T = any,>({
           <button
             role='combobox'
             aria-expanded={open}
-            className={`w-full flex items-center justify-between h-9 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 hover:border-blue-300 text-sm ${
-              disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300' : 'border-gray-300'
+            className={`w-full flex items-center justify-between h-9 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:border-blue-300 dark:hover:border-gray-500 text-sm ${
+              disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600' : 'border-gray-300 dark:border-gray-600'
             }`}
             disabled={disabled}
             onClick={() => setOpen(!open)}
           >
-            <span className={selectedOption ? 'text-gray-900' : 'text-xs text-gray-400'}>
+            <span className={selectedOption ? 'text-gray-900 dark:text-gray-100' : 'text-xs text-gray-400 dark:text-gray-500'}>
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
@@ -130,9 +130,9 @@ const SelectWithCommand = <T = any,>({
             />
             <CommandList className='max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto custom-scrollbar'>
               {isLoading ? (
-                <div className='p-4 text-center text-sm text-gray-500'>로딩 중...</div>
+                <div className='p-4 text-center text-sm text-gray-500 dark:text-gray-400'>로딩 중...</div>
               ) : options.length === 0 ? (
-                <div className='p-4 text-center text-sm text-gray-500'>옵션이 없습니다</div>
+                <div className='p-4 text-center text-sm text-gray-500 dark:text-gray-400'>옵션이 없습니다</div>
               ) : (
                 options.map((option, index) => (
                   <CommandItem
@@ -145,9 +145,9 @@ const SelectWithCommand = <T = any,>({
                     <div className='flex-1 min-w-0'>
                       <div className='font-medium truncate'>{option.label}</div>
                       {option.description && (
-                        <div className='text-xs text-gray-500 mt-1 truncate'>{option.description}</div>
+                        <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 truncate'>{option.description}</div>
                       )}
-                      <div className='text-xs text-gray-400 mt-1 truncate'>{option.category}</div>
+                      <div className='text-xs text-gray-400 dark:text-gray-500 mt-1 truncate'>{option.category}</div>
                     </div>
                     <div
                       className={`text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0 ${getCategoryColor(
@@ -165,7 +165,7 @@ const SelectWithCommand = <T = any,>({
       </Popover>
 
       {/* 에러 메시지 */}
-      {error && <div className='text-xs text-red-500 mt-1'>{error}</div>}
+      {error && <div className='text-xs text-red-500 dark:text-red-400 mt-1'>{error}</div>}
     </div>
   );
 };

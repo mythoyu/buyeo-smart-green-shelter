@@ -195,7 +195,7 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
             variant='ghost'
             size='sm'
             disabled={isAutoEnabled || availableUnits.length === 0}
-            className='h-5 px-2 text-xs hover:bg-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-0'
+            className='h-5 px-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-0'
             title={
               isAutoEnabled
                 ? 'Auto 모드에서는 사용할 수 없습니다'
@@ -226,11 +226,11 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
         </PopoverTrigger>
         {availableUnits.length > 0 && (
           <PopoverContent
-            className='w-80 p-0 border-gray-200/50 shadow-xl'
+            className='w-80 p-0 border-gray-200/50 dark:border-gray-600 shadow-xl'
             align='start'
             onClick={e => e.stopPropagation()}
           >
-            <div className='p-3 border-b border-gray-100'>
+            <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
               <div className='flex items-center justify-between'>
                 <h4 className='text-sm font-semibold'>다른 장비 선택</h4>
                 <Button
@@ -238,12 +238,12 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
                   variant='ghost'
                   size='sm'
                   onClick={() => toggleAllUnits(fieldKey)}
-                  className='h-6 text-xs border-0 hover:bg-gray-100'
+                  className='h-6 text-xs border-0 hover:bg-gray-100 dark:hover:bg-gray-700'
                 >
                   {availableUnits.every(u => selectedUnits.has(u.key)) ? '전체 해제' : '전체 선택'}
                 </Button>
               </div>
-              <p className='text-xs text-gray-500 mt-1'>같은 필드를 지원하는 다른 장비에 동일한 설정을 적용합니다</p>
+              <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>같은 필드를 지원하는 다른 장비에 동일한 설정을 적용합니다</p>
             </div>
             <ScrollArea className='h-[300px]'>
               <div className='p-2 space-y-1'>
@@ -252,7 +252,7 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
                   return (
                     <div
                       key={unitItem.key}
-                      className='flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 cursor-pointer transition-colors'
+                      className='flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors'
                       onClick={() => toggleUnitSelection(fieldKey, unitItem.key)}
                     >
                       <Checkbox
@@ -261,7 +261,7 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
                       />
                       <div className='flex-1 min-w-0'>
                         <div className='text-sm font-medium truncate'>{unitItem.deviceName}</div>
-                        <div className='text-xs text-gray-500 truncate'>
+                        <div className='text-xs text-gray-500 dark:text-gray-400 truncate'>
                           {unitItem.unitName} ({unitItem.deviceType})
                         </div>
                       </div>
@@ -297,7 +297,7 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
             >
               <Label
                 className={`text-xs font-medium flex items-center justify-between ${
-                  isAutoEnabled ? 'text-gray-400' : 'text-gray-700'
+                  isAutoEnabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'
                 }`}
               >
                 <div className='flex items-center gap-2'>
@@ -368,7 +368,7 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
         {/* 시간 설정 항목들 */}
         {timeCommands.length > 0 && (
           <div className='space-y-3'>
-            <h3 className='text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2'>
+            <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2'>
               <div className='w-1 h-4 bg-primary rounded-full' />
               시간 설정
             </h3>
@@ -378,7 +378,7 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
         {/* 나머지 설정 항목들 */}
         {otherCommands.filter(cmd => cmd.key !== 'auto' && cmd.key !== 'power').length > 0 && (
           <div className='space-y-3'>
-            <h3 className='text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2'>
+            <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2'>
               <div className='w-1 h-4 bg-primary rounded-full' />
               기타 설정
             </h3>
@@ -388,11 +388,11 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
       </div>
 
       {/* 설정 버튼 - 다이얼로그 스타일로 표시 */}
-      <div className='flex gap-3 mt-6 pt-4 border-t border-gray-100'>
+      <div className='flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700'>
         <Button
           variant='outline'
           onClick={onCancel}
-          className='flex-1 h-10 font-medium transition-all duration-200 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+          className='flex-1 h-10 font-medium transition-all duration-200 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
         >
           취소
         </Button>

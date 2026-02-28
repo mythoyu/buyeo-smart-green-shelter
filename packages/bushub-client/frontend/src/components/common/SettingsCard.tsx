@@ -35,14 +35,14 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
   headerExtra,
 }) => {
   return (
-    <div className='p-6 space-y-4 border border-gray-200 rounded-lg'>
+    <div className='p-6 space-y-4 border border-gray-200 dark:border-gray-600 rounded-lg'>
       {/* 카드 헤더 */}
       <div className='flex items-center gap-3'>
-        <div className='w-10 h-10 bg-muted rounded-lg flex items-center justify-center'>
+        <div className='w-10 h-10 bg-muted dark:bg-gray-700 rounded-lg flex items-center justify-center'>
           <Icon className='h-5 w-5 text-primary' />
         </div>
         <div className='flex-1'>
-          <h2 className='text-lg font-semibold'>{title}</h2>
+          <h2 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>{title}</h2>
           <p className='text-sm text-muted-foreground'>{description}</p>
         </div>
         {headerExtra && <div className='flex-shrink-0'>{headerExtra}</div>}
@@ -69,7 +69,7 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
 
       {/* 현재 설정값 표시 */}
       {currentSettings && (
-        <div className='text-xs text-muted-foreground p-2 bg-muted rounded-lg'>{currentSettings}</div>
+        <div className='text-xs text-muted-foreground p-2 bg-muted dark:bg-gray-800 rounded-lg'>{currentSettings}</div>
       )}
 
       {/* 설정 내용 */}

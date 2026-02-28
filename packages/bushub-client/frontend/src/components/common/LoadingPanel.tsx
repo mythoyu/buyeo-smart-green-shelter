@@ -42,7 +42,7 @@ export function LoadingPanel({
             {[0, 1, 2].map(i => (
               <Circle
                 key={i}
-                className={cn('animate-bounce text-blue-500', `opacity-${60 + i * 20}`)}
+                className={cn('animate-bounce text-blue-500 dark:text-blue-400', `opacity-${60 + i * 20}`)}
                 size={size / 2}
                 style={{
                   animationDelay: `${i * 0.2}s`,
@@ -55,22 +55,22 @@ export function LoadingPanel({
       case 'pulse':
         return (
           <div className='relative flex items-center justify-center'>
-            <div className='w-8 h-8 bg-blue-400 rounded-full animate-pulse opacity-70' />
-            <div className='absolute w-8 h-8 bg-blue-300 rounded-full animate-ping opacity-40' />
+            <div className='w-8 h-8 bg-blue-400 dark:bg-blue-600 rounded-full animate-pulse opacity-70' />
+            <div className='absolute w-8 h-8 bg-blue-300 dark:bg-blue-700 rounded-full animate-ping opacity-40' />
           </div>
         );
       case 'success':
         return (
           <div className='flex items-center justify-center'>
             {isSuccess ? (
-              <CheckCircle2 className='text-green-500 animate-bounce' size={size} />
+              <CheckCircle2 className='text-green-500 dark:text-green-400 animate-bounce' size={size} />
             ) : (
-              <Loader2 className='animate-spin text-blue-500' size={size} />
+              <Loader2 className='animate-spin text-blue-500 dark:text-blue-400' size={size} />
             )}
           </div>
         );
       default:
-        return <Loader2 className='animate-spin text-blue-500' size={size} />;
+        return <Loader2 className='animate-spin text-blue-500 dark:text-blue-400' size={size} />;
     }
   };
 
@@ -129,7 +129,7 @@ export function SimpleLoadingSpinner({
 }) {
   return (
     <div className={cn('flex flex-col items-center justify-center gap-2', className)}>
-      <Loader2 className='animate-spin text-blue-500' size={size} />
+      <Loader2 className='animate-spin text-blue-500 dark:text-blue-400' size={size} />
       {text && <p className='text-sm text-gray-600 dark:text-gray-400'>{text}</p>}
     </div>
   );

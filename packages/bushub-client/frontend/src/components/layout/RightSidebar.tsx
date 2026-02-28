@@ -74,7 +74,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           className={`
             fixed top-16 bottom-0 right-0 z-50 w-20 transform transition-all duration-300 ease-in-out
             ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-            bg-card border-l border-gray-200 shadow-lg
+            bg-card border-l border-gray-200 dark:border-gray-600 shadow-lg
             flex flex-col
             lg:hidden
           `}
@@ -94,7 +94,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   // 데스크탑: 숨기지 않음, 항상 표시, 좌측과 동일 형태
   return (
     <div
-      className='fixed top-16 bottom-0 right-0 z-50 w-20 bg-card border-l border-gray-200 shadow-lg flex flex-col max-lg:hidden'
+      className='fixed top-16 bottom-0 right-0 z-50 w-20 bg-card border-l border-gray-200 dark:border-gray-600 shadow-lg flex flex-col max-lg:hidden'
     >
       <nav className='flex-1 py-4 flex flex-col'>
         <div className='flex flex-col items-center gap-1 flex-1 overflow-auto'>

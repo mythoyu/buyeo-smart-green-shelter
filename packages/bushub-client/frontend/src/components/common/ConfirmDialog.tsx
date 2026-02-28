@@ -33,37 +33,37 @@ export function ConfirmDialog({
     switch (variant) {
       case 'danger':
         return {
-          icon: <Trash2 className='h-6 w-6 text-red-600' />,
-          iconBg: 'bg-red-100',
+          icon: <Trash2 className='h-6 w-6 text-red-600 dark:text-red-400' />,
+          iconBg: 'bg-red-100 dark:bg-red-900/50',
           confirmButton: 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white',
-          border: 'border-red-100',
-          titleColor: 'text-red-900',
+          border: 'border-red-100 dark:border-red-900/50',
+          titleColor: 'text-red-900 dark:text-red-100',
         };
       case 'warning':
         return {
-          icon: <AlertTriangle className='h-6 w-6 text-yellow-600' />,
-          iconBg: 'bg-yellow-100',
+          icon: <AlertTriangle className='h-6 w-6 text-yellow-600 dark:text-yellow-400' />,
+          iconBg: 'bg-yellow-100 dark:bg-yellow-900/50',
           confirmButton:
             'bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white',
-          border: 'border-yellow-100',
-          titleColor: 'text-yellow-900',
+          border: 'border-yellow-100 dark:border-yellow-900/50',
+          titleColor: 'text-yellow-900 dark:text-yellow-100',
         };
       case 'info':
         return {
-          icon: <Info className='h-6 w-6 text-blue-600' />,
-          iconBg: 'bg-blue-100',
+          icon: <Info className='h-6 w-6 text-blue-600 dark:text-blue-400' />,
+          iconBg: 'bg-blue-100 dark:bg-blue-900/50',
           confirmButton: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
-          border: 'border-blue-100',
-          titleColor: 'text-blue-900',
+          border: 'border-blue-100 dark:border-blue-900/50',
+          titleColor: 'text-blue-900 dark:text-blue-100',
         };
       default:
         return {
-          icon: <CheckCircle className='h-6 w-6 text-green-600' />,
-          iconBg: 'bg-green-100',
+          icon: <CheckCircle className='h-6 w-6 text-green-600 dark:text-green-400' />,
+          iconBg: 'bg-green-100 dark:bg-green-900/50',
           confirmButton:
             'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white',
-          border: 'border-green-100',
-          titleColor: 'text-green-900',
+          border: 'border-green-100 dark:border-green-900/50',
+          titleColor: 'text-green-900 dark:text-green-100',
         };
     }
   };
@@ -85,24 +85,24 @@ export function ConfirmDialog({
   };
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]'>
+    <div className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]'>
       <div className='w-full max-w-md mx-4'>
         <div
-          className={`bg-white rounded-2xl p-8 shadow-2xl border ${styles.border} hover:shadow-3xl transition-all duration-300`}
+          className={`bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-2xl border ${styles.border} hover:shadow-3xl transition-all duration-300`}
         >
           <div className='flex flex-col items-center gap-2 mb-6'>
             <span className={`w-12 h-12 flex items-center justify-center ${styles.iconBg} rounded-full mb-2`}>
               {styles.icon}
             </span>
             <h3 className={`text-2xl font-bold ${styles.titleColor}`}>{title}</h3>
-            {description && <p className='text-gray-600 text-sm mt-1 text-center'>{description}</p>}
+            {description && <p className='text-gray-600 dark:text-gray-400 text-sm mt-1 text-center'>{description}</p>}
           </div>
 
           <div className='flex space-x-3'>
             <Button
               variant='outline'
               onClick={handleCancel}
-              className='flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 text-gray-700 font-medium'
+              className='flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-gray-700 dark:text-gray-200 font-medium'
             >
               {cancelText}
             </Button>

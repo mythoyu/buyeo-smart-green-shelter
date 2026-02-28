@@ -533,6 +533,19 @@ body {
   background: rgba(34, 197, 94, 0.7);
 }
 
+/* 다크 모드 전역 스크롤바 */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.8);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.8);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.9);
+}
+
 /* 그린 쉼터 애니메이션 */
 @keyframes shelterFloat {
   0%,

@@ -35,7 +35,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 }) => {
   // 디바이스 관련 데이터 준비
   const deviceIcon = getDeviceIcon(device.type);
-  const deviceColor = deviceStyles[device.type]?.bgColor || 'bg-gray-500';
+  const deviceColor = deviceStyles[device.type]?.avatarBg ?? deviceStyles[device.type]?.bgColor ?? 'bg-gray-500 dark:bg-gray-700';
   const deviceSpec = deviceSpecs[device.type];
 
   const deviceStatusConfig = getStatusConfig(device.status);

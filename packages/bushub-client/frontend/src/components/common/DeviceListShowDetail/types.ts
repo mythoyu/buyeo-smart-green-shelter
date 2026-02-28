@@ -39,6 +39,8 @@ export interface DeviceSpec {
 
 export interface DeviceStyle {
   bgColor: string;
+  /** 라이트/다크 배경 클래스 (예: 'bg-yellow-50 dark:bg-yellow-900/50'). 미설정 시 bgColor 사용 */
+  avatarBg?: string;
   textColor?: string;
 }
 

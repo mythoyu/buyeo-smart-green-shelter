@@ -226,8 +226,8 @@ const DashboardPage: React.FC = () => {
       {/* 통합 그리드: 장비 목록 (피플카운터는 기존 DeviceCard 스타일로 표시) */}
       {filteredDevices.length === 0 && devices.length > 0 ? (
         <div className='text-center py-12 space-y-2'>
-          <p className='text-gray-500 font-medium'>선택한 필터 조건에 맞는 장비가 없습니다.</p>
-          <p className='text-sm text-gray-400'>필터를 변경해보세요.</p>
+          <p className='text-gray-500 dark:text-gray-400 font-medium'>선택한 필터 조건에 맞는 장비가 없습니다.</p>
+          <p className='text-sm text-gray-400 dark:text-gray-500'>필터를 변경해보세요.</p>
         </div>
       ) : (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>

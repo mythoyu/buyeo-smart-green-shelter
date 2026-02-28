@@ -277,12 +277,12 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                 {!isPeopleCounter && (
                   <Settings
                     className={`w-4 h-4 transition-all duration-300 ${
-                      isSelected ? 'text-blue-600 rotate-90' : 'text-gray-500 hover:text-blue-500'
+                      isSelected ? 'text-blue-600 dark:text-blue-400 rotate-90' : 'text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400'
                     }`}
                   />
                 )}
                 <div className='flex flex-col'>
-                  <span className='text-xs text-gray-500 transition-colors duration-200'>{unit.name || unit.id}</span>
+                  <span className='text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200'>{unit.name || unit.id}</span>
                 </div>
               </div>
 
@@ -342,26 +342,26 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                         <Users className='h-4 w-4 text-muted-foreground' />
                         <span className='text-sm text-muted-foreground'>현재 인원</span>
                       </div>
-                      <span className='text-xl font-bold text-blue-600'>
+                      <span className='text-xl font-bold text-blue-600 dark:text-blue-400'>
                         {Number(unit.data.currentCount ?? 0).toLocaleString()}
                       </span>
                     </div>
                     <div className='grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700'>
                       <div className='flex flex-col'>
                         <div className='flex items-center gap-1 mb-0.5'>
-                          <TrendingUp className='h-3 w-3 text-green-600' />
+                          <TrendingUp className='h-3 w-3 text-green-600 dark:text-green-400' />
                           <span className='text-xs text-muted-foreground'>입실 누적</span>
                         </div>
-                        <span className='text-sm font-semibold text-green-600'>
+                        <span className='text-sm font-semibold text-green-600 dark:text-green-400'>
                           {Number(unit.data.inCumulative ?? 0).toLocaleString()}
                         </span>
                       </div>
                       <div className='flex flex-col'>
                         <div className='flex items-center gap-1 mb-0.5'>
-                          <TrendingDown className='h-3 w-3 text-red-600' />
+                          <TrendingDown className='h-3 w-3 text-red-600 dark:text-red-400' />
                           <span className='text-xs text-muted-foreground'>퇴실 누적</span>
                         </div>
-                        <span className='text-sm font-semibold text-red-600'>
+                        <span className='text-sm font-semibold text-red-600 dark:text-red-400'>
                           {Number(unit.data.outCumulative ?? 0).toLocaleString()}
                         </span>
                       </div>
@@ -401,7 +401,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                       <DropdownMenuItem onClick={() => handleResetClick('out')}>
                         퇴실 누적 리셋
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleResetClick('all')} className='text-red-600'>
+                      <DropdownMenuItem onClick={() => handleResetClick('all')} className='text-red-600 dark:text-red-400'>
                         전체 리셋
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -426,7 +426,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                         title={`${cmd.label}: ${displayValue}`}
                       >
                         <div className='flex flex-col items-center w-full min-w-0'>
-                          <span className='text-xs text-gray-500 font-medium leading-none truncate max-w-full'>{cmd.label}</span>
+                          <span className='text-xs text-gray-500 dark:text-gray-400 font-medium leading-none truncate max-w-full'>{cmd.label}</span>
                           <span className='text-xs font-bold leading-none mt-0.5 truncate max-w-full'>{displayValue}</span>
                         </div>
                       </Badge>
@@ -448,24 +448,24 @@ export const UnitCard: React.FC<UnitCardProps> = ({
               }}
             >
               <DialogContent
-                className='max-w-[calc(100%-2rem)] sm:max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden border-gray-200/50 shadow-xl'
+                className='max-w-[calc(100%-2rem)] sm:max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden border-gray-200/50 dark:border-gray-600 shadow-xl'
                 onClick={e => e.stopPropagation()}
                 showCloseButton={false}
               >
                 {/* 헤더 */}
-                <DialogHeader className='px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-primary/5 via-primary/5 to-transparent'>
+                <DialogHeader className='px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 via-primary/5 to-transparent'>
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
                       <div className='w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm'>
                         <Settings className='w-6 h-6 text-primary' />
                       </div>
                       <div>
-                        <DialogTitle className='text-xl font-bold text-gray-900 flex items-center gap-2'>
+                        <DialogTitle className='text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
                           {device.name || device.id}
                         </DialogTitle>
-                        <DialogDescription className='text-sm text-gray-600 mt-1 flex items-center gap-2'>
+                        <DialogDescription className='text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2'>
                           <span className='font-medium'>{unit.name || unit.id}</span>
-                          <span className='text-gray-400'>·</span>
+                          <span className='text-gray-400 dark:text-gray-500'>·</span>
                           <span>{deviceSpec?.deviceName || device.type}</span>
                         </DialogDescription>
                       </div>

@@ -54,7 +54,7 @@ export const PollingDialog: React.FC<PollingDialogProps> = ({ isOpen, title, mes
             <p className='text-sm text-muted-foreground'>
               클라이언트 등록을 계속하거나 대시보드에서 실시간 모니터링을 확인할 수 있습니다.
             </p>
-            <p className='text-sm font-semibold text-red-600'>{countdown}초 후 자동으로 대시보드로 이동합니다.</p>
+            <p className='text-sm font-semibold text-red-600 dark:text-red-400'>{countdown}초 후 자동으로 대시보드로 이동합니다.</p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className='flex-col sm:flex-row gap-2'>

@@ -54,6 +54,20 @@ function formatDateTimeDisplay(dt: string): string {
   return t ? `${d} ${t}` : d;
 }
 
+/** Recharts 툴팁(balloon) 다크 모드 대응 - CSS 변수 사용 */
+const chartTooltipStyles = {
+  contentStyle: {
+    backgroundColor: 'var(--background)',
+    border: '1px solid var(--border)',
+    color: 'var(--foreground)',
+    borderRadius: '6px',
+    padding: '8px 12px',
+  },
+  wrapperStyle: {},
+  labelStyle: { color: 'var(--foreground)' },
+  itemStyle: { color: 'var(--foreground)' },
+};
+
 const UserStatisticsPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('day');
   const [customStartDateTime, setCustomStartDateTime] = useState<string>('');
@@ -488,7 +502,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='time' />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Line type='monotone' dataKey='count' stroke='#2563eb' strokeWidth={2} name='현재 인원' />
               </LineChart>
@@ -513,7 +532,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='time' />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Area type='monotone' dataKey='입실' stackId='1' stroke='#10b981' fill='#10b981' fillOpacity={0.6} />
                 <Area type='monotone' dataKey='퇴실' stackId='1' stroke='#ef4444' fill='#ef4444' fillOpacity={0.6} />
@@ -535,7 +559,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='hour' />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Bar dataKey='입실' fill='#10b981' />
                 <Bar dataKey='퇴실' fill='#ef4444' />
@@ -557,7 +586,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis type='number' />
                 <YAxis dataKey='시간' type='category' width={60} />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Bar dataKey='인원' fill='#2563eb' />
               </BarChart>
@@ -578,7 +612,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='day' />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Area type='monotone' dataKey='입실' stackId='1' stroke='#10b981' fill='#10b981' fillOpacity={0.6} />
                 <Area type='monotone' dataKey='퇴실' stackId='1' stroke='#ef4444' fill='#ef4444' fillOpacity={0.6} />
@@ -600,7 +639,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='day' />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Bar dataKey='입실' fill='#10b981' />
                 <Bar dataKey='퇴실' fill='#ef4444' />
@@ -623,7 +667,12 @@ const UserStatisticsPage: React.FC = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='month' />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={chartTooltipStyles.contentStyle}
+                  wrapperStyle={chartTooltipStyles.wrapperStyle}
+                  labelStyle={chartTooltipStyles.labelStyle}
+                  itemStyle={chartTooltipStyles.itemStyle}
+                />
                 <Legend />
                 <Bar dataKey='입실' fill='#10b981' />
                 <Bar dataKey='퇴실' fill='#ef4444' />

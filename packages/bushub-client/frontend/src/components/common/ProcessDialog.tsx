@@ -25,23 +25,23 @@ export const ProcessDialog: React.FC<ProcessDialogProps> = ({
     switch (status) {
       case 'processing':
         return {
-          icon: <Loader2 className='w-6 h-6 animate-spin text-blue-500' />,
-          className: 'text-blue-600',
+          icon: <Loader2 className='w-6 h-6 animate-spin text-blue-500 dark:text-blue-400' />,
+          className: 'text-blue-600 dark:text-blue-400',
         };
       case 'completed':
         return {
-          icon: <CheckCircle className='w-6 h-6 text-green-500' />,
-          className: 'text-green-600',
+          icon: <CheckCircle className='w-6 h-6 text-green-500 dark:text-green-400' />,
+          className: 'text-green-600 dark:text-green-400',
         };
       case 'error':
         return {
-          icon: <XCircle className='w-6 h-6 text-red-500' />,
-          className: 'text-red-600',
+          icon: <XCircle className='w-6 h-6 text-red-500 dark:text-red-400' />,
+          className: 'text-red-600 dark:text-red-400',
         };
       default:
         return {
-          icon: <Loader2 className='w-6 h-6 text-gray-500' />,
-          className: 'text-gray-600',
+          icon: <Loader2 className='w-6 h-6 text-gray-500 dark:text-gray-400' />,
+          className: 'text-gray-600 dark:text-gray-400',
         };
     }
   };
@@ -55,7 +55,7 @@ export const ProcessDialog: React.FC<ProcessDialogProps> = ({
         <div className='flex justify-end mt-4'>
           <button
             onClick={onClose}
-            className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200'
+            className='px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600'
           >
             닫기
           </button>
@@ -78,7 +78,7 @@ export const ProcessDialog: React.FC<ProcessDialogProps> = ({
         <div className='space-y-4'>
           {/* 진행률 바 */}
           <div className='space-y-2'>
-            <div className='flex justify-between text-sm text-gray-600'>
+            <div className='flex justify-between text-sm text-gray-600 dark:text-gray-400'>
               <span>진행률</span>
               <span>{progress}%</span>
             </div>
@@ -86,7 +86,7 @@ export const ProcessDialog: React.FC<ProcessDialogProps> = ({
           </div>
 
           {/* 상태 설명 */}
-          <p className='text-sm text-gray-600'>{description}</p>
+          <p className='text-sm text-gray-600 dark:text-gray-400'>{description}</p>
         </div>
 
         {/* 액션 버튼 */}

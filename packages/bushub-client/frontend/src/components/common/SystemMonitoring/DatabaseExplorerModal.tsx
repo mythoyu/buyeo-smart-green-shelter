@@ -91,19 +91,19 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
   const typeToBadgeClass = (t: string): string => {
     switch (t) {
       case 'string':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200';
       case 'number':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-200';
       case 'boolean':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200';
       case 'array':
-        return 'bg-purple-100 text-purple-700';
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-200';
       case 'object':
-        return 'bg-cyan-100 text-cyan-700';
+        return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-200';
       case 'null':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200';
       default:
-        return 'bg-neutral-100 text-neutral-700';
+        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200';
     }
   };
 
@@ -203,14 +203,14 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg shadow-xl w-11/12 h-5/6 max-w-6xl flex flex-col'>
+    <div className='fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-50'>
+      <div className='bg-white dark:bg-gray-900 rounded-lg shadow-xl w-11/12 h-5/6 max-w-6xl flex flex-col border border-gray-200 dark:border-gray-700'>
         {/* 헤더 */}
-        <div className='flex items-center justify-between p-6 border-b'>
+        <div className='flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'>
           <div className='flex items-center gap-3'>
-            <Database className='h-6 w-6 text-blue-600' />
+            <Database className='h-6 w-6 text-blue-600 dark:text-blue-400' />
             <div>
-              <h2 className='text-xl font-semibold'>데이터베이스 탐색</h2>
+              <h2 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>데이터베이스 탐색</h2>
               <p className='text-sm text-muted-foreground'>컬렉션 데이터를 확인할 수 있습니다</p>
             </div>
           </div>
@@ -224,7 +224,7 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
           <div className='h-full flex flex-col gap-4'>
             {/* 컬렉션 선택 */}
             <div className='flex items-center gap-4'>
-              <label className='text-sm font-medium'>컬렉션 선택:</label>
+              <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>컬렉션 선택:</label>
               <Select value={selectedCollection} onValueChange={handleCollectionChange}>
                 <SelectTrigger className='w-64'>
                   <SelectValue placeholder='컬렉션을 선택하세요' />
@@ -278,7 +278,7 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                       <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3'>
                         <div className='flex items-center gap-2'>
                           <input
-                            className='border border-neutral-300 rounded px-2 py-1 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                            className='border border-neutral-300 dark:border-gray-600 rounded px-2 py-1 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400'
                             placeholder='검색 (현재 페이지)'
                             value={search}
                             onChange={e => setSearch(e.target.value)}
@@ -309,9 +309,9 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                       <div className='overflow-x-auto'>
                         <table className='w-full text-sm'>
                           <thead>
-                            <tr className='border-b border-neutral-200'>
+                            <tr className='border-b border-neutral-200 dark:border-gray-700'>
                               {columns.map(col => (
-                                <th key={col} className='text-left p-2 font-medium'>
+                                <th key={col} className='text-left p-2 font-medium text-gray-900 dark:text-gray-100'>
                                   <div className='flex items-center gap-2'>
                                     <span>{col}</span>
                                     <Badge
@@ -328,9 +328,9 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                           </thead>
                           <tbody>
                             {viewRows.map((doc, rowIndex) => (
-                              <tr key={rowIndex} className='border-b border-neutral-200 align-top'>
+                              <tr key={rowIndex} className='border-b border-neutral-200 dark:border-gray-700 align-top'>
                                 {columns.map(col => (
-                                  <td key={col} className='p-2 text-xs'>
+                                  <td key={col} className='p-2 text-xs text-gray-900 dark:text-gray-200'>
                                     <div className='break-all'>{formatValue(doc?.[col])}</div>
                                   </td>
                                 ))}
@@ -351,7 +351,7 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                       <div className='flex items-center gap-2'>
                         {/* 페이지 점프 */}
                         <input
-                          className='border border-neutral-300 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                          className='border border-neutral-300 dark:border-gray-600 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                           placeholder='이동'
                           value={pageInput}
                           onChange={e => setPageInput(e.target.value.replace(/[^0-9]/g, ''))}
@@ -368,7 +368,7 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                         <Button
                           variant='outline'
                           size='sm'
-                          className='hover:bg-neutral-100'
+                          className='hover:bg-neutral-100 dark:hover:bg-neutral-700'
                           onClick={() => handlePageChange(currentPage - 1)}
                           disabled={currentPage <= 1}
                         >
@@ -377,7 +377,7 @@ const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({ isOpen, o
                         <Button
                           variant='outline'
                           size='sm'
-                          className='hover:bg-neutral-100'
+                          className='hover:bg-neutral-100 dark:hover:bg-neutral-700'
                           onClick={() => handlePageChange(currentPage + 1)}
                           disabled={currentPage >= collectionData.totalPages}
                         >

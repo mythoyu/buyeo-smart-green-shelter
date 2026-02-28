@@ -1043,8 +1043,8 @@ const SystemSettingsPage: React.FC = () => {
               {/* 주 NTP 서버 */}
               <div className='mb-3'>
                 <div className='flex items-center justify-between mb-1'>
-                  <Label className='text-sm font-medium text-gray-700'>주 NTP 서버</Label>
-                  <span className='text-xs text-gray-500 ml-2'>
+                  <Label className='text-sm font-medium text-gray-700 dark:text-gray-300'>주 NTP 서버</Label>
+                  <span className='text-xs text-gray-500 dark:text-gray-400 ml-2'>
                     현재: {ntpStatus?.data?.primaryServer || 'time.google.com'}{' '}
                     {ntpStatus?.data?.primaryServerCommented ? '(주석 처리됨)' : '(활성화됨)'}
                   </span>
@@ -1056,8 +1056,8 @@ const SystemSettingsPage: React.FC = () => {
                     placeholder='NTP 서버 주소를 입력하세요 (예: time.google.com)'
                     disabled={!ntpInput?.enabled}
                     className={`flex-1 ${
-                      getFieldError('ntp', 'primaryServer') ? 'border-red-400' : 'border-gray-300'
-                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+                      getFieldError('ntp', 'primaryServer') ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
+                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
                   />
                   <Button
                     variant='secondary'
@@ -1140,8 +1140,8 @@ const SystemSettingsPage: React.FC = () => {
               {/* 백업 NTP 서버 */}
               <div className='mb-3'>
                 <div className='flex items-center justify-between mb-1'>
-                  <Label className='text-sm font-medium text-gray-700'>백업 NTP 서버</Label>
-                  <span className='text-xs text-gray-500 ml-2'>
+                  <Label className='text-sm font-medium text-gray-700 dark:text-gray-300'>백업 NTP 서버</Label>
+                  <span className='text-xs text-gray-500 dark:text-gray-400 ml-2'>
                     현재: {ntpStatus?.data?.fallbackServer || '설정되지 않음'}{' '}
                     {ntpStatus?.data?.fallbackServerCommented
                       ? '(주석 처리됨)'
@@ -1157,8 +1157,8 @@ const SystemSettingsPage: React.FC = () => {
                     placeholder='백업 NTP 서버 주소를 입력하세요 (예: ntp.ubuntu.com)'
                     disabled={!ntpInput?.enabled}
                     className={`flex-1 ${
-                      getFieldError('ntp', 'fallbackServer') ? 'border-red-400' : 'border-gray-300'
-                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+                      getFieldError('ntp', 'fallbackServer') ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
+                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
                   />
                   <Button
                     variant='secondary'
@@ -1313,7 +1313,7 @@ const SystemSettingsPage: React.FC = () => {
             <div className='space-y-4'>
               {/* 현재 월 동작절기 설정 */}
               <div className='flex items-center space-x-4'>
-                <span className='text-sm font-medium text-gray-700'>현재 월 동작절기:</span>
+                <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>현재 월 동작절기:</span>
                 <span
                   className={`text-sm font-medium px-3 py-1 rounded ${
                     currentMonthSeasonValue === 1
@@ -1326,7 +1326,7 @@ const SystemSettingsPage: React.FC = () => {
               </div>
 
               {/* 월별 설정 */}
-              <div className='grid grid-cols-3 border border-gray-200 rounded-md overflow-hidden'>
+              <div className='grid grid-cols-3 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden'>
                 {Object.entries(monthNames).map(([month, name], index) => {
                   const monthKey =
                     month === '1'
@@ -1362,8 +1362,8 @@ const SystemSettingsPage: React.FC = () => {
                     <div
                       key={month}
                       className={`flex items-center justify-center p-1 ${
-                        !isLastCol ? 'border-r border-gray-200' : ''
-                      } ${!isLastRow ? 'border-b border-gray-200' : ''}`}
+                        !isLastCol ? 'border-r border-gray-200 dark:border-gray-600' : ''
+                      } ${!isLastRow ? 'border-b border-gray-200 dark:border-gray-600' : ''}`}
                     >
                       <Button
                         variant={value === 1 ? 'default' : 'default'}

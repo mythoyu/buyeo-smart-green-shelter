@@ -92,47 +92,47 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
     const getServiceBadge = useCallback((service: string) => {
       switch (service) {
         case 'system':
-          return { text: 'SYSTEM', className: 'bg-purple-100 text-purple-800 border-purple-200' };
+          return { text: 'SYSTEM', className: 'bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800' };
         case 'device':
-          return { text: 'DEVICE', className: 'bg-green-100 text-green-800 border-green-200' };
+          return { text: 'DEVICE', className: 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' };
         case 'websocket':
-          return { text: 'WEBSOCKET', className: 'bg-blue-100 text-blue-800 border-blue-200' };
+          return { text: 'WEBSOCKET', className: 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800' };
         case 'api':
-          return { text: 'API', className: 'bg-orange-100 text-orange-800 border-orange-200' };
+          return { text: 'API', className: 'bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800' };
         case 'user':
-          return { text: 'USER', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
+          return { text: 'USER', className: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800' };
         case 'UnifiedLogService':
-          return { text: 'LOG', className: 'bg-gray-100 text-gray-800 border-gray-200' };
+          return { text: 'LOG', className: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600' };
         default:
-          return { text: service.toUpperCase(), className: 'bg-gray-100 text-gray-800 border-gray-200' };
+          return { text: service.toUpperCase(), className: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600' };
       }
     }, []);
 
     const getLevelColor = useCallback((level: string) => {
       switch (level) {
         case 'error':
-          return 'bg-red-100 text-red-800 border-red-200';
+          return 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
         case 'warn':
-          return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          return 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800';
         case 'info':
-          return 'bg-blue-100 text-blue-800 border-blue-200';
+          return 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800';
         case 'debug':
-          return 'bg-gray-100 text-gray-800 border-gray-200';
+          return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
         default:
-          return 'bg-gray-100 text-gray-800 border-gray-200';
+          return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
       }
     }, []);
 
     const getStatusColor = useCallback((status: string) => {
       switch (status) {
         case 'success':
-          return 'bg-green-100 text-green-800 border-green-200';
+          return 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800';
         case 'fail':
-          return 'bg-red-100 text-red-800 border-red-200';
+          return 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
         case 'pending':
-          return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          return 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800';
         default:
-          return 'bg-gray-100 text-gray-800 border-gray-200';
+          return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
       }
     }, []);
 
@@ -214,7 +214,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
             <button
               onClick={() => setFilter('system')}
               className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                filter === 'system' ? 'bg-purple-100 text-purple-800' : 'bg-secondary hover:bg-secondary/80'
+                filter === 'system' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200' : 'bg-secondary hover:bg-secondary/80'
               }`}
             >
               <Settings className='w-3 h-3' />
@@ -223,7 +223,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
             <button
               onClick={() => setFilter('user')}
               className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                filter === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-secondary hover:bg-secondary/80'
+                filter === 'user' ? 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200' : 'bg-secondary hover:bg-secondary/80'
               }`}
             >
               <Info className='w-3 h-3' />
@@ -232,7 +232,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
             <button
               onClick={() => setFilter('api')}
               className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                filter === 'api' ? 'bg-orange-100 text-orange-800' : 'bg-secondary hover:bg-secondary/80'
+                filter === 'api' ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200' : 'bg-secondary hover:bg-secondary/80'
               }`}
             >
               <Code className='w-3 h-3' />
@@ -241,7 +241,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
             <button
               onClick={() => setFilter('value-error')}
               className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                filter === 'value-error' ? 'bg-orange-100 text-orange-800' : 'bg-secondary hover:bg-secondary/80'
+                filter === 'value-error' ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200' : 'bg-secondary hover:bg-secondary/80'
               }`}
             >
               <Info className='w-3 h-3' />
@@ -249,7 +249,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
             </button>
             <button
               onClick={clearLogs}
-              className='px-3 py-1 text-xs rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition-colors flex items-center gap-1'
+              className='px-3 py-1 text-xs rounded-full bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1'
               title='로그 지우기'
             >
               <Trash2 className='w-3 h-3' />
@@ -269,7 +269,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
               className={`overflow-y-auto space-y-1 custom-scrollbar ${isLogPanelExpanded ? 'max-h-96' : 'max-h-20'}`}
             >
               {filteredLogs.length === 0 ? (
-                <div className='text-center py-8 text-gray-500'>
+                <div className='text-center py-8 text-gray-500 dark:text-gray-400'>
                   <Info className='w-8 h-8 mx-auto mb-2 opacity-50' />
                   <p>로그가 없습니다.</p>
                 </div>
@@ -278,7 +278,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
                   return (
                     <div
                       key={index}
-                      className='flex items-center gap-1 p-2 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors py-1'
+                      className='flex items-center gap-1 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors py-1'
                     >
                       {log.type === 'log' ? (
                         <>
@@ -290,8 +290,8 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
                           <Badge variant='outline' className={`text-xs ${getServiceBadge(log.service).className}`}>
                             {getServiceBadge(log.service).text}
                           </Badge>
-                          <span className='text-gray-900 truncate flex-1 text-xs'>{log.message}</span>
-                          <span className='text-xs text-gray-500 flex-shrink-0'>{formatTimestamp(log.timestamp)}</span>
+                          <span className='text-gray-900 dark:text-gray-100 truncate flex-1 text-xs'>{log.message}</span>
+                          <span className='text-xs text-gray-500 dark:text-gray-400 flex-shrink-0'>{formatTimestamp(log.timestamp)}</span>
                         </>
                       ) : (
                         <>
@@ -308,7 +308,7 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
                           </Badge>
 
                           {/* 메시지 */}
-                          <span className='text-gray-900 truncate flex-1 text-xs'>{log.message}</span>
+                          <span className='text-gray-900 dark:text-gray-100 truncate flex-1 text-xs'>{log.message}</span>
 
                           {/* value 정보 표시 (성공/실패 모두) */}
                           {log.value != null && (
@@ -316,8 +316,8 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
                               variant='outline'
                               className={`text-xs ${
                                 log.status === 'success'
-                                  ? 'bg-green-100 text-green-800 border-green-200'
-                                  : 'bg-blue-100 text-blue-800 border-blue-200'
+                                  ? 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800'
+                                  : 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800'
                               }`}
                               title={log.status === 'success' ? '변경된 값' : '시도했던 값'}
                             >
@@ -329,14 +329,14 @@ export const TopLogPanel: React.FC<TopLogPanelProps> = React.memo(
                           {log.error != null && log.status === 'fail' && (
                             <Badge
                               variant='outline'
-                              className='text-xs bg-red-100 text-red-800 border-red-200'
+                              className='text-xs bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
                               title='오류 메시지'
                             >
                               오류: {String(log.error)}
                             </Badge>
                           )}
 
-                          <span className='text-xs text-gray-500 flex-shrink-0'>{formatTimestamp(log.timestamp)}</span>
+                          <span className='text-xs text-gray-500 dark:text-gray-400 flex-shrink-0'>{formatTimestamp(log.timestamp)}</span>
                         </>
                       )}
                     </div>

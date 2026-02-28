@@ -28,10 +28,10 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
         disabled={disabled}
         className={`flex-1 h-8 text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
           disabled
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
             : value
             ? 'bg-primary hover:bg-primary/90 text-white'
-            : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+            : 'bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600'
         }`}
       >
         ON
@@ -44,10 +44,10 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
         disabled={disabled}
         className={`flex-1 h-8 text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
           disabled
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
             : !value
             ? 'bg-gray-600 hover:bg-gray-700 text-white'
-            : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+            : 'bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600'
         }`}
       >
         OFF
@@ -57,8 +57,8 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
 
   const renderNumberInput = () => (
     <div
-      className={`border border-gray-200 rounded-md transition-all duration-200 ${
-        disabled ? 'bg-gray-100' : 'bg-white'
+      className={`border border-gray-200 dark:border-gray-600 rounded-md transition-all duration-200 ${
+        disabled ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-card'
       }`}
     >
       <Input
@@ -78,7 +78,7 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
         placeholder={command.label}
         disabled={disabled}
         className={`h-8 text-xs border-0 transition-all duration-200 ${
-          disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-transparent hover:bg-gray-50 focus:bg-white'
+          disabled ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-white dark:focus:bg-card'
         }`}
       />
     </div>
@@ -115,8 +115,8 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
 
     return (
       <div
-        className={`border border-gray-200 rounded-md transition-all duration-200 ${
-          disabled ? 'bg-gray-100' : 'bg-white'
+        className={`border border-gray-200 dark:border-gray-600 rounded-md transition-all duration-200 ${
+          disabled ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-card'
         }`}
       >
         <select
@@ -124,7 +124,7 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
           onChange={e => !disabled && onChange(e.target.value)}
           disabled={disabled}
           className={`h-8 text-xs border-0 w-full px-3 transition-all duration-200 ${
-            disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-transparent hover:bg-gray-50 focus:bg-white'
+            disabled ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-white dark:focus:bg-card'
           }`}
         >
           {command.options.map(option => (
@@ -139,8 +139,8 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
 
   const renderTextInput = () => (
     <div
-      className={`border border-gray-200 rounded-md transition-all duration-200 ${
-        disabled ? 'bg-gray-100' : 'bg-white'
+      className={`border border-gray-200 dark:border-gray-600 rounded-md transition-all duration-200 ${
+        disabled ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-card'
       }`}
     >
       <Input
@@ -149,7 +149,7 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
         placeholder={command.label}
         disabled={disabled}
         className={`h-8 text-xs border-0 transition-all duration-200 ${
-          disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-transparent hover:bg-gray-50 focus:bg-white'
+          disabled ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-white dark:focus:bg-card'
         }`}
       />
     </div>
@@ -218,12 +218,12 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
     if (!showAutoModeMessage) return null;
 
     return (
-      <div className='mt-1.5 p-2 bg-blue-50 border border-blue-200 rounded-md'>
-        <div className='flex items-center gap-2 text-xs text-blue-700'>
+      <div className='mt-1.5 p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-md'>
+        <div className='flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300'>
           <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
           <span className='font-medium'>자동모드에서 비활성화</span>
         </div>
-        <div className='text-xs text-blue-600 mt-1'>
+        <div className='text-xs text-blue-600 dark:text-blue-400 mt-1'>
           자동 모드에서는 스케줄에 따라 장비가 제어되므로 수동 전원 제어가 불가능합니다.
         </div>
       </div>
@@ -238,14 +238,14 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
         animation: 'fadeInUp 0.3s ease-out forwards',
       }}
     >
-      <Label className='text-xs font-medium text-gray-700 flex items-center justify-between'>
+      <Label className='text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           {command.label}
           {disabled && (
-            <span className='text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded-full'>비활성화</span>
+            <span className='text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-950/40 px-1.5 py-0.5 rounded-full'>비활성화</span>
           )}
         </div>
-        {command.unit && <span className='text-xs text-gray-500'>({command.unit})</span>}
+        {command.unit && <span className='text-xs text-gray-500 dark:text-gray-400'>({command.unit})</span>}
       </Label>
 
       {renderCommandInput()}
@@ -261,7 +261,7 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
             variant='ghost'
             size='sm'
             onClick={() => handleCopy(value || '')}
-            className='h-5 w-5 p-0 hover:bg-gray-200 transition-all duration-200 hover:scale-110 active:scale-95'
+            className='h-5 w-5 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 active:scale-95'
             title='복사'
           >
             <Copy className='w-2.5 h-2.5' />
@@ -271,7 +271,7 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
             variant='ghost'
             size='sm'
             onClick={() => handlePaste(command.key)}
-            className='h-5 w-5 p-0 hover:bg-gray-200 transition-all duration-200 hover:scale-110 active:scale-95'
+            className='h-5 w-5 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 active:scale-95'
             title='붙여넣기'
           >
             <Clipboard className='w-2.5 h-2.5' />

@@ -39,29 +39,29 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
         case 0: // 정상
           return {
             variant: 'default' as const,
-            className: 'bg-green-100 text-green-800 border-green-200',
-            icon: <CheckCircle className='w-4 h-4 text-green-600' />,
+            className: 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800',
+            icon: <CheckCircle className='w-4 h-4 text-green-600 dark:text-green-400' />,
             text: '정상',
           };
         case 1: // 경고
           return {
             variant: 'secondary' as const,
-            className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-            icon: <AlertTriangle className='w-4 h-4 text-yellow-600' />,
+            className: 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800',
+            icon: <AlertTriangle className='w-4 h-4 text-yellow-600 dark:text-yellow-400' />,
             text: '경고',
           };
         case 2: // 오류
           return {
             variant: 'destructive' as const,
-            className: 'bg-red-100 text-red-800 border-red-200',
-            icon: <XCircle className='w-4 h-4 text-red-600' />,
+            className: 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800',
+            icon: <XCircle className='w-4 h-4 text-red-600 dark:text-red-400' />,
             text: '오류',
           };
         default: // 알수없음
           return {
             variant: 'outline' as const,
-            className: 'bg-gray-100 text-gray-800 border-gray-200',
-            icon: <HelpCircle className='w-4 h-4 text-gray-600' />,
+            className: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600',
+            icon: <HelpCircle className='w-4 h-4 text-gray-600 dark:text-gray-400' />,
             text: '알수없음',
           };
       }
@@ -115,7 +115,7 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
 
     if (displayDevices.length === 0) {
       return (
-        <div className='text-gray-400 text-center py-8 font-medium animate-fade-in'>표시할 디바이스가 없습니다.</div>
+        <div className='text-gray-400 dark:text-gray-500 text-center py-8 font-medium animate-fade-in'>표시할 디바이스가 없습니다.</div>
       );
     }
 

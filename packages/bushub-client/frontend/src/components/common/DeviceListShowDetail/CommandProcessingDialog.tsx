@@ -31,31 +31,31 @@ export const CommandProcessingDialog: React.FC<CommandProcessingDialogProps> = (
     switch (status) {
       case 'waiting':
         return {
-          icon: <Loader2 className='w-6 h-6 animate-spin text-blue-500' />,
+          icon: <Loader2 className='w-6 h-6 animate-spin text-blue-500 dark:text-blue-400' />,
           title: '명령 처리 중...',
           description: `${deviceName || '디바이스'}의 ${unitName || '유닛'}에 ${action || '명령'}을 실행하고 있습니다.`,
-          className: 'text-blue-600',
+          className: 'text-blue-600 dark:text-blue-400',
         };
       case 'success':
         return {
-          icon: <Loader2 className='w-6 h-6 text-green-500' />, // 스피너 유지, 색상만 변경
+          icon: <Loader2 className='w-6 h-6 text-green-500 dark:text-green-400' />, // 스피너 유지, 색상만 변경
           title: '명령 처리 완료', // 제목 유지
           description: `${action || '명령'}이 성공적으로 실행되었습니다.`, // 설명만 변경
-          className: 'text-green-600',
+          className: 'text-green-600 dark:text-green-400',
         };
       case 'fail':
         return {
-          icon: <XCircle className='w-6 h-6 text-red-500' />,
+          icon: <XCircle className='w-6 h-6 text-red-500 dark:text-red-400' />,
           title: '명령 실행 실패',
           description: error || '명령 실행 중 오류가 발생했습니다.',
-          className: 'text-red-600',
+          className: 'text-red-600 dark:text-red-400',
         };
       default:
         return {
-          icon: <Clock className='w-6 h-6 text-gray-500' />,
+          icon: <Clock className='w-6 h-6 text-gray-500 dark:text-gray-400' />,
           title: '알 수 없는 상태',
           description: '명령 상태를 확인할 수 없습니다.',
-          className: 'text-gray-600',
+          className: 'text-gray-600 dark:text-gray-400',
         };
     }
   };
@@ -96,7 +96,7 @@ export const CommandProcessingDialog: React.FC<CommandProcessingDialogProps> = (
           {/* 진행률 표시 */}
           {(status === 'waiting' || status === 'success') && progress.total > 0 && (
             <div className='space-y-2'>
-              <div className='flex justify-between text-sm text-gray-600'>
+              <div className='flex justify-between text-sm text-gray-600 dark:text-gray-400'>
                 <span>진행률</span>
                 <span>
                   {progress.current} / {progress.total}
@@ -107,12 +107,12 @@ export const CommandProcessingDialog: React.FC<CommandProcessingDialogProps> = (
           )}
 
           {/* 상태 설명 */}
-          <p className='text-sm text-gray-600'>{statusInfo.description}</p>
+          <p className='text-sm text-gray-600 dark:text-gray-400'>{statusInfo.description}</p>
 
           {/* 에러 메시지 */}
           {status === 'fail' && error && (
-            <div className='p-3 bg-red-50 border border-red-200 rounded-md'>
-              <p className='text-sm text-red-600'>{error}</p>
+            <div className='p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-md'>
+              <p className='text-sm text-red-600 dark:text-red-400'>{error}</p>
             </div>
           )}
 

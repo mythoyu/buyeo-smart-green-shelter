@@ -48,6 +48,7 @@ export const smartcityMetaHelpers = {
         icon: 'Gauge',
         color: 'text-gray-400',
         bgColor: 'bg-gray-50',
+        avatarBg: 'bg-gray-50 dark:bg-gray-700',
         borderColor: 'border-gray-200',
         gradient: 'from-gray-50 to-slate-50',
       }
@@ -79,20 +80,20 @@ export const smartcityMetaHelpers = {
   // 명령 타입별 스타일 정보 가져오기
   getCommandBadgeStyle: (cmd: CommandConfig) => {
     let badgeVariant: 'default' | 'secondary' | 'outline' = 'outline';
-    let badgeClassName = 'px-2 py-1 text-xs border border-gray-200 bg-gray-50 text-gray-500';
+    let badgeClassName = 'px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-300';
 
     if (cmd.type === 'boolean') {
       badgeVariant = 'default';
-      badgeClassName = 'px-2 py-1 text-xs border border-green-200 bg-green-50 text-green-700';
+      badgeClassName = 'px-2 py-1 text-xs border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-200';
     } else if (cmd.type === 'float' || cmd.type === 'int') {
       badgeVariant = 'default';
-      badgeClassName = 'px-2 py-1 text-xs border border-blue-200 bg-blue-50 text-blue-700';
+      badgeClassName = 'px-2 py-1 text-xs border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-200';
     } else if (Array.isArray(cmd.options)) {
       badgeVariant = 'default';
-      badgeClassName = 'px-2 py-1 text-xs border border-purple-200 bg-purple-50 text-purple-700';
+      badgeClassName = 'px-2 py-1 text-xs border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-200';
     } else {
       badgeVariant = 'default';
-      badgeClassName = 'px-2 py-1 text-xs border border-blue-200 bg-blue-50 text-blue-700';
+      badgeClassName = 'px-2 py-1 text-xs border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-200';
     }
 
     return {

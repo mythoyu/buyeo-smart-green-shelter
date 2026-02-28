@@ -10,7 +10,7 @@ export const getAnimationDelay = (deviceIndex: number, unitIndex: number, comman
 
 // 디바이스 카드 스타일링
 export const getDeviceCardStyles = () => ({
-  container: `p-3 flex flex-col gap-3 bg-white border-2 border-gray-300 shadow-sm hover:border-blue-400 transition-colors duration-200 rounded-lg`,
+  container: `p-3 flex flex-col gap-3 bg-white dark:bg-card border-2 border-gray-300 dark:border-gray-600 shadow-sm hover:border-blue-400 dark:hover:border-primary/50 transition-colors duration-200 rounded-lg`,
   animation: 'fadeInUp 0.6s ease-out forwards',
 });
 
@@ -18,8 +18,8 @@ export const getDeviceCardStyles = () => ({
 export const getUnitCardStyles = (isSelected: boolean) => ({
   container: `flex flex-col text-sm px-0 py-3 rounded-lg cursor-pointer transition-all duration-300 ease-out flex-shrink-0 border transform ${
     isSelected
-      ? 'bg-blue-50 border-blue-300 shadow-md'
-      : 'bg-gray-50 hover:bg-blue-50 border-gray-200 hover:border-blue-200 hover:shadow-sm'
+      ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 shadow-md'
+      : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-950/30 border-gray-200 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-sm'
   }`,
   animation: 'fadeInUp 0.4s ease-out forwards',
 });
@@ -142,15 +142,15 @@ export const getInitialFormValues = (unit: Unit, deviceSpec: DeviceSpec): Record
 export const getBadgeStyles = (status: string) => {
   switch (status) {
     case 'pending':
-      return 'text-blue-600 bg-blue-50 border-blue-200';
+      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800';
     case 'success':
-      return 'text-green-600 bg-green-50 border-green-200';
+      return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800';
     case 'failed':
-      return 'text-red-600 bg-red-50 border-red-200';
+      return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';
     case 'mixed':
-      return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800';
     default:
-      return 'text-gray-600 bg-gray-50 border-gray-200';
+      return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600';
   }
 };
 

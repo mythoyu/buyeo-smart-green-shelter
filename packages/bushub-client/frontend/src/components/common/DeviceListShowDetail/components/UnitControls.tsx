@@ -40,7 +40,7 @@ export const UnitControls: React.FC<UnitControlsProps> = ({
           onMouseDown={e => e.stopPropagation()}
           onMouseUp={e => e.stopPropagation()}
         >
-          <Power className={`w-3 h-3 ${autoValue ? 'text-gray-300' : 'text-gray-400'}`} />
+          <Power className={`w-3 h-3 ${autoValue ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400 dark:text-gray-500'}`} />
           <Switch
             checked={powerValue}
             onCheckedChange={onPowerChange}
@@ -60,7 +60,7 @@ export const UnitControls: React.FC<UnitControlsProps> = ({
           onMouseDown={e => e.stopPropagation()}
           onMouseUp={e => e.stopPropagation()}
         >
-          <TimerIcon className='w-3 h-3 text-gray-400' />
+          <TimerIcon className='w-3 h-3 text-gray-400 dark:text-gray-500' />
           <Switch checked={autoValue} onCheckedChange={onAutoChange} className='scale-75' disabled={isProcessing} />
         </div>
       )}

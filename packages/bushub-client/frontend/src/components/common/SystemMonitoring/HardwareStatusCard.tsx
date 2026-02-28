@@ -95,7 +95,7 @@ const HardwareStatusCard: React.FC<HardwareStatusCardProps> = ({ data }) => {
 
           {/* DDC 상태 */}
           <Collapsible>
-            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 rounded'>
+            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors'>
               <div className='flex items-center gap-2'>
                 <Badge variant={getStatusVariant(data.ddc.connected)} className='text-xs'>
                   {data.ddc.connected ? '연결' : '연결안됨'}
@@ -127,7 +127,7 @@ const HardwareStatusCard: React.FC<HardwareStatusCardProps> = ({ data }) => {
 
           {/* Modbus 상태 */}
           <Collapsible>
-            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 rounded'>
+            <CollapsibleTrigger className='flex justify-between items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors'>
               <div className='flex items-center gap-2'>
                 <Badge variant={getStatusVariant(data.modbus.isConnected)} className='text-xs'>
                   {data.modbus.isConnected ? '연결' : '연결안됨'}

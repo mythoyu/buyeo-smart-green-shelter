@@ -17,7 +17,10 @@ import {
   Train,
   MapPin,
   UserCheck,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -76,6 +79,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const { user } = useAuth();
   const { client } = useLayoutData();
+  const { resolvedTheme, setTheme } = useTheme();
 
   // 현장 타입에 따라 아이콘 반환
   const getClientIcon = () => {
@@ -398,6 +402,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             )}
           </div>
 
+          {/* 라이트/다크 모드 전환 */}
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-9 w-9 shrink-0'
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            title={resolvedTheme === 'dark' ? '라이트 모드' : '다크 모드'}
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun className='h-4 w-4 text-muted-foreground' />
+            ) : (
+              <Moon className='h-4 w-4 text-muted-foreground' />
+            )}
+          </Button>
+
           {/* FAB 버튼들 - 헤더에 통합 */}
           <div className='flex items-center gap-2'>
             {/* 폴링 버튼 */}
@@ -407,8 +426,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 border transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]
                 ${
                   pollingState?.pollingEnabled
-                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-700'
-                    : 'bg-gray-400 hover:bg-gray-500 text-white border-gray-500'
+                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white border-green-700 dark:border-green-500'
+                    : 'bg-gray-400 hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500 text-white border-gray-500 dark:border-gray-500'
                 }
               `}
               disabled={pollingStateLoading || updatePollingStateMutation.isPending || pollingState?.applyInProgress}
@@ -424,8 +443,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 rounded-lg shadow-sm w-10 h-10 flex items-center justify-center relative border transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]
                 ${
                   errorPanelOpen
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600'
-                    : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-900 border-yellow-200'
+                    ? 'bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 text-white border-yellow-600 dark:border-yellow-500'
+                    : 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/50 dark:hover:bg-yellow-800/50 text-yellow-900 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700'
                 }
               `}
               onClick={toggleErrorPanel}
@@ -433,7 +452,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             >
               <AlertTriangle
                 size={18}
-                className={errorPanelOpen ? 'text-white' : 'text-yellow-700'}
+                className={errorPanelOpen ? 'text-white' : 'text-yellow-700 dark:text-yellow-300'}
               />
               {errorCount > 0 && (
                 <span className='absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium text-[10px]'>
@@ -448,8 +467,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 rounded-lg shadow-sm w-10 h-10 flex items-center justify-center border transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]
                 ${
                   isLogPanelOpen
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
-                    : 'bg-blue-50 hover:bg-blue-100 text-blue-900 border-blue-200'
+                    ? 'bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white border-blue-600 dark:border-blue-500'
+                    : 'bg-blue-50 hover:bg-blue-100 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-900 dark:text-gray-200 border-blue-200 dark:border-gray-600'
                 }
               `}
               onClick={() => {
@@ -458,7 +477,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               }}
               title={isLogPanelOpen ? '로그 패널 닫기' : '로그 패널 열기'}
             >
-              <MessageSquare size={18} className={isLogPanelOpen ? 'text-white' : 'text-blue-700'} />
+              <MessageSquare size={18} className={isLogPanelOpen ? 'text-white' : 'text-blue-700 dark:text-gray-300'} />
             </Button>
           </div>
         </div>
@@ -480,7 +499,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         className={`
           fixed top-16 bottom-0 left-0 z-50 w-20 transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          bg-card border-r border-gray-200 shadow-lg
+          bg-card border-r border-gray-200 dark:border-gray-600 shadow-lg
           flex flex-col
         `}
       >

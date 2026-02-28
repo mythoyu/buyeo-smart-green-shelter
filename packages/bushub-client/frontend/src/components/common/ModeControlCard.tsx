@@ -241,7 +241,7 @@ const ModeControlCard = React.forwardRef<HTMLDivElement, ModeControlCardProps>(
                 size='default'
                 onClick={() => handleModeChange(false)}
                 disabled={isLoading || selectedUnitKeys.size === 0 || selectedUnitsCount === 0}
-                className='w-full h-12 border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-primary font-medium text-sm'
+                className='w-full h-12 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-primary font-medium text-sm'
               >
                 <div className='flex items-center gap-2'>
                   <Hand className='w-4 h-4' />
@@ -253,7 +253,7 @@ const ModeControlCard = React.forwardRef<HTMLDivElement, ModeControlCardProps>(
                 size='default'
                 onClick={() => handleModeChange(true)}
                 disabled={isLoading || selectedUnitKeys.size === 0 || selectedUnitsCount === 0}
-                className='w-full h-12 border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-primary font-medium text-sm'
+                className='w-full h-12 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-primary font-medium text-sm'
               >
                 <div className='flex items-center gap-2'>
                   <TimerIcon className='w-4 h-4' />
@@ -272,7 +272,7 @@ const ModeControlCard = React.forwardRef<HTMLDivElement, ModeControlCardProps>(
                 size='default'
                 onClick={() => handlePowerChange(false)}
                 disabled={isLoading || selectedUnitKeys.size === 0 || selectedUnitsCount === 0}
-                className='w-full h-12 border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-primary font-medium text-sm'
+                className='w-full h-12 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-primary font-medium text-sm'
               >
                 <div className='flex items-center gap-2'>
                   <Power className='w-4 h-4' />
@@ -284,7 +284,7 @@ const ModeControlCard = React.forwardRef<HTMLDivElement, ModeControlCardProps>(
                 size='default'
                 onClick={() => handlePowerChange(true)}
                 disabled={isLoading || selectedUnitKeys.size === 0 || selectedUnitsCount === 0}
-                className='w-full h-12 border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-primary font-medium text-sm'
+                className='w-full h-12 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-primary font-medium text-sm'
               >
                 <div className='flex items-center gap-2'>
                   <Power className='w-4 h-4' />
@@ -315,7 +315,7 @@ const ModeControlCard = React.forwardRef<HTMLDivElement, ModeControlCardProps>(
                 >
                   <Checkbox checked={allSelected} onCheckedChange={toggleAllUnits} onClick={e => e.stopPropagation()} />
                   <div className='flex items-center gap-2'>
-                    <div className='flex items-center justify-center w-6 h-6 rounded bg-muted [&>svg]:w-full [&>svg]:h-full text-gray-600'>
+                    <div className='flex items-center justify-center w-6 h-6 rounded bg-muted [&>svg]:w-full [&>svg]:h-full text-gray-600 dark:text-gray-400'>
                       <CheckSquare2 className='w-full h-full' />
                     </div>
                     <span className='text-xs text-muted-foreground font-medium'>
@@ -359,7 +359,7 @@ const ModeControlCard = React.forwardRef<HTMLDivElement, ModeControlCardProps>(
                         />
                         <div className='flex items-center gap-2'>
                           <div
-                            className={`flex items-center justify-center w-6 h-6 rounded [&>svg]:w-full [&>svg]:h-full text-gray-600 ${bgColor}`}
+                            className={`flex items-center justify-center w-6 h-6 rounded [&>svg]:w-full [&>svg]:h-full text-gray-600 dark:text-gray-400 ${bgColor}`}
                           >
                             {deviceIcon}
                           </div>

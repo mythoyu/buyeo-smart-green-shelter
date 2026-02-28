@@ -56,8 +56,8 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
   return (
     <div className='mb-3'>
       <div className='flex items-center justify-between mb-1'>
-        <Label className='text-sm font-medium text-gray-700'>{label}</Label>
-        {description && <span className='text-xs text-gray-500 ml-2'>{description}</span>}
+        <Label className='text-sm font-medium text-gray-700 dark:text-gray-300'>{label}</Label>
+        {description && <span className='text-xs text-gray-500 dark:text-gray-400 ml-2'>{description}</span>}
       </div>
       <div className='relative'>
         <Input
@@ -68,9 +68,9 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
           disabled={disabled}
           autoComplete={type === 'password' ? 'new-password' : 'off'}
           data-lpignore={type === 'password' ? 'true' : undefined}
-          className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white text-gray-900 placeholder:text-xs placeholder:text-gray-400 hover:border-blue-300 ${
-            error ? 'border-red-400' : 'border-gray-300'
-          } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+          className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 hover:border-blue-300 dark:hover:border-gray-500 ${
+            error ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
+          } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''}`}
           style={
             type === 'password' && !showPassword
               ? ({
@@ -87,7 +87,7 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
             onClick={handleSetDefaultValue}
             disabled={disabled}
             aria-disabled={disabled}
-            className={`absolute top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-blue-600 transition-colors duration-200 ${
+            className={`absolute top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 ${
               showPasswordToggle && type === 'password' ? 'right-12' : 'right-3'
             } ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
             aria-label='기본값으로 설정'
@@ -104,7 +104,7 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
             onClick={handleTogglePassword}
             disabled={disabled}
             aria-disabled={disabled}
-            className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 transition-colors duration-200 ${
+            className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200 ${
               disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
             }`}
             aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
@@ -113,7 +113,7 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
           </button>
         )}
       </div>
-      {error && <div className='text-xs text-red-500 mt-1'>{error}</div>}
+      {error && <div className='text-xs text-red-500 dark:text-red-400 mt-1'>{error}</div>}
     </div>
   );
 };
