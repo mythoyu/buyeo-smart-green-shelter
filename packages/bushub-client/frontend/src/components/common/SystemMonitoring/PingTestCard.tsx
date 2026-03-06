@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Wifi, CheckCircle, XCircle, Clock, Activity } from 'lucide-react';
 
 import { Button } from '../../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { Badge } from '../../ui/badge';
 import { usePingTest } from '../../../api/queries/system';
 import { toast } from 'sonner';
+import { MonitoringCard } from './MonitoringCard';
 
 interface PingTestResult {
   ip: string;
@@ -82,15 +82,8 @@ const PingTestCard: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <Wifi className='h-5 w-5' />
-          Ping 테스트
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className='space-y-4'>
+    <MonitoringCard icon={Wifi} title='Ping 테스트'>
+      <div className='space-y-4'>
           {/* IP 입력 */}
           <div className='space-y-3'>
             <Label htmlFor='ping-ip' className='text-sm font-medium'>
@@ -216,9 +209,8 @@ const PingTestCard: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </MonitoringCard>
   );
 };
 

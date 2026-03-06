@@ -11,6 +11,8 @@ import { RightSidebarItem } from '../layout/RightSidebar';
 import { PollingDialog } from '../common/PollingDialog';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { PageSectionLoading } from '../common/PageSectionLoading';
+import { LOADING_MESSAGES } from '../../constants/loadingMessages';
 
 import type { HardwareControlError } from '../../types/hardware';
 
@@ -60,27 +62,6 @@ const AccessDeniedCard = React.memo(() => (
   </div>
 ));
 AccessDeniedCard.displayName = 'AccessDeniedCard';
-
-// 로딩 카드 컴포넌트
-const LoadingCard = React.memo(() => (
-  <div className='w-full p-6'>
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <Cpu className='h-5 w-5' />
-          {CONSTANTS.TITLES.LOADING}
-        </CardTitle>
-        <CardDescription>{CONSTANTS.MESSAGES.LOADING_DESCRIPTION}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className='flex items-center justify-center py-8'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-));
-LoadingCard.displayName = 'LoadingCard';
 
 // 에러 카드 컴포넌트
 const ErrorCard = React.memo<{ error: HardwareControlError; onRetry: () => void }>(({ error, onRetry }) => (
@@ -283,7 +264,7 @@ const HardwareControlPage: React.FC = React.memo(() => {
 
   // 폴링 로딩 중
   if (pollingLoading) {
-    return <LoadingCard />;
+    return <PageSectionLoading message={LOADING_MESSAGES.hardwareControl} />;
   }
 
   // 에러가 있는 경우

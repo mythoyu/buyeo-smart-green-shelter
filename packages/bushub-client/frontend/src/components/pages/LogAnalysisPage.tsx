@@ -8,6 +8,8 @@ import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { TopLogPanel } from '../common/TopLogPanel';
+import { PageSectionLoading } from '../common/PageSectionLoading';
+import { LOADING_MESSAGES } from '../../constants/loadingMessages';
 import {
   Badge,
   Button,
@@ -558,30 +560,30 @@ export default function LogAnalysisPage() {
             {/* 파일 목록 로딩 */}
             {isFilesLoading && (
               <div className='flex-1 flex items-center justify-center'>
-                <div className='text-center py-8'>
-                  <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
-                  <p className='text-muted-foreground'>파일 목록을 불러오는 중...</p>
-                </div>
+                <PageSectionLoading
+                  message={LOADING_MESSAGES.logFiles}
+                  minHeightClass='min-h-[200px]'
+                />
               </div>
             )}
 
             {/* 로그 내용 로딩 */}
             {isContentLoading && (
               <div className='flex-1 flex items-center justify-center'>
-                <div className='text-center py-8'>
-                  <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
-                  <p className='text-muted-foreground'>로그 내용을 불러오는 중...</p>
-                </div>
+                <PageSectionLoading
+                  message={LOADING_MESSAGES.logContent}
+                  minHeightClass='min-h-[200px]'
+                />
               </div>
             )}
 
             {/* 검색 로딩 */}
             {isSearchLoading && (
               <div className='flex-1 flex items-center justify-center'>
-                <div className='text-center py-8'>
-                  <RefreshCw className='w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground' />
-                  <p className='text-muted-foreground'>검색 중...</p>
-                </div>
+                <PageSectionLoading
+                  message={LOADING_MESSAGES.logSearch}
+                  minHeightClass='min-h-[200px]'
+                />
               </div>
             )}
 

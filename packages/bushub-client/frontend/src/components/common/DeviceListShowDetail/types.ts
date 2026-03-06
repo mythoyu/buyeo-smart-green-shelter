@@ -44,6 +44,9 @@ export interface DeviceStyle {
   textColor?: string;
 }
 
+// 장비 카드 표시 방식
+export type DeviceCardVariant = 'default' | 'panel';
+
 export interface StatusConfig {
   variant: 'default' | 'secondary' | 'destructive' | 'outline';
   className: string;
@@ -119,6 +122,7 @@ export interface DeviceListShowDetailProps {
   deviceStyles: Record<string, DeviceStyle>;
   onExecuteAction?: (deviceId: string, unitId: string, action: any, value?: any) => Promise<void>;
   getAvailableActions?: (deviceId: string) => Record<string, any>;
+  cardVariant?: DeviceCardVariant;
 }
 
 export interface DeviceCardProps {
@@ -144,6 +148,7 @@ export interface DeviceCardProps {
   onAutoModeChange: (device: Device, unit: Unit, autoMode: boolean) => void;
   onPowerChange: (device: Device, unit: Unit, powerMode: boolean) => void;
   devices?: Device[]; // 모든 장비 목록
+  cardVariant?: DeviceCardVariant;
 }
 
 export interface UnitCardProps {
@@ -167,6 +172,8 @@ export interface UnitCardProps {
   handlePaste: (key: string) => void;
   devices?: Device[]; // 모든 장비 목록
   deviceSpecs?: Record<string, DeviceSpec>; // 장비 스펙
+  /** 패널형 카드 등에서 모달(설정 다이얼로그)만 렌더링할 때 사용 */
+  renderSettingsDialogOnly?: boolean;
 }
 
 export interface UnitSettingsProps {

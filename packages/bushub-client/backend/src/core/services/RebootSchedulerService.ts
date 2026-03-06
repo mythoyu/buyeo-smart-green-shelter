@@ -84,14 +84,22 @@ export class RebootSchedulerService {
     );
 
     // lastExecutedAt 업데이트 (하루 1회 보장용)
-    await this.systemRepository.updateSettings({
-      runtime: {
-        rebootSchedule: {
-          ...schedule,
-          lastExecutedAt: now,
-        },
+    const currentSettings = await this.systemService.getSettings();
+    const currentRuntime: Partial<NonNullable<SystemSettings['runtime']>> =
+      currentSettings?.runtime ?? {};
+    const runtime: NonNullable<SystemSettings['runtime']> = {
+      pollingEnabled: currentRuntime.pollingEnabled ?? true,
+      pollingInterval: currentRuntime.pollingInterval ?? 60,
+      applyInProgress: currentRuntime.applyInProgress ?? false,
+      ...(currentRuntime.peopleCounterEnabled !== undefined && {
+        peopleCounterEnabled: currentRuntime.peopleCounterEnabled,
+      }),
+      rebootSchedule: {
+        ...schedule,
+        lastExecutedAt: now,
       },
-    });
+    };
+    await this.systemRepository.updateSettings({ runtime });
 
     await this.triggerHostReboot('schedule');
   }

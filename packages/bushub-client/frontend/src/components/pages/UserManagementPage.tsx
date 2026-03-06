@@ -39,7 +39,8 @@ import {
   createDefaultApiKey,
   filterUsersByRole,
 } from '../../utils/userDataProcessor';
-import { PageLoading } from '../common/LoadingPanel';
+import { PageSectionLoading } from '../common/PageSectionLoading';
+import { LOADING_MESSAGES } from '../../constants/loadingMessages';
 import { TopLogPanel } from '../common/TopLogPanel';
 import {
   Badge,
@@ -358,7 +359,7 @@ export default function UserManagementPage() {
   };
 
   if (loading) {
-    return <PageLoading text='사용자 정보를 불러오는 중입니다...' />;
+    return <PageSectionLoading message={LOADING_MESSAGES.userManagement} />;
   }
 
   if (error) {

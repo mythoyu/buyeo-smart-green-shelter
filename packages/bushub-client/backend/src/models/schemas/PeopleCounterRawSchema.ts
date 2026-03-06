@@ -6,6 +6,8 @@ export interface IPeopleCounterRaw extends Document {
   unitId: string;
   timestamp: Date;
   inCumulative: number;
+  inDelta?: number; // 1분 동안 입실 증가분 (신규 1분 저장 시 필수)
+  inRef?: number; // 해당 분 시점 입실 누적값 (신규 1분 저장 시 필수)
   outCumulative: number;
   currentCount: number;
   output1: boolean;
@@ -26,6 +28,8 @@ const PeopleCounterRawSchema = new Schema<IPeopleCounterRaw>(
     unitId: { type: String, required: true, default: 'u001' },
     timestamp: { type: Date, required: true, index: true },
     inCumulative: { type: Number, required: true },
+    inDelta: { type: Number },
+    inRef: { type: Number },
     outCumulative: { type: Number, required: true },
     currentCount: { type: Number, required: true },
     output1: { type: Boolean, required: true },

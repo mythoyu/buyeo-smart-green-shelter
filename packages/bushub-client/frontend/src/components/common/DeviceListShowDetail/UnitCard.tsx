@@ -63,6 +63,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   handlePaste,
   devices = [],
   deviceSpecs = {},
+  renderSettingsDialogOnly = false,
 }) => {
   const navigate = useNavigate();
   const isPeopleCounter = device.type === 'people_counter' || device.id === 'd082';
@@ -260,6 +261,94 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     }
   };
 
+  const settingsDialog =
+    canShowSettings && (deviceSpec?.commands?.length ?? 0) > 0 && !isPeopleCounter ? (
+      <Dialog
+        open={isSelected}
+        onOpenChange={open => {
+          if (!open) {
+            onCancel();
+          }
+        }}
+      >
+        <DialogContent
+          className='max-w-[calc(100%-2rem)] sm:max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden border-gray-200/50 dark:border-gray-600 shadow-xl'
+          onClick={e => e.stopPropagation()}
+          showCloseButton={false}
+        >
+          {/* 헤더 */}
+          <DialogHeader className='px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 via-primary/5 to-transparent'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-4'>
+                <div className='w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm'>
+                  <Settings className='w-6 h-6 text-primary' />
+                </div>
+                <div>
+                  <DialogTitle className='text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
+                    {device.name || device.id}
+                  </DialogTitle>
+                  <DialogDescription className='text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2'>
+                    <span className='font-medium'>{unit.name || unit.id}</span>
+                    <span className='text-gray-400 dark:text-gray-500'>·</span>
+                    <span>{deviceSpec?.deviceName || device.type}</span>
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* 컨텐츠 영역 - 스크롤 가능 */}
+          <div className='flex-1 overflow-y-auto px-6 py-6 min-h-0 custom-scrollbar'>
+            <UnitSettings
+              unit={unit}
+              device={device}
+              deviceSpec={deviceSpec}
+              unitForm={unitForm}
+              onFormChange={onFormChange}
+              onSave={handleSaveWithCommandManager}
+              onCancel={onCancel}
+              bulkCommandsMutation={null}
+              bulkStatus={bulkStatus}
+              handleCopy={handleCopy}
+              handlePaste={handlePaste}
+              devices={devices}
+              deviceSpecs={deviceSpecs}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    ) : null;
+
+  if (renderSettingsDialogOnly) {
+    return (
+      <>
+        {settingsDialog}
+        {/* 패널 설정 모달에서 저장 시 로딩/진행률 표시 */}
+        <CommandProcessingDialog
+          isOpen={showDialog}
+          onClose={() => {
+            setShowDialog(false);
+            if (commandManager.commandStatus === 'loading') {
+              commandManager.resetStatus();
+            }
+          }}
+          status={
+            commandManager.commandStatus === 'idle' || commandManager.commandStatus === 'loading'
+              ? 'waiting'
+              : commandManager.commandStatus === 'success'
+                ? 'success'
+                : 'fail'
+          }
+          progress={commandManager.progress}
+          error={commandManager.error}
+          deviceName={device.name || device.id}
+          unitName={unit.name || unit.id}
+          action={deviceSpec?.commands?.find((cmd: any) => cmd.key === 'power' || cmd.key === 'auto')?.label || '명령'}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <div
@@ -438,62 +527,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
           </CardContent>
 
           {/* 유닛 설정 다이얼로그 (명령이 있는 장비만, 피플카운터 제외) */}
-          {canShowSettings && (deviceSpec?.commands?.length ?? 0) > 0 && !isPeopleCounter && (
-            <Dialog
-              open={isSelected}
-              onOpenChange={open => {
-                if (!open) {
-                  onCancel();
-                }
-              }}
-            >
-              <DialogContent
-                className='max-w-[calc(100%-2rem)] sm:max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden border-gray-200/50 dark:border-gray-600 shadow-xl'
-                onClick={e => e.stopPropagation()}
-                showCloseButton={false}
-              >
-                {/* 헤더 */}
-                <DialogHeader className='px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary/5 via-primary/5 to-transparent'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-4'>
-                      <div className='w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm'>
-                        <Settings className='w-6 h-6 text-primary' />
-                      </div>
-                      <div>
-                        <DialogTitle className='text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
-                          {device.name || device.id}
-                        </DialogTitle>
-                        <DialogDescription className='text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2'>
-                          <span className='font-medium'>{unit.name || unit.id}</span>
-                          <span className='text-gray-400 dark:text-gray-500'>·</span>
-                          <span>{deviceSpec?.deviceName || device.type}</span>
-                        </DialogDescription>
-                      </div>
-                    </div>
-                  </div>
-                </DialogHeader>
-
-                {/* 컨텐츠 영역 - 스크롤 가능 */}
-                <div className='flex-1 overflow-y-auto px-6 py-6 min-h-0 custom-scrollbar'>
-                  <UnitSettings
-                    unit={unit}
-                    device={device}
-                    deviceSpec={deviceSpec}
-                    unitForm={unitForm}
-                    onFormChange={onFormChange}
-                    onSave={handleSaveWithCommandManager}
-                    onCancel={onCancel}
-                    bulkCommandsMutation={null}
-                    bulkStatus={bulkStatus}
-                    handleCopy={handleCopy}
-                    handlePaste={handlePaste}
-                    devices={devices}
-                    deviceSpecs={deviceSpecs}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+          {settingsDialog}
         </Card>
       </div>
 

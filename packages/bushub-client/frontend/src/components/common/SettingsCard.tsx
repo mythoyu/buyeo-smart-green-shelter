@@ -35,7 +35,7 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
   headerExtra,
 }) => {
   return (
-    <div className='p-6 space-y-4 border border-gray-200 dark:border-gray-600 rounded-lg'>
+    <div className='p-6 space-y-4 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors duration-200 hover:border-blue-400 dark:hover:border-primary/50'>
       {/* 카드 헤더 */}
       <div className='flex items-center gap-3'>
         <div className='w-10 h-10 bg-muted dark:bg-gray-700 rounded-lg flex items-center justify-center'>

@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Server, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 import { Button } from '../../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { useCheckExternalServer } from '../../../api/queries/system';
 import { toast } from 'sonner';
+import { MonitoringCard } from './MonitoringCard';
 
 interface ExternalCheckResult {
   url: string;
@@ -77,15 +77,8 @@ const SuperiorServerStatusCard: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <Server className='h-5 w-5' />
-          외부 서버 상태 확인
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className='space-y-4'>
+    <MonitoringCard icon={Server} title='외부 서버 상태 확인'>
+      <div className='space-y-4'>
           {/* URL 입력 */}
           <div className='space-y-3'>
             <Label htmlFor='external-url' className='text-sm font-medium'>
@@ -185,9 +178,8 @@ const SuperiorServerStatusCard: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </MonitoringCard>
   );
 };
 

@@ -10,7 +10,7 @@ export const getAnimationDelay = (deviceIndex: number, unitIndex: number, comman
 
 // 디바이스 카드 스타일링
 export const getDeviceCardStyles = () => ({
-  container: `p-3 flex flex-col gap-3 bg-white dark:bg-card border-2 border-gray-300 dark:border-gray-600 shadow-sm hover:border-blue-400 dark:hover:border-primary/50 transition-colors duration-200 rounded-lg`,
+  container: `p-3 flex flex-col gap-3 bg-white dark:bg-card border border-gray-200 dark:border-gray-600 shadow-sm hover:border-blue-400 dark:hover:border-primary/50 transition-colors duration-200 rounded-lg`,
   animation: 'fadeInUp 0.6s ease-out forwards',
 });
 

@@ -49,3 +49,4 @@ export * from './sonner';
 export * from './tabs';
 export * from './toggle-group';
 export * from './toggle';
+export * from './floating-label-button';

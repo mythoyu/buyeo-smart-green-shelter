@@ -36,6 +36,7 @@ export class ServerInitializer {
     modbusService: false,
     ddcTimeSync: false, // 🎯 추가
     pollingRecovery: false, // 🔄 추가
+    hostRebootScheduler: false,
   };
 
   private serviceContainer: any;

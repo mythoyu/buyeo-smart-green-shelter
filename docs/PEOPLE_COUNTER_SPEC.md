@@ -40,8 +40,8 @@
 
 ### 2.3 통신 주기
 
-- **조회 주기**: 1초 (최소 권장 주기)
-- **데이터 저장 조건**: IN누적 인원이 변경된 경우에만 로우데이터 저장
+- **폴링 주기**: 10초 (환경 변수 `PEOPLE_COUNTER_POLL_INTERVAL` 기본값 10000ms)
+- **로우데이터 저장**: 1분당 1건 (분 경계 시점에 해당 분의 `inDelta`, `inRef` 저장)
 
 ---
 
@@ -87,17 +87,21 @@
 }
 ```
 
-### 3.3 로우데이터 구조
+### 3.3 로우데이터 구조 (1분 단위)
+
+한 문서가 1분 구간 하나를 나타냅니다. `timestamp`는 해당 분의 시작 시각입니다.
 
 ```typescript
 {
   clientId: string,
   deviceId: "d082",
   unitId: "u001",
-  timestamp: Date,                  // 데이터 수집 시간
-  inCumulative: number,             // 입실 누적 인원
-  outCumulative: number,           // 퇴실 누적 인원
-  currentCount: number,             // 현재 인원
+  timestamp: Date,                  // 해당 분의 시작 시각
+  inCumulative: number,             // 해당 분 시점의 입실 누적 (inRef와 동일)
+  inDelta: number,                  // 해당 1분 동안의 입실 증가분
+  inRef: number,                    // 해당 분 시점의 입실 누적 (근거/리셋 판단용)
+  outCumulative: number,
+  currentCount: number,
   output1: boolean,
   output2: boolean,
   countEnabled: boolean,
@@ -114,37 +118,36 @@
 ### 4.1 실시간 데이터 (Data Collection)
 
 - **저장 위치**: `data` 컬렉션
-- **업데이트 주기**: 1초마다 읽기 (IN누적 변경 시에만 업데이트)
-- **저장 조건**: IN누적 인원(`inCumulative`)이 이전 값과 다를 때만 저장
+- **폴링 주기**: 10초
+- **저장 조건**: IN누적 인원(`inCumulative`)이 이전 값과 다를 때만 업데이트
 
-### 4.2 로우데이터 (Raw Data)
+### 4.2 로우데이터 (Raw Data, 1분 단위)
 
-- **저장 위치**: `people_counter_raw` 컬렉션 (새로운 컬렉션)
-- **보관 기간**: 30일
-- **저장 조건**: IN누적 인원이 변경된 경우에만 저장
-- **자동 삭제**: 30일 경과 데이터는 자동 삭제 (Cron Job 또는 TTL Index)
+- **저장 위치**: `people_counter_raw` 컬렉션
+- **보관 기간**: 30일 (TTL 인덱스)
+- **저장 주기**: 1분당 1건. 분 경계를 넘을 때 직전 분에 대해 한 건 저장.
+- **저장 필드**: `inDelta`(해당 1분 동안 입실 증가분), `inRef`(해당 분 시점 입실 누적). 리셋 시 `inCumulative` 감소하면 해당 분의 `inDelta`는 리셋 후 누적값으로 저장.
 
 ### 4.3 데이터 저장 로직
 
 ```typescript
-// 의사코드
-const currentData = await readFromAPC100();
-const lastData = await getLastDataFromDB();
-
-if (currentData.inCumulative !== lastData.inCumulative) {
-  // 실시간 데이터 업데이트
-  await updateDataCollection({
-    deviceId: "d082",
-    unitId: "u001",
-    data: currentData
-  });
-  
-  // 로우데이터 저장
-  await saveRawData({
-    ...currentData,
-    timestamp: new Date()
-  });
-}
+// 의사코드 (10초 폴링, 1분 저장)
+every 10s:
+  data = readFromAPC100();
+  if (data.inCumulative !== lastInCumulative) {
+    updateDataCollection(data);
+    lastInCumulative = data.inCumulative;
+  }
+  if (currentMinute !== lastSavedMinute) {
+    saveOneMinuteRaw({
+      timestamp: lastSavedMinuteStart,
+      inDelta: currentIn - refAtStartOfMinute,  // 또는 리셋 시 currentIn
+      inRef: currentIn,
+      ...
+    });
+    refAtStartOfMinute = currentIn;
+    lastSavedMinute = currentMinute;
+  }
 ```
 
 ---
@@ -294,6 +297,31 @@ if (currentData.inCumulative !== lastData.inCumulative) {
 - **응답 구조**:
   - `data.date`, `data.timezone`, `data.buckets` 필드 구조는 외부 API와 동일합니다.
 
+### 5.5 10분 단위 사용량 API (상위 플랫폼용)
+
+- **엔드포인트**: `GET /api/v1/external/people-counter/usage-10min`
+- **설명**: 지정 구간을 10분 버킷으로 나누어, 각 버킷별 입실 수(`inCount`)만 제공합니다. 요청/응답은 KST 기준입니다.
+- **Query Parameters** (하나의 방식만 지정):
+  - `date`: `YYYY-MM-DD` — 해당 일 00:00 ~ 다음날 00:00 (KST)
+  - `start`, `end`: 임의 구간 (ISO 8601 또는 KST 기준). 구간을 10분 버킷으로 분할하여 집계
+  - `period=day`: 오늘 00:00 KST ~ 현재 시각
+  - `period=last_24h`: 현재 시각 기준 직전 24시간
+- **clientId**: 미지정. 서버가 최신 클라이언트 사용(IP로 구분되는 환경 가정).
+- **응답 예시:**
+```json
+{
+  "success": true,
+  "message": "피플카운터 10분 단위 사용량 조회 성공",
+  "data": {
+    "timezone": "Asia/Seoul",
+    "buckets": [
+      { "start": "2025-01-09T00:00:00.000Z", "end": "2025-01-09T00:10:00.000Z", "inCount": 2 },
+      { "start": "2025-01-09T00:10:00.000Z", "end": "2025-01-09T00:20:00.000Z", "inCount": 5 }
+    ]
+  }
+}
+```
+
 ---
 
 ## 6. 구현 요구사항
@@ -313,12 +341,11 @@ if (currentData.inCumulative !== lastData.inCumulative) {
 #### 6.1.2 PeopleCounterPollerService
 
 - **역할**: 주기적 폴링 및 데이터 저장
-- **폴링 주기**: 1초
+- **폴링 주기**: 10초 (기본값)
 - **기능**:
-  - `PeopleCounterService`를 통해 데이터 조회
-  - IN누적 변경 감지
-  - 실시간 데이터 업데이트
-  - 로우데이터 저장
+  - `PeopleCounterQueueService`를 통해 APC100 조회
+  - IN누적 변경 시 `Data` 컬렉션 업데이트
+  - 분 경계 감지 시 1분당 1건 `people_counter_raw` 저장 (`inDelta`, `inRef` 포함)
 
 #### 6.1.3 PeopleCounterDataService
 
@@ -335,7 +362,7 @@ if (currentData.inCumulative !== lastData.inCumulative) {
 
 기존 `data` 컬렉션에 피플카운터 데이터가 포함됩니다.
 
-#### 6.2.2 PeopleCounterRaw Collection (신규)
+#### 6.2.2 PeopleCounterRaw Collection (1분 단위)
 
 ```typescript
 interface PeopleCounterRaw {
@@ -343,8 +370,10 @@ interface PeopleCounterRaw {
   clientId: string;
   deviceId: "d082";
   unitId: "u001";
-  timestamp: Date;
+  timestamp: Date;        // 해당 분의 시작 시각
   inCumulative: number;
+  inDelta?: number;        // 해당 1분 동안 입실 증가분
+  inRef?: number;         // 해당 분 시점 입실 누적
   outCumulative: number;
   currentCount: number;
   output1: boolean;
@@ -382,12 +411,19 @@ PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
 #### 6.3.3 로우데이터 조회
 
 - **엔드포인트**: `GET /api/v1/external/people-counter/raw`
-- **설명**: 로우데이터 직접 조회 (데이터가 많지 않을 때)
+- **설명**: 로우데이터 직접 조회 (1분 단위 문서, `inDelta`, `inRef` 포함)
 - **인증**: API Key 필요
 - **Query Parameters**:
   - `startDate` (required): ISO 8601 형식
   - `endDate` (required): ISO 8601 형식
   - `limit` (optional): 최대 반환 개수 (기본값: 1000)
+
+#### 6.3.4 10분 단위 사용량 조회
+
+- **엔드포인트**: `GET /api/v1/external/people-counter/usage-10min`
+- **설명**: 10분 버킷별 입실 수(`inCount`)만 제공. 쿼리/응답은 KST 기준.
+- **인증**: API Key 필요
+- **Query Parameters**: `date` (YYYY-MM-DD) 또는 `start`+`end` 또는 `period=day`|`period=last_24h`
 
 ---
 
@@ -399,7 +435,7 @@ PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
 # 피플카운터 포트 설정
 PEOPLE_COUNTER_PORT=/dev/ttyS1
 PEOPLE_COUNTER_BAUD_RATE=9600
-PEOPLE_COUNTER_POLL_INTERVAL=1000  # 1초 (밀리초)
+PEOPLE_COUNTER_POLL_INTERVAL=10000  # 10초 (밀리초)
 PEOPLE_COUNTER_DEVICE_ID=0000      # 기본 ID
 
 # 로우데이터 보관 기간 (일)
@@ -411,7 +447,7 @@ PEOPLE_COUNTER_RAW_DATA_RETENTION_DAYS=30
 해당 값은 시스템 설정 UI(관리자 페이지)에서 변경합니다.  
 환경 변수를 설정하지 않더라도:
 
-- `PEOPLE_COUNTER_PORT` 등이 정의되어 있지 않으면 코드에 정의된 기본값(`/dev/ttyS1`, `9600bps`, `1000ms`)을 사용합니다.
+- `PEOPLE_COUNTER_PORT` 등이 정의되어 있지 않으면 코드에 정의된 기본값(`/dev/ttyS1`, `9600bps`, `10000ms`)을 사용합니다.
 - `peopleCounterEnabled`의 기본값은 항상 `false`이며, 사용자가 시스템 설정에서 명시적으로 ON 으로 변경하기 전까지는 피플카운터 기능이 비활성화된 상태로 동작합니다.
 
 ### 7.2 Docker 설정
@@ -507,7 +543,8 @@ services:
 
 - `GET /api/v1/external/data`: 실시간 데이터 (피플카운터 포함)
 - `GET /api/v1/external/people-counter/stats`: 통계 데이터
-- `GET /api/v1/external/people-counter/raw`: 로우데이터
+- `GET /api/v1/external/people-counter/raw`: 로우데이터 (1분 단위)
+- `GET /api/v1/external/people-counter/usage-10min`: 10분 버킷별 입실 수 (상위 플랫폼용)
 
 ### 11.4 선택적 기능 및 배포 전략
 

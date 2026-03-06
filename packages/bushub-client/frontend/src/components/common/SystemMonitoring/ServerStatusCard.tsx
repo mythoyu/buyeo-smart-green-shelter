@@ -1,8 +1,8 @@
 import { Server } from 'lucide-react';
 
 import { Badge } from '../../ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Progress } from '../../ui/progress';
+import { MonitoringCard } from './MonitoringCard';
 
 interface ServerStatusCardProps {
   data?: {
@@ -39,19 +39,11 @@ interface ServerStatusCardProps {
 const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ data }) => {
   if (!data) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Server className='h-5 w-5' />
-            서버 상태
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='flex items-center justify-center h-20'>
-            <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
-          </div>
-        </CardContent>
-      </Card>
+      <MonitoringCard icon={Server} title='서버 상태'>
+        <div className='flex items-center justify-center h-20'>
+          <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
+        </div>
+      </MonitoringCard>
     );
   }
 
@@ -86,89 +78,72 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ data }) => {
     }
   };
 
+  const statusBadge = (
+    <Badge variant={getStatusVariant(data.status)}>{getStatusText(data.status)}</Badge>
+  );
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <Server className='h-5 w-5' />
-          서버 상태
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className='space-y-4'>
-          {/* 상태 */}
-          <div className='flex justify-between items-center'>
-            <span className='text-sm font-medium'>상태</span>
-            <Badge variant={getStatusVariant(data.status)}>{getStatusText(data.status)}</Badge>
-          </div>
+    <MonitoringCard icon={Server} title='서버 상태' headerRight={statusBadge}>
+      {/* 가동시간 */}
+      <div className='flex justify-between items-center'>
+        <span className='text-sm font-medium'>가동시간</span>
+        <span className='text-sm text-muted-foreground'>
+          {uptimeHours}시간 {uptimeMinutes}분 {uptimeSeconds}초
+        </span>
+      </div>
 
-          {/* 가동시간 */}
-          <div className='flex justify-between items-center'>
-            <span className='text-sm font-medium'>가동시간</span>
-            <span className='text-sm text-muted-foreground'>
-              {uptimeHours}시간 {uptimeMinutes}분 {uptimeSeconds}초
-            </span>
-          </div>
+      {/* 메모리 사용량 */}
+      <div className='space-y-2'>
+        <div className='flex justify-between text-sm'>
+          <span className='font-medium'>힙 메모리</span>
+          <span className='text-muted-foreground'>
+            {data.memory.used}MB / {data.memory.total}MB
+          </span>
+        </div>
+        <Progress value={memoryUsagePercent} className='h-2' />
+        <div className='text-xs text-muted-foreground'>사용률: {memoryUsagePercent}%</div>
 
-          {/* 메모리 사용량 */}
-          <div className='space-y-2'>
-            <div className='flex justify-between text-sm'>
-              <span className='font-medium'>힙 메모리</span>
-              <span className='text-muted-foreground'>
-                {data.memory.used}MB / {data.memory.total}MB
-              </span>
-            </div>
-            <Progress value={memoryUsagePercent} className='h-2' />
-            <div className='text-xs text-muted-foreground'>사용률: {memoryUsagePercent}%</div>
+        <div className='flex justify-between text-xs text-muted-foreground'>
+          <span>최대 힙 메모리</span>
+          <span>{data.memory.maxHeap}MB</span>
+        </div>
+        <div className='flex justify-between text-xs text-muted-foreground'>
+          <span>RSS 메모리</span>
+          <span>{data.memory.rss}MB</span>
+        </div>
+        <div className='flex justify-between text-xs text-muted-foreground'>
+          <span>외부 메모리</span>
+          <span>{data.memory.external}MB</span>
+        </div>
+      </div>
 
-            {/* 힙 메모리 최대값 */}
-            <div className='flex justify-between text-xs text-muted-foreground'>
-              <span>최대 힙 메모리</span>
-              <span>{data.memory.maxHeap}MB</span>
-            </div>
+      {/* 시스템 정보 */}
+      <div className='space-y-1'>
+        <div className='flex justify-between text-xs'>
+          <span>시스템 메모리</span>
+          <span>{data.system.totalMemory}GB</span>
+        </div>
+        <div className='flex justify-between text-xs'>
+          <span>사용 가능</span>
+          <span>{data.system.freeMemory}GB</span>
+        </div>
+        <div className='flex justify-between text-xs'>
+          <span>CPU 코어</span>
+          <span>{data.system.cpuCount}개</span>
+        </div>
+      </div>
 
-            {/* RSS 메모리 */}
-            <div className='flex justify-between text-xs text-muted-foreground'>
-              <span>RSS 메모리</span>
-              <span>{data.memory.rss}MB</span>
-            </div>
-
-            {/* 외부 메모리 */}
-            <div className='flex justify-between text-xs text-muted-foreground'>
-              <span>외부 메모리</span>
-              <span>{data.memory.external}MB</span>
-            </div>
-          </div>
-
-          {/* 시스템 정보 */}
-          <div className='space-y-1'>
-            <div className='flex justify-between text-xs'>
-              <span>시스템 메모리</span>
-              <span>{data.system.totalMemory}GB</span>
-            </div>
-            <div className='flex justify-between text-xs'>
-              <span>사용 가능</span>
-              <span>{data.system.freeMemory}GB</span>
-            </div>
-            <div className='flex justify-between text-xs'>
-              <span>CPU 코어</span>
-              <span>{data.system.cpuCount}개</span>
-            </div>
-          </div>
-
-          {/* 프로세스 정보 (3열, 가운데 정렬) */}
-          <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
-            <div className='grid grid-cols-3 gap-2 text-xs text-muted-foreground text-center'>
-              <div>PID: {data.process.pid}</div>
-              <div>Node.js {data.process.version}</div>
-              <div>
-                {data.process.platform} ({data.process.arch})
-              </div>
-            </div>
+      {/* 프로세스 정보 (3열, 가운데 정렬) */}
+      <div className='pt-2 border-t border-gray-200 dark:border-gray-700'>
+        <div className='grid grid-cols-3 gap-2 text-xs text-muted-foreground text-center'>
+          <div>PID: {data.process.pid}</div>
+          <div>Node.js {data.process.version}</div>
+          <div>
+            {data.process.platform} ({data.process.arch})
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </MonitoringCard>
   );
 };
 

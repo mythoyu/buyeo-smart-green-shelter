@@ -206,7 +206,10 @@ const SystemMonitoringPage = () => {
     {
       id: 'monitor-system-summary',
       card: (
-        <Card key='system-summary'>
+        <Card
+          key='system-summary'
+          className='transition-colors duration-200 hover:border-blue-400 dark:hover:border-primary/50'
+        >
           <CardHeader>
             <CardTitle className='text-lg'>시스템 요약</CardTitle>
           </CardHeader>

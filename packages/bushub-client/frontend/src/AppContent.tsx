@@ -2,6 +2,7 @@ import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { PageLoading as RoutePageLoading } from './components/common/LoadingPanel';
 import MainLayout from './components/layout/MainLayout';
 import DashboardPage from './components/pages/DashboardPage';
 import { useAuth } from './contexts/AuthContext';
@@ -19,16 +20,6 @@ const HardwareControlPage = lazy(() => import('./components/pages/HardwareContro
 const UserStatisticsPage = lazy(() => import('./components/pages/UserStatisticsPage'));
 const LoginPage = lazy(() => import('./components/pages/LoginPage'));
 const Logout = lazy(() => import('./components/pages/Logout'));
-
-// 로딩 컴포넌트
-const PageLoading = () => (
-  <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'>
-    <div className='text-center'>
-      <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
-      <p className='text-gray-600'>페이지를 로딩하는 중...</p>
-    </div>
-  </div>
-);
 
 // 페이지 이동 로그를 위한 컴포넌트
 function PageLogger() {
@@ -107,7 +98,7 @@ function AppContent() {
 
   if (!isLoggedIn) {
     return (
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<RoutePageLoading />}>
         <LoginPage onLoginSuccess={() => {}} />
       </Suspense>
     );
@@ -116,12 +107,7 @@ function AppContent() {
   // 클라이언트 정보 로딩 중
   if (clientLoading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
-          <p className='text-gray-600'>클라이언트 정보를 확인하는 중...</p>
-        </div>
-      </div>
+      <RoutePageLoading text='클라이언트 정보를 확인하는 중...' />
     );
   }
 
@@ -147,7 +133,7 @@ function AppContent() {
             path='/device-registration'
             element={
               <ProtectedRoute path='/device-registration'>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <DeviceRegistrationPage />
                 </Suspense>
               </ProtectedRoute>
@@ -157,7 +143,7 @@ function AppContent() {
             path='/log-analysis'
             element={
               <ProtectedRoute path='/log-analysis'>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <LogAnalysisPage />
                 </Suspense>
               </ProtectedRoute>
@@ -167,7 +153,7 @@ function AppContent() {
             path='/system-settings'
             element={
               <ProtectedRoute path='/system-settings' requiresClient={false}>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <SystemSettingsPage />
                 </Suspense>
               </ProtectedRoute>
@@ -177,7 +163,7 @@ function AppContent() {
             path='/system-monitoring'
             element={
               <ProtectedRoute path='/system-monitoring' requiresClient={false}>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <SystemMonitoringPage />
                 </Suspense>
               </ProtectedRoute>
@@ -187,7 +173,7 @@ function AppContent() {
             path='/users'
             element={
               <ProtectedRoute path='/users'>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <UserManagementPage />
                 </Suspense>
               </ProtectedRoute>
@@ -197,7 +183,7 @@ function AppContent() {
             path='/hardware-control'
             element={
               <ProtectedRoute path='/hardware-control' requiresClient>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <HardwareControlPage />
                 </Suspense>
               </ProtectedRoute>
@@ -207,7 +193,7 @@ function AppContent() {
             path='/user-statistics'
             element={
               <ProtectedRoute path='/user-statistics' requiresClient>
-                <Suspense fallback={<PageLoading />}>
+                <Suspense fallback={<RoutePageLoading />}>
                   <UserStatisticsPage />
                 </Suspense>
               </ProtectedRoute>
@@ -217,7 +203,7 @@ function AppContent() {
           <Route
             path='/change-password'
             element={
-              <Suspense fallback={<PageLoading />}>
+              <Suspense fallback={<RoutePageLoading />}>
                 <ChangePasswordPage />
               </Suspense>
             }
@@ -225,7 +211,7 @@ function AppContent() {
           <Route
             path='/logout'
             element={
-              <Suspense fallback={<PageLoading />}>
+              <Suspense fallback={<RoutePageLoading />}>
                 <Logout />
               </Suspense>
             }

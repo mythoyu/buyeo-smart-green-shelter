@@ -1,4 +1,6 @@
 import { FastifyInstance } from 'fastify';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 // API 엔드포인트 상수
 export const SYSTEM_GENERAL_ENDPOINTS = {

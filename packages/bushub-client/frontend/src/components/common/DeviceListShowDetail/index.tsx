@@ -9,7 +9,7 @@ import { useUnitFormManagement } from './hooks';
 import { DeviceListShowDetailProps, DeviceListShowDetailHandle, Device } from './types';
 
 const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, DeviceListShowDetailProps>(
-  ({ devices, deviceSpecs, deviceStyles }, ref) => {
+  ({ devices, deviceSpecs, deviceStyles, cardVariant = 'default' }, ref) => {
     // useUnitFormManagement 훅 사용 (Toast 포함된 handleCopy, handlePaste 포함)
     const {
       selectedUnit,
@@ -115,11 +115,75 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
 
     if (displayDevices.length === 0) {
       return (
-        <div className='text-gray-400 dark:text-gray-500 text-center py-8 font-medium animate-fade-in'>표시할 디바이스가 없습니다.</div>
+        <div className='text-gray-400 dark:text-gray-500 text-center py-8 font-medium animate-fade-in'>
+          표시할 디바이스가 없습니다.
+        </div>
       );
     }
 
-    // 그리드는 부모 컴포넌트(DashboardPage)에서 관리하므로 Fragment로 반환
+    // panel 모드: 장비/유닛을 평탄화하여 유닛별 패널 카드 렌더링
+    if (cardVariant === 'panel') {
+      const unitPanels = displayDevices.flatMap((device: Device, deviceIndex: number) =>
+        (device.units ?? []).map((unit, unitIndex) => ({
+          device,
+          unit,
+          deviceIndex,
+          unitIndex,
+        }))
+      );
+
+      if (unitPanels.length === 0) {
+        return (
+          <div className='text-gray-400 dark:text-gray-500 text-center py-8 font-medium animate-fade-in'>
+            표시할 유닛이 없습니다.
+          </div>
+        );
+      }
+
+      return (
+        <>
+          {unitPanels.map(({ device, unit, deviceIndex, unitIndex }) => {
+            // 패널 카드에서는 유닛 1개만 가지는 장비 형태로 전달
+            const singleUnitDevice: Device = {
+              ...device,
+              units: [unit],
+            };
+            const isSelected =
+              selectedUnit?.device.id === device.id && selectedUnit?.unit.id === unit.id;
+
+            return (
+              <DeviceCard
+                key={`${device.id || device.deviceId}-${unit.id || unitIndex}`}
+                device={singleUnitDevice}
+                deviceIndex={deviceIndex}
+                deviceSpecs={deviceSpecs}
+                deviceStyles={deviceStyles}
+                selectedUnit={isSelected ? selectedUnit : null}
+                onUnitClick={handleUnitClick}
+                onFormChange={handleFormChange}
+                onCancel={handleCancel}
+                getUnitForm={getUnitForm}
+                unitForm={isSelected && selectedUnit ? getUnitForm(selectedUnit.device.id, selectedUnit.unit.id) : {}}
+                getStatusConfig={getStatusConfig}
+                getDeviceIcon={getDeviceIcon}
+                getDeviceColor={getDeviceColor}
+                getDeviceLabel={getDeviceLabel}
+                formatUnitLabel={formatUnitLabel}
+                handleCopy={handleCopy}
+                handlePaste={handlePaste}
+                bulkStatus={null}
+                onAutoModeChange={handleAutoModeChangeWrapper}
+                onPowerChange={handlePowerChangeWrapper}
+                devices={displayDevices}
+                cardVariant={cardVariant}
+              />
+            );
+          })}
+        </>
+      );
+    }
+
+    // 기본 카드: 장비별 카드 하나씩, 내부에 여러 유닛 표시
     return (
       <>
         {displayDevices.map((device: Device, deviceIndex: number) => (
@@ -146,6 +210,7 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
             onAutoModeChange={handleAutoModeChangeWrapper}
             onPowerChange={handlePowerChangeWrapper}
             devices={displayDevices}
+            cardVariant={cardVariant}
           />
         ))}
       </>

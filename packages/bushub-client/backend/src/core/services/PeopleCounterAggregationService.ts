@@ -58,8 +58,7 @@ export async function getPeopleCounterHourlyStats(
   const bucketsInternal: {
     start: Date;
     end: Date;
-    inMin: number | null;
-    inMax: number | null;
+    inCountSum: number;
     outMin: number | null;
     outMax: number | null;
     peak: number | null;
@@ -76,8 +75,7 @@ export async function getPeopleCounterHourlyStats(
     bucketsInternal.push({
       start: bucketStart,
       end: bucketEnd,
-      inMin: null,
-      inMax: null,
+      inCountSum: 0,
       outMin: null,
       outMax: null,
       peak: null,
@@ -86,35 +84,24 @@ export async function getPeopleCounterHourlyStats(
     });
   }
 
-  // 문서들을 24개 버킷에 분배
+  // 문서들을 24개 버킷에 분배 (1분 문서: inDelta 합산, 나머지는 out/current 유지)
   for (const d of docs) {
     const ts = d.timestamp instanceof Date ? d.timestamp : new Date(d.timestamp);
-    // startOfDay ~ endOfDay 범위 내라고 가정
-    const hour = ts.getHours(); // 로컬 타임존 기준 시각
+    const hour = ts.getHours();
     if (hour < 0 || hour > 23) {
       continue;
     }
 
     const bucket = bucketsInternal[hour];
-    const { inCumulative, outCumulative, currentCount } = d;
+    bucket.inCountSum += d.inDelta ?? 0;
 
-    // inCumulative
-    if (bucket.inMin === null || inCumulative < bucket.inMin) {
-      bucket.inMin = inCumulative;
-    }
-    if (bucket.inMax === null || inCumulative > bucket.inMax) {
-      bucket.inMax = inCumulative;
-    }
-
-    // outCumulative
+    const { outCumulative, currentCount } = d;
     if (bucket.outMin === null || outCumulative < bucket.outMin) {
       bucket.outMin = outCumulative;
     }
     if (bucket.outMax === null || outCumulative > bucket.outMax) {
       bucket.outMax = outCumulative;
     }
-
-    // peak / avg
     if (bucket.peak === null || currentCount > bucket.peak) {
       bucket.peak = currentCount;
     }
@@ -126,27 +113,15 @@ export async function getPeopleCounterHourlyStats(
   const isoDate = startOfDay.toISOString().slice(0, 10);
 
   const buckets: PeopleCounterHourlyBucket[] = bucketsInternal.map((b) => {
-    if (!b.count || b.inMin === null || b.inMax === null || b.outMin === null || b.outMax === null) {
-      return {
-        start: b.start.toISOString(),
-        end: b.end.toISOString(),
-        inCount: 0,
-        outCount: 0,
-        peakCount: 0,
-        avgCount: 0,
-        dataPoints: 0,
-      };
-    }
-
-    const inCount = b.inMax - b.inMin;
-    const outCount = b.outMax - b.outMin;
+    const outCount =
+      b.outMin !== null && b.outMax !== null ? b.outMax - b.outMin : 0;
     const peakCount = b.peak ?? 0;
     const avgCount = Math.round(((b.sumCurrent / b.count) || 0) * 100) / 100;
 
     return {
       start: b.start.toISOString(),
       end: b.end.toISOString(),
-      inCount,
+      inCount: b.inCountSum,
       outCount,
       peakCount,
       avgCount,

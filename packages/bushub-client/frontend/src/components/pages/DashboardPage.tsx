@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Filter, LayoutGrid } from 'lucide-react';
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { AlertCircle, Filter, LayoutGrid, Settings2 } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useExecuteDeviceAction } from '../../api/queries/device';
@@ -10,10 +10,11 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import { getDeviceActions, getActionInfo, type ActionKey } from '../../meta/actions/deviceActions';
 import { DashboardFilterBar } from '../common/DashboardFilterBar';
 import DeviceListShowDetail from '../common/DeviceListShowDetail/index';
-import { DeviceListShowDetailHandle } from '../common/DeviceListShowDetail/types';
+import { DeviceListShowDetailHandle, type DeviceCardVariant } from '../common/DeviceListShowDetail/types';
+import SettingsCard from '../common/SettingsCard';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { TopLogPanel } from '../common/TopLogPanel';
-import { Alert, AlertDescription } from '../ui';
+import { Alert, AlertDescription, Button } from '../ui';
 import ModeControlCard from '../common/ModeControlCard';
 
 // 🆕 deviceTypeMap을 컴포넌트 외부로 이동하여 재생성 방지
@@ -44,7 +45,20 @@ const DashboardPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showFilter, setShowFilter] = useState<boolean>(false);
   const [showModeControl, setShowModeControl] = useState<boolean>(false);
+  const [showCardSettings, setShowCardSettings] = useState<boolean>(false);
+  const [cardVariant, setCardVariant] = useState<DeviceCardVariant>(() => {
+    if (typeof window === 'undefined') {
+      return 'panel';
+    }
+    const saved = window.localStorage.getItem('dashboard-card-variant') as DeviceCardVariant | null;
+    return saved ?? 'panel';
+  });
   const { isConnected } = useWebSocket({});
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('dashboard-card-variant', cardVariant);
+  }, [cardVariant]);
 
   // 🆕 필터링 로직 최적화 - 의존성 배열 최소화
   const filteredDevices = useMemo(() => {
@@ -154,6 +168,10 @@ const DashboardPage: React.FC = () => {
     setShowModeControl(prev => !prev);
   }, []);
 
+  const handleToggleCardSettings = useCallback(() => {
+    setShowCardSettings(prev => !prev);
+  }, []);
+
   // 사이드바 컨텐츠
   const sidebarContent = useMemo(
     () => (
@@ -172,9 +190,16 @@ const DashboardPage: React.FC = () => {
           onClick={handleToggleModeControl}
           title='모드 제어'
         />
+        <RightSidebarItem
+          icon={Settings2}
+          label='카드\n설정'
+          active={showCardSettings}
+          onClick={handleToggleCardSettings}
+          title='카드 설정'
+        />
       </>
     ),
-    [showFilter, showModeControl, handleToggleFilter, handleToggleModeControl]
+    [showFilter, showModeControl, showCardSettings, handleToggleFilter, handleToggleModeControl, handleToggleCardSettings]
   );
 
   // 오른쪽 사이드바 설정
@@ -194,8 +219,8 @@ const DashboardPage: React.FC = () => {
     <div className='space-y-4'>
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 필터 및 모드 제어 카드 (토글 가능, 1열로 표시) */}
-      {(showFilter || showModeControl) && (
+      {/* 필터 / 모드 제어 / 카드 설정 카드 (토글 가능, 1열로 표시) */}
+      {(showFilter || showModeControl || showCardSettings) && (
         <div className='flex flex-col gap-4'>
           {showFilter && (
             <div id='dashboard-filter'>
@@ -220,6 +245,42 @@ const DashboardPage: React.FC = () => {
               />
             </div>
           )}
+          {showCardSettings && (
+            <div id='dashboard-card-settings'>
+              <SettingsCard
+                icon={LayoutGrid}
+                title='장비 카드 디자인'
+                description='대시보드 장비 카드의 표시 방식을 선택합니다.'
+                currentSettings={
+                  <span>
+                    현재:{' '}
+                    {cardVariant === 'panel'
+                      ? '패널형 카드 (기본)'
+                      : '기본 카드'}
+                  </span>
+                }
+              >
+                <div className='flex flex-wrap gap-2'>
+                  <Button
+                    type='button'
+                    variant={cardVariant === 'panel' ? 'default' : 'outline'}
+                    onClick={() => setCardVariant('panel')}
+                    className='flex-1 min-w-[120px]'
+                  >
+                    패널형 (기본)
+                  </Button>
+                  <Button
+                    type='button'
+                    variant={cardVariant === 'default' ? 'default' : 'outline'}
+                    onClick={() => setCardVariant('default')}
+                    className='flex-1 min-w-[120px]'
+                  >
+                    기존 카드
+                  </Button>
+                </div>
+              </SettingsCard>
+            </div>
+          )}
         </div>
       )}
 
@@ -238,6 +299,7 @@ const DashboardPage: React.FC = () => {
             deviceStyles={deviceStyles}
             onExecuteAction={executeDeviceAction}
             getAvailableActions={getAvailableActions}
+            cardVariant={cardVariant}
           />
         </div>
       )}

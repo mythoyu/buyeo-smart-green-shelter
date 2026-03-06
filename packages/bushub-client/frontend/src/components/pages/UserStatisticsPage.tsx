@@ -19,6 +19,8 @@ import { DatePickerField } from '../common/DatePickerField';
 import { TimeSelect } from '../common/TimeSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui';
+import { PageSectionLoading } from '../common/PageSectionLoading';
+import { LOADING_MESSAGES } from '../../constants/loadingMessages';
 
 /** YYYY-MM-DDTHH:mm 형식 */
 function toDateTimeString(d: Date): string {
@@ -268,16 +270,7 @@ const UserStatisticsPage: React.FC = () => {
 
   // 로딩 상태
   if (pcStateLoading || statsLoading) {
-    return (
-      <div className='p-6'>
-        <div className='flex items-center justify-center h-64'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
-            <p className='text-gray-600'>데이터를 불러오는 중...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageSectionLoading message={LOADING_MESSAGES.userStatistics} />;
   }
 
   // 에러 상태
