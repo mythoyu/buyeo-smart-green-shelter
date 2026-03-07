@@ -450,17 +450,17 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
         />
         <RightSidebarItem
           icon={Train}
-          label='쉼터'
+          label='승강장'
           active={selectedType === 'sm-shelter'}
           onClick={() => handleTypeFilter('sm-shelter')}
-          title='쉼터 타입'
+          title='승강장 타입'
         />
         <RightSidebarItem
           icon={Leaf}
-          label='승강장'
+          label='쉼터'
           active={selectedType === 'sm-restplace'}
           onClick={() => handleTypeFilter('sm-restplace')}
-          title='승강장 타입'
+          title='쉼터 타입'
         />
         <RightSidebarItem icon={RefreshCw} label='새로\n고침' onClick={handleRefresh} title='현장 목록 새로고침' />
       </>

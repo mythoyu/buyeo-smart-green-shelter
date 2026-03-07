@@ -115,7 +115,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { data: pollingState, isLoading: pollingStateLoading } = useGetPollingState();
   const updatePollingStateMutation = useUpdatePollingState();
 
-
   // ✅ 에러 관련 상태 및 훅
   const [errorPanelOpen, setErrorPanelOpen] = useState(false);
   const { data: clientErrorsData } = useGetClientErrors({
@@ -225,7 +224,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
-
 
   // 현재 시간 상태 관리
   const [currentTime, setCurrentTime] = useState<{ date: string; time: string }>({ date: '', time: '' });
@@ -363,9 +361,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       </div>
                       <h3 className='font-bold text-lg'>{user.name}</h3>
                       <Badge variant='secondary'>{getRoleDisplayName(user.role)}</Badge>
-                      {user.id && (
-                        <p className='text-sm text-muted-foreground'>ID: {user.id}</p>
-                      )}
+                      {user.id && <p className='text-sm text-muted-foreground'>ID: {user.id}</p>}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -394,9 +390,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     </div>
                     <h3 className='font-bold text-lg'>{user.name}</h3>
                     <Badge variant='secondary'>{getRoleDisplayName(user.role)}</Badge>
-                    {user.id && (
-                      <p className='text-sm text-muted-foreground'>ID: {user.id}</p>
-                    )}
+                    {user.id && <p className='text-sm text-muted-foreground'>ID: {user.id}</p>}
                   </div>
                 </PopoverContent>
               </Popover>
@@ -573,12 +567,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       )}
 
       {/* 하단 네비게이션 - 모바일에서만 표시 */}
-      {isMobile && (
-        <BottomNavigation
-          navigation={navigation}
-          rightSidebarContent={rightSidebarContent}
-        />
-      )}
+      {isMobile && <BottomNavigation navigation={navigation} rightSidebarContent={rightSidebarContent} />}
 
       {/* ✅ 에러 패널 렌더링 */}
       <ErrorPanel isOpen={errorPanelOpen} onClose={() => setErrorPanelOpen(false)} errors={clientErrorsData} />
@@ -591,7 +580,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         progress={processDialog.progress}
         status={processDialog.status}
       />
-
     </div>
   );
 };
