@@ -38,6 +38,7 @@ import { getFormattedVersion } from '../../utils/version';
 import { ErrorPanel } from '../common/ErrorPanel';
 import { ProcessDialog } from '../common/ProcessDialog';
 import { RightSidebar } from './RightSidebar';
+import { BottomNavigation } from './BottomNavigation';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Badge } from '../ui/badge';
@@ -295,8 +296,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <header className='fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-2 md:pl-0 md:pr-2 bg-card shadow-sm border-b border-border/50'>
         {/* 왼쪽: 햄버거(좌측 네비와 동일 폭 w-20) + 아이콘·현장 주소(pl-4) */}
         <div className='flex items-center min-w-0'>
-          {/* 메뉴 버튼 - 데스크탑에서 좌측 네비와 동일 가로(w-20) */}
-          <div className='flex items-center justify-center flex-shrink-0 w-12 md:w-20'>
+          {/* 메뉴 버튼 - 데스크탑에서 좌측 네비와 동일 가로(w-20), 모바일에서는 숨김 (하단 네비 사용) */}
+          <div className='hidden lg:flex items-center justify-center flex-shrink-0 w-20'>
             <Button onClick={() => setSidebarOpen(!sidebarOpen)} size='icon' variant='ghost'>
               <Menu size={20} />
             </Button>
@@ -483,24 +484,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      {/* 모바일 사이드바 오버레이 */}
-      {sidebarOpen && (
-        <div
-          className='fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden'
-          onClick={() => {
-            console.log('오버레이 클릭됨 - 사이드바 닫기');
-            setSidebarOpen(false);
-          }}
-        />
-      )}
-
-      {/* 반응형 사이드바 - 헤더 밑에서 시작, 브라우저 하단까지 전체 채우기 */}
+      {/* 좌측 사이드바 - 데스크탑에서만 표시 (모바일에서는 BottomNavigation 사용) */}
       <div
         className={`
+          hidden lg:flex
           fixed top-16 bottom-0 left-0 z-50 w-20 transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           bg-card border-r border-gray-200 dark:border-gray-600 shadow-lg
-          flex flex-col
+          flex-col
         `}
       >
         {/* 네비게이션 메뉴 */}
@@ -558,11 +549,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </nav>
       </div>
 
-      {/* 메인 콘텐츠 - 헤더 밑에서 시작 */}
+      {/* 메인 콘텐츠 - 헤더 밑에서 시작, 모바일에서는 하단 네비 공간 확보 */}
       <div
         className={`pt-16 flex flex-col h-screen transition-all duration-300 ${
           sidebarOpen ? 'lg:ml-20' : ''
-        } lg:mr-20`}
+        } lg:mr-20 ${isMobile ? 'pb-16' : ''}`}
       >
         {/* 메인 콘텐츠 영역 */}
         <main className='flex-1 overflow-auto bg-background custom-scrollbar'>
@@ -570,14 +561,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </main>
       </div>
 
-      {/* 오른쪽 사이드바 - 숨기지 않음, 좌측과 동일 형태 */}
-      <RightSidebar
-        isOpen={rightSidebarOpen}
-        onToggle={() => setRightSidebarOpen(!rightSidebarOpen)}
-        isMobile={isMobile}
-      >
-        {rightSidebarContent}
-      </RightSidebar>
+      {/* 오른쪽 사이드바 - 데스크탑에서만 표시 */}
+      {!isMobile && (
+        <RightSidebar
+          isOpen={rightSidebarOpen}
+          onToggle={() => setRightSidebarOpen(!rightSidebarOpen)}
+          isMobile={isMobile}
+        >
+          {rightSidebarContent}
+        </RightSidebar>
+      )}
+
+      {/* 하단 네비게이션 - 모바일에서만 표시 */}
+      {isMobile && (
+        <BottomNavigation
+          navigation={navigation}
+          rightSidebarContent={rightSidebarContent}
+        />
+      )}
 
       {/* ✅ 에러 패널 렌더링 */}
       <ErrorPanel isOpen={errorPanelOpen} onClose={() => setErrorPanelOpen(false)} errors={clientErrorsData} />

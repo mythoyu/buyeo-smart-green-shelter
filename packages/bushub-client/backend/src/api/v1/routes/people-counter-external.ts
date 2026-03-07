@@ -370,8 +370,12 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         const buckets = bucket10Min(start, end, docs);
 
         return reply.send(
-          createSuccessResponse('피플카운터 10분 단위 사용량 조회 성공', {
-            timezone: 'Asia/Seoul',
+          createSuccessResponse('피플카운터 10분 사용량 조회 성공', {
+            range: {
+              start: start.toISOString(),
+              end: end.toISOString(),
+            },
+            bucketSizeMinutes: 10,
             buckets,
           }),
         );

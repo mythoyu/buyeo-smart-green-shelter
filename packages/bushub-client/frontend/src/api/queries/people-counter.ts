@@ -144,6 +144,44 @@ export const useGetPeopleCounterRaw = (options?: {
   });
 };
 
+export interface PeopleCounterUsage10MinBucket {
+  start: string;
+  end: string;
+  inCount: number;
+}
+
+export interface PeopleCounterUsage10Min {
+  range: {
+    start: string;
+    end: string;
+  };
+  bucketSizeMinutes: number;
+  buckets: PeopleCounterUsage10MinBucket[];
+}
+
+export const useGetPeopleCounterUsage10Min = (options: {
+  date?: string;
+  start?: string;
+  end?: string;
+  period?: 'day' | 'last_24h';
+  enabled?: boolean;
+}) => {
+  return useQuery<PeopleCounterUsage10Min>({
+    queryKey: ['people-counter', 'usage-10min', options.date, options.start, options.end, options.period],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (options.date) params.append('date', options.date);
+      if (options.start) params.append('start', options.start);
+      if (options.end) params.append('end', options.end);
+      if (options.period) params.append('period', options.period);
+      const response = await externalApi.get(`/people-counter/usage-10min?${params.toString()}`);
+      return response.data.data;
+    },
+    staleTime: 10000,
+    enabled: (options.enabled ?? true) && !!(options.date || (options.start && options.end) || options.period),
+  });
+};
+
 export const useResetPeopleCounterData = () => {
   const queryClient = useQueryClient();
   return useMutation({

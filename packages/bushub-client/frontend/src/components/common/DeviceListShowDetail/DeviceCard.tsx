@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
 
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import { Button, LabeledStatusButton } from '../../ui';
 import { useCommandManager } from './CommandManager';
 import { CommandProcessingDialog } from './CommandProcessingDialog';
@@ -45,6 +46,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   const deviceSpec = deviceSpecs[device.type];
 
   const deviceStatusConfig = getStatusConfig(device.status);
+
+  // 모바일 여부
+  const isMobile = useIsMobile(1024);
 
   // 패널형에서 전원/자동 명령 전송용 (훅은 무조건 호출)
   const primaryUnitForCommand = device.units?.[0];
@@ -285,32 +289,44 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   return (
     <>
       <div
-        className='relative p-4 flex gap-4 bg-white dark:bg-card border border-gray-200 dark:border-gray-600 shadow-sm rounded-2xl'
+        className={`relative p-4 bg-white dark:bg-card border border-gray-200 dark:border-gray-600 shadow-sm rounded-2xl ${
+          isMobile ? 'flex flex-col gap-3' : 'flex gap-4'
+        }`}
         style={{
           animationDelay: `${deviceIndex * 100}ms`,
           animation: styles.animation,
         }}
       >
-        {/* 1열: 장비 아이콘 + 이름 */}
+        {/* 1열(데스크탑) / 1행(모바일): 장비 아이콘 + 이름 */}
         <div
-          className={`relative flex flex-col justify-center w-24 flex-shrink-0 rounded-xl border border-slate-100 dark:border-slate-700 px-2 py-3 ${deviceColor}`}
+          className={`relative rounded-xl border border-slate-100 dark:border-slate-700 ${deviceColor} ${
+            isMobile
+              ? 'flex items-center gap-3 px-3 py-2'
+              : 'flex flex-col items-center justify-center w-24 flex-shrink-0 px-2 py-3'
+          }`}
         >
-          <div className='flex flex-col items-center gap-1.5'>
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center border border-slate-600 dark:border-slate-400 ${deviceColor}`}
-            >
-              {deviceIcon}
-            </div>
-            {primaryUnit?.name && (
-              <div className='text-sm font-semibold text-gray-900 dark:text-gray-100 text-center leading-tight'>
-                {primaryUnit.name}
-              </div>
-            )}
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center border border-slate-600 dark:border-slate-400 flex-shrink-0 ${deviceColor}`}
+          >
+            {deviceIcon}
           </div>
+          {primaryUnit?.name && (
+            <div
+              className={`text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight ${
+                isMobile ? '' : 'text-center'
+              }`}
+            >
+              {primaryUnit.name}
+            </div>
+          )}
         </div>
 
-        {/* 2열: 제어 + 2xN 정보 셀 */}
-        <div className='flex-1 flex flex-col gap-3 border-l border-slate-200 dark:border-slate-700 pl-4'>
+        {/* 2열(데스크탑) / 2행(모바일): 제어 + 2xN 정보 셀 */}
+        <div
+          className={`flex-1 flex flex-col gap-3 ${
+            isMobile ? '' : 'border-l border-slate-200 dark:border-slate-700 pl-4'
+          }`}
+        >
           {/* 상단 제어 영역: P/A + 설정 버튼 (2열 1행) */}
           <div className='flex items-center justify-between pb-2 mb-1 border-b border-slate-200 dark:border-slate-700'>
             <span className='text-[11px] text-muted-foreground'>제어</span>
@@ -366,7 +382,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
 
           {/* 정보 영역: 2열 균등 그리드, 셀 내부는 라벨(좌)·값(우) 2열 균등 */}
-          <div className='space-y-2'>
+          <div className='space-y-2 min-h-[128px]'>
             {scheduleRows.map(row => (
               <div key={row.id} className='grid grid-cols-[1fr_1fr] gap-2 min-w-0'>
                 <div className='grid grid-cols-[1fr_1fr] min-w-0 gap-1 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40'>
@@ -402,8 +418,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             ))}
           </div>
         </div>
-        {/* 연결 상태 배지 - 장비카드 좌상단 absolute */}
-        <div className='absolute top-0 left-1.5'>
+        {/* 연결 상태 배지 - 데스크탑: 좌상단, 모바일: 우상단 */}
+        <div className={`absolute top-0 ${isMobile ? 'right-1.5' : 'left-1.5'}`}>
           <span
             className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-[10px] font-semibold shadow-sm ${statusBadgeClass}`}
           >
