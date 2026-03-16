@@ -1,5 +1,20 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { MapPin, Building, Lightbulb, Fan, Thermometer, DoorOpen, Activity, Gauge, Train, Leaf, Search, RefreshCw, CheckSquare2 } from 'lucide-react';
+import {
+  MapPin,
+  Building,
+  Lightbulb,
+  Fan,
+  Thermometer,
+  DoorOpen,
+  Activity,
+  Gauge,
+  Train,
+  Leaf,
+  Search,
+  RefreshCw,
+  CheckSquare2,
+  Settings2,
+} from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -17,7 +32,8 @@ import { PollingDialog } from '../common/PollingDialog';
 import { ProcessDialog } from '../common/ProcessDialog';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { RightSidebarItem } from '../layout/RightSidebar';
-import { Card, CardContent, Input } from '../ui';
+import SettingsCard from '../common/SettingsCard';
+import { Card, CardContent, Input, Button } from '../ui';
 
 interface DeviceRegistrationPageProps {
   // 현재는 사용되지 않으므로 주석 처리
@@ -58,6 +74,8 @@ interface ModbusConfig {
   commands: any[];
 }
 
+type SiteCardVariant = 'default' | 'panel';
+
 const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
   // DeviceRegistrationPage 전용 훅 사용
   const { currentClient, clients, refetchClients, refetchCurrentClient } = useDeviceRegistrationData();
@@ -93,6 +111,18 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
   const [selectedClient, setSelectedClient] = useState<ClientInfoDto | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showSearch, setShowSearch] = useState<boolean>(false);
+
+  // 현장 카드 디자인 (오른쪽 사이드바 카드 설정)
+  const [showCardSettings, setShowCardSettings] = useState<boolean>(false);
+  const [siteCardVariant, setSiteCardVariant] = useState<SiteCardVariant>(() => {
+    if (typeof window === 'undefined') return 'default';
+    const saved = window.localStorage.getItem('device-registration-card-variant') as SiteCardVariant | null;
+    return saved === 'panel' ? 'panel' : 'default';
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('device-registration-card-variant', siteCardVariant);
+  }, [siteCardVariant]);
 
   // ProcessDialog 상태 관리 추가
   const [processDialog, setProcessDialog] = useState<{
@@ -407,12 +437,9 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
   };
 
   // 타입 필터 핸들러 (메모이제이션)
-  const handleTypeFilter = useCallback(
-    (type: string) => {
-      setSelectedType(type);
-    },
-    []
-  );
+  const handleTypeFilter = useCallback((type: string) => {
+    setSelectedType(type);
+  }, []);
 
   // 검색바 토글 핸들러 (메모이제이션)
   const handleToggleSearch = useCallback(() => {
@@ -430,17 +457,15 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
     }
   }, [refetchClients, refetchCurrentClient]);
 
+  const handleToggleCardSettings = useCallback(() => {
+    setShowCardSettings(prev => !prev);
+  }, []);
+
   // 사이드바 컨텐츠
   const sidebarContent = useMemo(
     () => (
       <>
-        <RightSidebarItem
-          icon={Search}
-          label='검색'
-          active={showSearch}
-          onClick={handleToggleSearch}
-          title='검색'
-        />
+        <RightSidebarItem icon={Search} label='검색' active={showSearch} onClick={handleToggleSearch} title='검색' />
         <RightSidebarItem
           icon={CheckSquare2}
           label='전체'
@@ -462,14 +487,29 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
           onClick={() => handleTypeFilter('sm-restplace')}
           title='쉼터 타입'
         />
+        <RightSidebarItem
+          icon={Settings2}
+          label='카드\n설정'
+          active={showCardSettings}
+          onClick={handleToggleCardSettings}
+          title='카드 설정'
+        />
         <RightSidebarItem icon={RefreshCw} label='새로\n고침' onClick={handleRefresh} title='현장 목록 새로고침' />
       </>
     ),
-    [showSearch, handleToggleSearch, handleTypeFilter, selectedType, handleRefresh]
+    [showSearch, handleToggleSearch, handleTypeFilter, selectedType, showCardSettings, handleToggleCardSettings, handleRefresh]
   );
 
   // 오른쪽 사이드바 설정
-  useRightSidebarContent(sidebarContent, [showSearch, handleToggleSearch, handleTypeFilter, selectedType, handleRefresh]);
+  useRightSidebarContent(sidebarContent, [
+    showSearch,
+    handleToggleSearch,
+    handleTypeFilter,
+    selectedType,
+    showCardSettings,
+    handleToggleCardSettings,
+    handleRefresh,
+  ]);
 
   return (
     <div className='space-y-2'>
@@ -494,7 +534,41 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
         </Card>
       )}
 
-      {/* 클라이언트 목록 */}
+      {/* 카드 설정 (오른쪽 사이드바에서 토글) */}
+      {showCardSettings && (
+        <div className='flex flex-col gap-4'>
+          <SettingsCard
+            icon={Settings2}
+            title='현장 카드 디자인'
+            description='현장 카드의 표시 방식을 선택합니다.'
+            currentSettings={
+              <span>현재: {siteCardVariant === 'panel' ? '패널형 (2열)' : '기존 디자인'}</span>
+            }
+          >
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                type='button'
+                variant={siteCardVariant === 'default' ? 'default' : 'outline'}
+                onClick={() => setSiteCardVariant('default')}
+                className='flex-1 min-w-[120px]'
+              >
+                기존 디자인
+              </Button>
+              <Button
+                type='button'
+                variant={siteCardVariant === 'panel' ? 'default' : 'outline'}
+                onClick={() => setSiteCardVariant('panel')}
+                className='flex-1 min-w-[120px]'
+              >
+                패널형 (2열)
+              </Button>
+            </div>
+          </SettingsCard>
+        </div>
+      )}
+
+      {/* 클라이언트 목록 - 기존 디자인 */}
+      {siteCardVariant === 'default' && (
       <div key={search} className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2'>
         {filteredClients.length === 0 ? (
           <div className='col-span-full animate-in fade-in duration-300'>
@@ -575,6 +649,77 @@ const DeviceRegistrationPage: React.FC<DeviceRegistrationPageProps> = () => {
           ))
         )}
       </div>
+      )}
+
+      {/* 클라이언트 목록 - 패널형 2열 (등록된 장비 전부 줄바꿈) */}
+      {siteCardVariant === 'panel' && (
+      <div key={search} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {filteredClients.length === 0 ? (
+          <div className='col-span-full animate-in fade-in duration-300'>
+            <EmptyState
+              icon={<Building className='h-16 w-16 text-muted-foreground' />}
+              title='현장이 없습니다'
+              description='필터 조건에 맞는 현장이 없습니다.'
+            />
+          </div>
+        ) : (
+          filteredClients.map((client, index) => (
+            <div
+              key={client.id}
+              className='relative flex gap-4 p-4 bg-white dark:bg-card border border-gray-200 dark:border-gray-600 shadow-sm rounded-2xl transition-all duration-300 cursor-pointer hover:bg-primary/5'
+              style={{
+                animationDelay: `${index * 100}ms`,
+                animation: 'fadeInUp 0.6s ease-out forwards',
+              }}
+              onClick={() => handleClientSelect(client)}
+              data-selected={selectedClient && selectedClient.id === client.id}
+            >
+              {currentClient && currentClient.id === client.id && (
+                <div className='absolute top-2 right-2 z-10'>
+                  <span className='bg-primary text-primary-foreground text-xs font-medium px-2 py-0.5 rounded-full shadow'>
+                    선택됨
+                  </span>
+                </div>
+              )}
+              <div
+                className={`flex flex-col items-center justify-center w-20 flex-shrink-0 rounded-xl border border-slate-100 dark:border-slate-700 p-3 bg-muted/50 ${
+                  selectedClient && selectedClient.id === client.id
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                    : currentClient && currentClient.id === client.id
+                    ? 'border-primary'
+                    : ''
+                }`}
+              >
+                <div className='w-12 h-12 bg-muted rounded-full flex items-center justify-center flex-shrink-0'>
+                  {getSiteIcon(client)}
+                </div>
+              </div>
+              <div className='flex-1 flex flex-col gap-2 min-w-0 border-l border-slate-200 dark:border-slate-700 pl-4'>
+                <div className='text-base font-semibold text-foreground break-words'>{client.name}</div>
+                <div className='text-xs text-muted-foreground font-semibold'>{client.city}</div>
+                <div className='text-sm text-foreground'>{client.location}</div>
+                {client.devices && client.devices.length > 0 && (
+                  <div className='mt-1 w-full'>
+                    <div className='text-xs text-muted-foreground font-medium mb-1'>등록된 장비</div>
+                    <div className='flex flex-wrap items-center gap-1'>
+                      {client.devices.map((device: any) => (
+                        <div
+                          key={device.id}
+                          className='flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full flex-shrink-0'
+                        >
+                          {getDeviceIcon(device.name)}
+                          <span className='text-xs truncate max-w-20'>{device.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      )}
 
       {/* 장비/유닛 상세 다이얼로그 */}
       <DeviceUnitDialog

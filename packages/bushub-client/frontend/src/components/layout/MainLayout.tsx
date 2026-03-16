@@ -146,7 +146,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   });
 
   const { toggleLogPanel, isLogPanelOpen } = useLogContext();
-  const { content: rightSidebarContent } = useRightSidebar();
+  const { content: rightSidebarContent, mobileSheetOpen, setMobileSheetOpen } = useRightSidebar();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -566,8 +566,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </RightSidebar>
       )}
 
-      {/* 하단 네비게이션 - 모바일에서만 표시 */}
-      {isMobile && <BottomNavigation navigation={navigation} rightSidebarContent={rightSidebarContent} />}
+      {/* 하단 네비게이션 - 모바일에서만 표시 (시트 상태는 Context로 제어) */}
+      {isMobile && (
+        <BottomNavigation
+          navigation={navigation}
+          rightSidebarContent={rightSidebarContent}
+          sheetOpen={mobileSheetOpen}
+          onSheetOpenChange={setMobileSheetOpen}
+        />
+      )}
 
       {/* ✅ 에러 패널 렌더링 */}
       <ErrorPanel isOpen={errorPanelOpen} onClose={() => setErrorPanelOpen(false)} errors={clientErrorsData} />

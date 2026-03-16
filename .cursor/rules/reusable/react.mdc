@@ -1,0 +1,11 @@
+---
+description: "[재사용] React 컴포넌트·훅 패턴 - 다른 프로젝트에 복사 가능"
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React 규칙
+
+- 함수형 컴포넌트만 사용. Props는 상단에 `interface`로 정의.
+- 재사용 로직은 custom hook으로 분리.
+- 스타일은 컴포넌트와 가까운 위치에 두거나 공통 디자인 시스템 사용.

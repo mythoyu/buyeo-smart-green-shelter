@@ -20,6 +20,9 @@ export interface NavigationItem {
 interface BottomNavigationProps {
   navigation: NavigationItem[];
   rightSidebarContent?: ReactNode;
+  /** 모바일 시트 제어 (전달 시 제어 모드) */
+  sheetOpen?: boolean;
+  onSheetOpenChange?: (open: boolean) => void;
 }
 
 const VISIBLE_COUNT = 4;
@@ -27,11 +30,17 @@ const VISIBLE_COUNT = 4;
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   navigation,
   rightSidebarContent,
+  sheetOpen: controlledSheetOpen,
+  onSheetOpenChange,
 }) => {
   const [startIndex, setStartIndex] = useState(0);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [internalSheetOpen, setInternalSheetOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const isControlled = controlledSheetOpen !== undefined && onSheetOpenChange !== undefined;
+  const sheetOpen = isControlled ? controlledSheetOpen : internalSheetOpen;
+  const setSheetOpen = isControlled ? onSheetOpenChange! : setInternalSheetOpen;
 
   const isActiveRoute = (href: string) => location.pathname === href;
 

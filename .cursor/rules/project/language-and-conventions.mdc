@@ -1,0 +1,10 @@
+---
+description: "[이 프로젝트] 응답 언어 및 공통 컨벤션"
+alwaysApply: true
+---
+
+# 언어 및 공통 규칙
+
+- AI 응답과 코드 주석은 **한국어**로 작성한다.
+- 이 레포는 buyeo-smart-green-shelter(스마트 그린 쉘터) 프로젝트이다.
+- packages/bushub-client(버스허브 클라이언트) 등 기존 패키지/폴더 구조를 유지한다.

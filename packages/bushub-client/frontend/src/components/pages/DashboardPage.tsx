@@ -203,7 +203,14 @@ const DashboardPage: React.FC = () => {
   );
 
   // 오른쪽 사이드바 설정
-  useRightSidebarContent(sidebarContent, [showFilter, showModeControl, handleToggleFilter, handleToggleModeControl]);
+  useRightSidebarContent(sidebarContent, [
+    showFilter,
+    showModeControl,
+    showCardSettings,
+    handleToggleFilter,
+    handleToggleModeControl,
+    handleToggleCardSettings,
+  ]);
 
   // 🆕 에러 처리 로직 추가
   if (error) {

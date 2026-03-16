@@ -1,0 +1,11 @@
+---
+description: "[재사용] React Query·API 훅 컨벤션 - 다른 프로젝트에 복사 가능"
+globs: "**/api/**/*.ts,**/queries/**/*.ts,**/hooks/use*Query*.ts"
+alwaysApply: false
+---
+
+# API / React Query 규칙
+
+- 훅 네이밍: 조회 `useGet*`, 수정 `useUpdate*`, 생성 `useCreate*`, 삭제 `useDelete*`.
+- 에러는 훅/API 레이어에서 로깅 후 호출부에서 처리.
+- mutation 후 필요 시 `queryClient.invalidateQueries`로 캐시 무효화.

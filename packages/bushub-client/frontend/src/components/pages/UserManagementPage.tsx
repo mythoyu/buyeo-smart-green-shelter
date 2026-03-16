@@ -15,13 +15,16 @@ import {
   Edit,
   X,
   CheckSquare2,
+  Settings2,
 } from 'lucide-react';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { toast } from 'sonner';
 
 import { useGetUsers, useGetApiKeys, useCreateUser, useUpdateUser, useDeleteUser } from '../../api/queries';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRightSidebar } from '../../contexts/RightSidebarContext';
 import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { type CreateUserRequest, type UpdateUserRequest, type ApiKey } from '../../hooks/useUserManagement';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -40,6 +43,7 @@ import {
   filterUsersByRole,
 } from '../../utils/userDataProcessor';
 import { PageSectionLoading } from '../common/PageSectionLoading';
+import SettingsCard from '../common/SettingsCard';
 import { LOADING_MESSAGES } from '../../constants/loadingMessages';
 import { TopLogPanel } from '../common/TopLogPanel';
 import {
@@ -64,6 +68,8 @@ import {
 // 데이터 처리 유틸리티 import
 
 // User 타입 정의
+type UserCardVariant = 'default' | 'panel';
+
 interface User {
   id: string;
   username: string;
@@ -76,6 +82,7 @@ interface User {
 
 export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
+  const { closeMobileSheet } = useRightSidebar();
   const { isConnected } = useWebSocket({});
 
   // 디버그: 환경변수 확인
@@ -131,6 +138,19 @@ export default function UserManagementPage() {
   // 필터 상태
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
+  // 카드 디자인 설정 (오른쪽 사이드패널)
+  const [showCardSettings, setShowCardSettings] = useState<boolean>(false);
+  const [userCardVariant, setUserCardVariant] = useState<UserCardVariant>(() => {
+    if (typeof window === 'undefined') return 'default';
+    const saved = window.localStorage.getItem('user-management-card-variant') as UserCardVariant | null;
+    return saved === 'panel' ? 'panel' : 'default';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('user-management-card-variant', userCardVariant);
+  }, [userCardVariant]);
+
   // 로딩 및 에러 상태 통합
   const loading = usersLoading || apiKeysLoading;
   const error = usersError?.message || apiKeysError?.message;
@@ -168,16 +188,33 @@ export default function UserManagementPage() {
     { value: 'ex-user', icon: Globe, label: '외부' },
   ] as const;
 
-  // 핸들러 메모이제이션 (사이드바용)
+  // 핸들러 메모이제이션 (사이드바용) — 등록 시 모바일 시트 먼저 닫고 모달만 열기
   const handleOpenCreateUser = useCallback(() => {
+    closeMobileSheet();
     setShowCreateUser(true);
-  }, []);
+  }, [closeMobileSheet]);
 
   const handleFilterChange = useCallback(
     (value: string) => {
       setSelectedFilter(value);
     },
     []
+  );
+
+  const handleToggleCardSettings = useCallback(() => {
+    setShowCardSettings(prev => !prev);
+  }, []);
+
+  // 필터링된 사용자 목록 (카드 목록 렌더용)
+  const filteredUsers = useMemo(
+    () =>
+      filterUsersByRole(processedUsers, selectedFilter).filter((user: User) => {
+        if (selectedFilter === 'apikeys') {
+          return apiKeys.some((key: ApiKey) => key.username === (user.name || user.username));
+        }
+        return true;
+      }),
+    [processedUsers, selectedFilter, apiKeys]
   );
 
   // 사이드바 컨텐츠
@@ -200,13 +237,20 @@ export default function UserManagementPage() {
             title={label}
           />
         ))}
+        <RightSidebarItem
+          icon={Settings2}
+          label='카드\n설정'
+          active={showCardSettings}
+          onClick={handleToggleCardSettings}
+          title='카드 설정'
+        />
       </>
     ),
-    [selectedFilter, processedUsers.length, handleOpenCreateUser, handleFilterChange]
+    [selectedFilter, processedUsers.length, handleOpenCreateUser, handleFilterChange, showCardSettings, handleToggleCardSettings]
   );
 
   // 오른쪽 사이드바 설정
-  useRightSidebarContent(sidebarContent, [selectedFilter, processedUsers.length, handleOpenCreateUser, handleFilterChange]);
+  useRightSidebarContent(sidebarContent, [selectedFilter, processedUsers.length, handleOpenCreateUser, handleFilterChange, showCardSettings, handleToggleCardSettings]);
 
   const handleCopy = (key: string) => {
     navigator.clipboard.writeText(key);
@@ -384,25 +428,47 @@ export default function UserManagementPage() {
       {/* 로그 패널 */}
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 사용자 카드 목록 */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-        {filterUsersByRole(processedUsers, selectedFilter)
-          .filter((user: User) => {
-            // apikeys 필터는 별도로 처리
-            if (selectedFilter === 'apikeys') {
-              return apiKeys.some((key: ApiKey) => key.username === (user.name || user.username));
+      {/* 카드 설정 (오른쪽 사이드패널에서 토글) */}
+      {showCardSettings && (
+        <div className='flex flex-col gap-4'>
+          <SettingsCard
+            icon={Settings2}
+            title='사용자 카드 디자인'
+            description='사용자 카드의 표시 방식을 선택합니다.'
+            currentSettings={
+              <span>
+                현재: {userCardVariant === 'panel' ? '패널형 (4열)' : '기존 디자인'}
+              </span>
             }
-            return true;
-          })
-          .map((user: User, index: number) => {
-            // 사용자별 API 키 찾기 (새로운 유틸리티 함수 사용)
+          >
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                type='button'
+                variant={userCardVariant === 'default' ? 'default' : 'outline'}
+                onClick={() => setUserCardVariant('default')}
+                className='flex-1 min-w-[120px]'
+              >
+                기존 디자인
+              </Button>
+              <Button
+                type='button'
+                variant={userCardVariant === 'panel' ? 'default' : 'outline'}
+                onClick={() => setUserCardVariant('panel')}
+                className='flex-1 min-w-[120px]'
+              >
+                패널형 (4열)
+              </Button>
+            </div>
+          </SettingsCard>
+        </div>
+      )}
+
+      {/* 사용자 카드 목록 */}
+      {userCardVariant === 'default' && (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+          {filteredUsers.map((user: User, index: number) => {
             const userApiKey = matchUserWithApiKey(user, apiKeys);
-            console.log(`사용자 ${user.username}의 API 키:`, userApiKey);
-
-            // API 키가 없을 경우 기본값 생성
             const displayApiKey = userApiKey || createDefaultApiKey(user);
-
-            // 권한별 hover 색상 결정
             const hoverBgColor =
               user.role === 'superuser'
                 ? 'hover:bg-purple-200 dark:hover:bg-purple-900/40'
@@ -519,12 +585,135 @@ export default function UserManagementPage() {
               </Card>
             );
           })}
-      </div>
+        </div>
+      )}
 
-      {/* 사용자 등록 모달 (오른쪽 사이드바 z-50보다 위에 표시) */}
-      {showCreateUser && (
-        <div className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60]'>
-          <div className='w-full max-w-md'>
+      {/* 패널형 사용자 카드 (2열: 1열 아이콘+이름, 2열 역할+버튼 / API키+복사) */}
+      {userCardVariant === 'panel' && (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+          {filteredUsers.map((user: User, index: number) => {
+            const userApiKey = matchUserWithApiKey(user, apiKeys);
+            const displayApiKey = userApiKey || createDefaultApiKey(user);
+            const iconBgClass =
+              user.role === 'superuser'
+                ? 'bg-purple-100 dark:bg-purple-900/50'
+                : user.role === 'engineer'
+                ? 'bg-blue-100 dark:bg-blue-900/50'
+                : user.role === 'user'
+                ? 'bg-green-100 dark:bg-green-900/50'
+                : 'bg-orange-100 dark:bg-orange-900/50';
+
+            return (
+              <div
+                key={user.id}
+                className='relative flex gap-4 p-4 bg-white dark:bg-card border border-gray-200 dark:border-gray-600 shadow-sm rounded-2xl transition-all duration-300'
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animation: 'fadeInUp 0.6s ease-out forwards',
+                }}
+              >
+                {/* 1열: 아이콘만 */}
+                <div
+                  className={`flex flex-col items-center justify-center w-20 flex-shrink-0 rounded-xl border border-slate-100 dark:border-slate-700 px-2 py-3 ${iconBgClass}`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center border border-slate-600 dark:border-slate-400 flex-shrink-0 ${iconBgClass}`}
+                  >
+                    {getRoleIcon(user.role)}
+                  </div>
+                </div>
+
+                {/* 2열: 1행 아이디 + 역할 배지 + 편집/삭제, 2행 API키 + 복사 */}
+                <div className='flex-1 flex flex-col gap-3 min-w-0 border-l border-slate-200 dark:border-slate-700 pl-4'>
+                  <div className='flex items-center justify-between gap-2 flex-wrap'>
+                    <span className='text-sm font-semibold text-gray-900 dark:text-gray-100 break-words min-w-0'>
+                      {user.name || user.username}
+                    </span>
+                    <div className='flex items-center gap-2 shrink-0'>
+                      {getRoleBadge(user.role)}
+                      {editingUser?.id === user.id ? (
+                        <>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleSaveEditUser(user)}
+                            className='hover:bg-accent text-green-600'
+                            title='저장'
+                          >
+                            <CheckCircle className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={handleCancelEditUser}
+                            className='hover:bg-accent text-red-600'
+                            title='취소'
+                          >
+                            <X className='h-4 w-4' />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleStartEditUser(user)}
+                            className='hover:bg-accent'
+                            title='편집'
+                          >
+                            <Edit className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleDeleteUser(user.id)}
+                            className={`hover:bg-accent ${
+                              currentUser && user.username === currentUser.name
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-red-600'
+                            }`}
+                            title={
+                              currentUser && user.username === currentUser.name ? '본인은 삭제할 수 없습니다' : '삭제'
+                            }
+                            disabled={!!(currentUser && user.username === currentUser.name)}
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-1 text-sm text-muted-foreground min-w-0'>
+                    <Key className='h-3 w-3 shrink-0' />
+                    <span className='text-xs text-muted-foreground shrink-0'>API키 :</span>
+                    <span className='text-xs font-mono bg-background px-2 py-1 rounded border truncate flex-1 min-w-0'>
+                      {displayApiKey.key}
+                    </span>
+                    <Button
+                      size='sm'
+                      variant='ghost'
+                      onClick={() => {
+                        handleCopy(displayApiKey.key);
+                        toast.success('API 키가 클립보드에 복사되었습니다');
+                      }}
+                      className='hover:bg-accent text-xs px-1 py-1 shrink-0'
+                      title='복사'
+                    >
+                      <CopyIcon className='h-3 w-3' />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 사용자 등록 모달 (Portal로 body에 렌더 → 모바일 터치 정상 동작) */}
+      {showCreateUser &&
+        createPortal(
+          <div className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] overflow-y-auto py-4'>
+            <div className='w-full max-w-md my-auto'>
             <Card className='bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700'>
               <CardHeader>
                 <div className='flex flex-col items-center gap-2'>
@@ -730,16 +919,18 @@ export default function UserManagementPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
 
-      {/* 사용자 편집 모달 (오른쪽 사이드바 z-50보다 위에 표시) */}
-      {editingUser && (
-        <div
-          className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60]'
-          onClick={handleCancelEditUser}
-        >
-          <div className='w-full max-w-md' onClick={e => e.stopPropagation()}>
+      {/* 사용자 편집 모달 (Portal로 body에 렌더 → 모바일 터치 정상 동작) */}
+      {editingUser &&
+        createPortal(
+          <div
+            className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] overflow-y-auto py-4'
+            onClick={handleCancelEditUser}
+          >
+            <div className='w-full max-w-md my-auto' onClick={e => e.stopPropagation()}>
             <Card className='bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700'>
               <CardHeader>
                 <div className='flex flex-col items-center gap-2'>
@@ -866,12 +1057,14 @@ export default function UserManagementPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
 
-      {/* 간단한 삭제 확인 다이얼로그 */}
-      {deletingUser && (
-        <div className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]'>
+      {/* 간단한 삭제 확인 다이얼로그 (Portal로 body에 렌더 → 모바일 터치 정상 동작) */}
+      {deletingUser &&
+        createPortal(
+          <div className='fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]'>
           <div className='bg-white dark:bg-gray-900 rounded-lg p-6 shadow-xl border border-gray-200 dark:border-gray-700 max-w-md w-full mx-4'>
             <div className='flex flex-col items-center gap-2 mb-6'>
               <span className='w-12 h-12 flex items-center justify-center bg-red-100 dark:bg-red-900/50 rounded-full mb-2'>
@@ -902,8 +1095,9 @@ export default function UserManagementPage() {
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
 
       {/* Toast 알림 */}
     </div>

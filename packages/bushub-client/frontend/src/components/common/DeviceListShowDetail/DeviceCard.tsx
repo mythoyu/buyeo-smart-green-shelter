@@ -297,12 +297,12 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           animation: styles.animation,
         }}
       >
-        {/* 1열(데스크탑) / 1행(모바일): 장비 아이콘 + 이름 */}
+        {/* 1열(데스크탑) / 1행(모바일): 장비 아이콘만 */}
         <div
           className={`relative rounded-xl border border-slate-100 dark:border-slate-700 ${deviceColor} ${
             isMobile
               ? 'flex items-center gap-3 px-3 py-2'
-              : 'flex flex-col items-center justify-center w-24 flex-shrink-0 px-2 py-3'
+              : 'flex flex-col items-center justify-center w-20 flex-shrink-0 px-2 py-3'
           }`}
         >
           <div
@@ -310,23 +310,19 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           >
             {deviceIcon}
           </div>
-          {primaryUnit?.name && (
-            <div
-              className={`text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight ${
-                isMobile ? '' : 'text-center'
-              }`}
-            >
-              {primaryUnit.name}
-            </div>
-          )}
         </div>
 
-        {/* 2열(데스크탑) / 2행(모바일): 제어 + 2xN 정보 셀 */}
+        {/* 2열(데스크탑) / 2행(모바일): 장비명 + 제어 + 2xN 정보 셀 */}
         <div
           className={`flex-1 flex flex-col gap-3 ${
             isMobile ? '' : 'border-l border-slate-200 dark:border-slate-700 pl-4'
           }`}
         >
+          {primaryUnit?.name && (
+            <div className='text-sm font-semibold text-gray-900 dark:text-gray-100 break-words'>
+              {primaryUnit.name}
+            </div>
+          )}
           {/* 상단 제어 영역: P/A + 설정 버튼 (2열 1행) */}
           <div className='flex items-center justify-between pb-2 mb-1 border-b border-slate-200 dark:border-slate-700'>
             <span className='text-[11px] text-muted-foreground'>제어</span>

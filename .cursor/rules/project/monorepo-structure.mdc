@@ -1,0 +1,12 @@
+---
+description: "[이 프로젝트] 모노레포 구조 및 스크립트"
+globs: "package.json,pnpm-workspace.yaml,packages/**/*"
+alwaysApply: false
+---
+
+# 모노레포 구조
+
+- 패키지 매니저: **pnpm**, workspaces 사용.
+- 주요 패키지: `packages/bushub-client/frontend`, `packages/bushub-client/backend`, `packages/bushub-client/network-control-api`, `packages/smartcity-platform/*`, `packages/shared`.
+- 루트 스크립트: `pnpm dev`, `pnpm dev:frontend`, `pnpm dev:backend`, `pnpm build`, `pnpm lint`, `pnpm format`, `pnpm test`.
+- 새 패키지 추가 시 루트 `package.json`의 `workspaces`에 경로 추가.

@@ -1,0 +1,21 @@
+---
+description: "[재사용] TypeScript 코딩 기준 - 다른 프로젝트에 복사 가능"
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# TypeScript 규칙
+
+- strict 모드 유지. `any` 대신 `unknown` 또는 구체 타입 사용.
+- 에러 처리 시 catch 후 로깅하고 rethrow 하거나 사용자 메시지 반환.
+
+```typescript
+// ❌ BAD
+catch (e) {}
+
+// ✅ GOOD
+catch (e) {
+  logger.error('Operation failed', { error: e });
+  throw new AppError('...', { cause: e });
+}
+```
