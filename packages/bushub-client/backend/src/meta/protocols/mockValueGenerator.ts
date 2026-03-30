@@ -11,7 +11,7 @@ export interface PortSpec {
 export interface ReverseIndexSpec extends PortSpec {
   functionCode: number;
   address: number;
-  clientId?: string; // 클라이언트 ID (c0101, c0102, c0105 등)
+  clientId?: string; // 클라이언트 ID (c0101, c0102, c0103 …)
 }
 
 const makeKey = (functionCode: number, address: number): string => `${functionCode}:${address}`;

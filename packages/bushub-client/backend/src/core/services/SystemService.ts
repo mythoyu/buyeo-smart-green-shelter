@@ -86,7 +86,7 @@ export class SystemService implements ISystemService {
         pollingEnabled: false,
         pollingInterval: 30000,
         applyInProgress: false,
-        peopleCounterEnabled: false,
+        peopleCounterEnabled: true,
       };
 
       this.logger?.info(`🔍 [SystemService] 현재 runtime: ${JSON.stringify(currentRuntime, null, 2)}`);
@@ -96,6 +96,7 @@ export class SystemService implements ISystemService {
         pollingEnabled,
         pollingInterval: currentRuntime.pollingInterval,
         applyInProgress: currentRuntime.applyInProgress,
+        peopleCounterEnabled: currentRuntime.peopleCounterEnabled ?? true,
       };
 
       this.logger?.info(`🔍 [SystemService] 업데이트할 runtime 설정: ${JSON.stringify(cleanRuntime, null, 2)}`);
@@ -161,7 +162,7 @@ export class SystemService implements ISystemService {
             pollingEnabled: false, // 기본값은 false이지만 사용자가 변경한 값은 보존
             pollingInterval: 30000,
             applyInProgress: false,
-            peopleCounterEnabled: false,
+            peopleCounterEnabled: true,
           };
 
           const updated = await this.systemRepository.updateSettings({
@@ -202,15 +203,15 @@ export class SystemService implements ISystemService {
             pollingEnabled: false,
             pollingInterval: 30000,
             applyInProgress: false,
-            peopleCounterEnabled: false,
+            peopleCounterEnabled: true,
           };
           const updated = await this.systemRepository.updateSettings({ runtime: defaultRuntime });
           if (!updated?.runtime) return null;
-          return { peopleCounterEnabled: updated.runtime.peopleCounterEnabled ?? false };
+          return { peopleCounterEnabled: updated.runtime.peopleCounterEnabled ?? true };
         }
         return null;
       }
-      return { peopleCounterEnabled: settings.runtime.peopleCounterEnabled ?? false };
+      return { peopleCounterEnabled: settings.runtime.peopleCounterEnabled ?? true };
     } catch (error) {
       this.logger?.error('피플카운터 상태 조회 중 오류 발생');
       throw error;
@@ -224,7 +225,7 @@ export class SystemService implements ISystemService {
         pollingEnabled: false,
         pollingInterval: 30000,
         applyInProgress: false,
-        peopleCounterEnabled: false,
+        peopleCounterEnabled: true,
       };
       const updated = await this.systemRepository.updateSettings({
         runtime: { ...currentRuntime, peopleCounterEnabled },
@@ -333,7 +334,7 @@ export class SystemService implements ISystemService {
         pollingEnabled: false,
         pollingInterval: 1000,
         applyInProgress: false,
-        peopleCounterEnabled: false,
+        peopleCounterEnabled: true,
       };
 
       const updated = await this.systemRepository.updateSettings({
@@ -381,7 +382,7 @@ export class SystemService implements ISystemService {
           pollingEnabled: false,
           pollingInterval: 30000,
           applyInProgress: false,
-          peopleCounterEnabled: false,
+          peopleCounterEnabled: true,
         };
 
       const updated = await this.systemRepository.updateSettings({

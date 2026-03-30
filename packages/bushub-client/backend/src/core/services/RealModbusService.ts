@@ -700,8 +700,8 @@ export class RealModbusService implements IModbusCommunication {
     const deviceType = (spec.deviceType || '').toString();
     const clientId = spec.clientId || '';
 
-    // 🎯 c0101, c0102, c0105 삼성 냉난방기 전용 변환 (MODE/SPEED)
-    if ((clientId === 'c0101' || clientId === 'c0102' || clientId === 'c0105') && deviceType === 'cooler') {
+    // 🎯 c0101, c0102 삼성 냉난방기 전용 변환 (MODE/SPEED) — LG 현장(c0103~)은 매핑 생략
+    if ((clientId === 'c0101' || clientId === 'c0102') && deviceType === 'cooler') {
       // MODE 변환: 삼성 Modbus 값 → REST API 값
       // 삼성 Modbus: 0x0000=자동, 0x0001=냉방, 0x0002=제습, 0x0003=송풍, 0x0004=난방
       // REST API: 0=냉방, 1=제습, 2=송풍, 3=자동, 4=난방
@@ -789,8 +789,8 @@ export class RealModbusService implements IModbusCommunication {
     const deviceType = (spec.deviceType || '').toString();
     const clientId = spec.clientId || '';
 
-    // 🎯 c0101, c0102, c0105 삼성 냉난방기 전용 변환 (MODE/SPEED)
-    if ((clientId === 'c0101' || clientId === 'c0102' || clientId === 'c0105') && deviceType === 'cooler') {
+    // 🎯 c0101, c0102 삼성 냉난방기 전용 변환 (MODE/SPEED) — LG 현장(c0103~)은 매핑 생략
+    if ((clientId === 'c0101' || clientId === 'c0102') && deviceType === 'cooler') {
       // MODE 변환: REST API 값 → 삼성 Modbus 값
       // REST API: 0=냉방, 1=제습, 2=송풍, 3=자동, 4=난방
       // 삼성 Modbus: 0x0000=자동, 0x0001=냉방, 0x0002=제습, 0x0003=송풍, 0x0004=난방

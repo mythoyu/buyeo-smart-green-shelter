@@ -2,6 +2,7 @@ import { RefreshCw } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
+import { useGetClient } from '../../../../api/queries/client';
 import { useSendDirectHardwareCommand, useReadAllHardwareStatus } from '../../../../api/queries/hardware';
 import { SCHEDULE2_SUPPORTED_PORTS } from '../../../../types/hardware';
 import { Button } from '../../../ui/button';
@@ -63,6 +64,9 @@ interface DOPortTabProps {
  * 디지털 출력 포트를 통한 하드웨어 직접 제어
  */
 export const DOPortTab: React.FC<DOPortTabProps> = ({ disabled = false, onError, pollingStatus }) => {
+  const { data: clientInfo } = useGetClient();
+  const hardwareClientId = clientInfo?.id ?? 'c0101';
+
   const sendCommand = useSendDirectHardwareCommand();
   const readAllStatus = useReadAllHardwareStatus();
 
@@ -97,7 +101,7 @@ export const DOPortTab: React.FC<DOPortTabProps> = ({ disabled = false, onError,
       });
 
       const result = await readAllStatus.mutateAsync({
-        clientId: 'c0101',
+        clientId: hardwareClientId,
         commands: [
           'POWER',
           'AUTO',
@@ -235,7 +239,7 @@ export const DOPortTab: React.FC<DOPortTabProps> = ({ disabled = false, onError,
       setLoadingPorts(prev => new Set(prev).add(commandKey));
 
       const success = await sendCommand.mutateAsync({
-        clientId: 'c0101',
+        clientId: hardwareClientId,
         port,
         command,
         value,

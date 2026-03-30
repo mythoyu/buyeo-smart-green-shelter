@@ -1,6 +1,6 @@
 /**
  * People Counter Service (APC100)
- * ttyS1 RS485 통신, 상태 조회 [0000 BTR], 응답 파싱
+ * ttyS1 RS485 통신, 상태 조회 9바이트 ASCII `[0000BTR]`, 응답 파싱
  * @see docs/APC100_RS485_PROTOCOL.md, docs/PEOPLE_COUNTER_SPEC.md
  */
 
@@ -9,7 +9,8 @@ import { SerialPort } from 'serialport';
 import { ILogger } from '../interfaces/ILogger';
 import { isPeopleCounterMockEnabled } from '../../config/mock.config';
 
-const REQUEST = '[0000 BTR ]';
+/** `[` + 4자리 ID + 3자리 명령 + `]` = 9바이트 */
+const REQUEST = '[0000BTR]';
 const DEFAULT_PORT = process.env.PEOPLE_COUNTER_PORT || '/dev/ttyS1';
 const DEFAULT_BAUD = Number(process.env.PEOPLE_COUNTER_BAUD_RATE) || 9600;
 const READ_TIMEOUT_MS = 1000;
@@ -17,9 +18,9 @@ const READ_TIMEOUT_MS = 1000;
 export type ResetType = 'current' | 'in' | 'out' | 'all';
 
 const RESET_COMMANDS = {
-  current: '[0000 BTC ]',
-  in: '[0000 BTI ]',
-  out: '[0000 BTD ]',
+  current: '[0000BTC]',
+  in: '[0000BTI]',
+  out: '[0000BTD]',
 } as const;
 
 const RESET_DELAY_MS = 50;
@@ -100,7 +101,7 @@ export class PeopleCounterService {
   }
 
   /**
-   * 상태 조회: [0000 BTR] 전송 후 응답 파싱
+   * 상태 조회: `[0000BTR]`(9바이트) 전송 후 응답 파싱
    */
   async query(): Promise<PeopleCounterData | null> {
     // Mock 모드: 더미 데이터 반환
@@ -222,7 +223,7 @@ export class PeopleCounterService {
   }
 
   /**
-   * 리셋 명령 전송: [0000 BTC/BTI/BTD] (write-only, 응답 없음)
+   * 리셋 명령 전송: `[0000BTC]` / `[0000BTI]` / `[0000BTD]` (write-only, 응답 없음)
    * @param type 리셋 타입: 'current' (현재 인원), 'in' (입실 누적), 'out' (퇴실 누적), 'all' (전체)
    */
   async reset(type: ResetType): Promise<boolean> {

@@ -550,11 +550,7 @@ export class DataApplyService {
       this.updateProgress('applying', 'DOx 포트 초기화 진행 중...');
       await this.resetAllDOxPortsDirectly(unifiedModbusService);
 
-      // 3단계: c0101~c0102 에어커튼 특별 처리
-      this.updateProgress('applying', '에어커튼 특별 처리 중...');
-      await this.resetAirCurtainForSpecialClients(unifiedModbusService, clientId);
-
-      // 4단계: 결과 정리
+      // 3단계: 결과 정리
       this.updateProgress('completed', 'DDC 초기화 완료');
       const result: DataApplyResult = {
         success: true,
@@ -645,37 +641,6 @@ export class DataApplyService {
         this.logger?.error(`[DataApplyService] ${doxPort} 초기화 실패: ${error}`);
         // 개별 포트 실패 시에도 계속 진행
       }
-    }
-  }
-
-  /**
-   * c0101~c0102 에어커튼에만 power=true 추가 명령 실행
-   */
-  private async resetAirCurtainForSpecialClients(unifiedModbusService: any, clientId: string): Promise<void> {
-    try {
-      const specialAirCurtainPorts: Record<string, string[]> = {
-        c0101: ['DO7', 'DO8'],
-        c0102: ['DO7', 'DO8'],
-      };
-
-      const airCurtainPorts = specialAirCurtainPorts[clientId];
-
-      if (!airCurtainPorts) {
-        this.logger?.info(`[DataApplyService] 특별 처리 대상 클라이언트가 아님: ${clientId}`);
-        return;
-      }
-
-      for (const doxPort of airCurtainPorts) {
-        try {
-          // 에어커튼에만 power=true로 설정
-          await this.executeDirectModbusWrite(doxPort, 'POWER', true, unifiedModbusService);
-          this.logger?.info(`[DataApplyService] c0101~c0104 에어커튼 power 설정: ${doxPort} = true`);
-        } catch (error) {
-          this.logger?.error(`[DataApplyService] 에어커튼 power 설정 실패: ${doxPort} - ${error}`);
-        }
-      }
-    } catch (error) {
-      this.logger?.error(`[DataApplyService] 에어커튼 특별 처리 실패: ${error}`);
     }
   }
 

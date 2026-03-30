@@ -7,6 +7,7 @@ alwaysApply: false
 # 모노레포 구조
 
 - 패키지 매니저: **pnpm**, workspaces 사용.
-- 주요 패키지: `packages/bushub-client/frontend`, `packages/bushub-client/backend`, `packages/bushub-client/network-control-api`, `packages/smartcity-platform/*`, `packages/shared`.
+- 주요 패키지: `packages/bushub-client/frontend`, `packages/bushub-client/backend`, `packages/bushub-client/network-control-api`.
+- 개발 전용: `packages/dev-tools/people-counter-tester` — APC100 시리얼 테스트 UI (`pnpm dev:people-counter-tester`, 로컬 `127.0.0.1:3100`).
 - 루트 스크립트: `pnpm dev`, `pnpm dev:frontend`, `pnpm dev:backend`, `pnpm build`, `pnpm lint`, `pnpm format`, `pnpm test`.
 - 새 패키지 추가 시 루트 `package.json`의 `workspaces`에 경로 추가.

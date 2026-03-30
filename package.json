@@ -7,9 +7,12 @@
     "dev": "pnpm -r run dev",
     "dev:frontend": "pnpm --filter @bushub-client/frontend run dev",
     "dev:backend": "pnpm --filter @bushub-client/backend run dev",
+    "dev:network-control-api": "pnpm --filter @bushub-client/network-control-api run dev",
+    "dev:people-counter-tester": "pnpm --filter @dev-tools/people-counter-tester run start:dev",
     "build": "pnpm -r run build:production",
     "build:frontend": "pnpm --filter @bushub-client/frontend run build",
     "build:backend": "pnpm --filter @bushub-client/backend run build",
+    "build:network-control-api": "pnpm --filter @bushub-client/network-control-api run build:production",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
     "test": "pnpm -r run test",
@@ -25,8 +28,8 @@
   "workspaces": [
     "packages/bushub-client/backend",
     "packages/bushub-client/frontend",
-    "packages/smartcity-platform/*",
-    "packages/shared"
+    "packages/bushub-client/network-control-api",
+    "packages/dev-tools/people-counter-tester"
   ],
   "dependencies": {},
   "devDependencies": {}

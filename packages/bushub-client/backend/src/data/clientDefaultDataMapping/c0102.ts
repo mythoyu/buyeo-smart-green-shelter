@@ -61,4 +61,17 @@ export const c0102Defaults: DeviceDefaultValues = {
       auto: false,
     },
   },
+  people_counter: {
+    u001: {
+      currentCount: 0,
+      inCumulative: 0,
+      outCumulative: 0,
+      output1: false,
+      output2: false,
+      countEnabled: true,
+      buttonStatus: false,
+      sensorStatus: true,
+      limitExceeded: false,
+    },
+  },
 };

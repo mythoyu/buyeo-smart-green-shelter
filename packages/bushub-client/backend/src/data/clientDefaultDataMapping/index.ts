@@ -136,10 +136,21 @@ export interface ClientDefaultMapping {
 }
 
 // 전체 클라이언트 기본값 매핑
+// LG 표준 현장(c0103~c0111)은 c0103 기본값 공유 (현장별 튜닝 시 분리)
+const lgShelterDefaults = c0103Defaults;
+
 export const CLIENT_DEFAULT_MAPPING: ClientDefaultMapping = {
   c0101: c0101Defaults,
   c0102: c0102Defaults,
-  c0103: c0103Defaults,
+  c0103: lgShelterDefaults,
+  c0104: lgShelterDefaults,
+  c0105: lgShelterDefaults,
+  c0106: lgShelterDefaults,
+  c0107: lgShelterDefaults,
+  c0108: lgShelterDefaults,
+  c0109: lgShelterDefaults,
+  c0110: lgShelterDefaults,
+  c0111: lgShelterDefaults,
 };
 
 // 기본값 조회 함수

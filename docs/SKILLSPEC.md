@@ -36,7 +36,7 @@
 
 ### 아키텍처 특징
 
-- **모노레포 구조**: bushub-client(frontend/backend), smartcity-platform 등 패키지 분리
+- **모노레포 구조**: bushub-client(frontend/backend/network-control-api 등) 패키지 분리
 - **Clean Architecture + Repository Pattern**: 레이어 분리, 의존성 주입, 인터페이스 기반 설계
 - **API 일원화**: 내부/외부/관리자 API, action 기반 시스템 명령, RESTful 설계
 - **실시간/스케줄링**: 장비 제어, 상태 모니터링, 주기적 데이터 수집 (폴링 시스템)

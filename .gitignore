@@ -92,11 +92,6 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# Large data files (OSM and MBTiles)
-packages/smartcity-platform/tile-server/data/*.osm.pbf
-packages/smartcity-platform/tile-server/data/*.mbtiles
-packages/smartcity-platform/tile-server/data/south-korea-latest.*
-
 # Java JAR files
 *.jar
 
@@ -119,7 +114,6 @@ packages/*/data/
 # frontend 샘플 데이터는 예외로 포함
 !packages/bushub-client/frontend/src/data/
 !packages/bushub-client/backend/src/data/ 
-!packages/shared/data/ 
 
 # Chrome debug profiles
 .vscode/chrome-debug-profile*

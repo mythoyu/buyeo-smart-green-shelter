@@ -1,3 +1,5 @@
 packages:
   - "packages/bushub-client/backend"
   - "packages/bushub-client/frontend"
+  - "packages/bushub-client/network-control-api"
+  - "packages/dev-tools/people-counter-tester"

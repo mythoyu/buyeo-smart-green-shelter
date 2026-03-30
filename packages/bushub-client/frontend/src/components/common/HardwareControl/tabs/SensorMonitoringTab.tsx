@@ -2,6 +2,7 @@ import { RefreshCw, Activity } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
+import { useGetClient } from '../../../../api/queries/client';
 import { useReadAllHardwareStatus } from '../../../../api/queries/hardware';
 import { Button } from '../../../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../ui/card';
@@ -29,6 +30,9 @@ export const SensorMonitoringTab: React.FC<SensorMonitoringTabProps> = ({
   onError,
   pollingStatus,
 }) => {
+  const { data: clientInfo } = useGetClient();
+  const hardwareClientId = clientInfo?.id ?? 'c0101';
+
   const readAllStatus = useReadAllHardwareStatus();
 
   // 센서 데이터 상태 관리
@@ -52,7 +56,7 @@ export const SensorMonitoringTab: React.FC<SensorMonitoringTabProps> = ({
 
       // 전체 상태 읽기 API 호출
       const result = await readAllStatus.mutateAsync({
-        clientId: 'c0101',
+        clientId: hardwareClientId,
         commands: sensorCommands,
       });
 
