@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { logEnvironmentInfo, debugAllEnvironmentVariables } from '../utils/environment';
+import { nowKstFormatted } from '../utils/kstDateTime';
 
 interface UseEnvironmentLoggerOptions {
   /** 로그 출력 여부 (기본값: true) */
@@ -28,7 +29,7 @@ export const useEnvironmentLogger = (options: UseEnvironmentLoggerOptions = {}) 
   useEffect(() => {
     if (!enabled || hasLogged.current) return;
 
-    const timestamp = new Date().toISOString();
+    const timestamp = nowKstFormatted();
 
     console.log(`🔍 [${tag}] Environment Logger Started:`, {
       timestamp,
@@ -91,7 +92,7 @@ export const useEnvironmentLogger = (options: UseEnvironmentLoggerOptions = {}) 
   const logCustomInfo = (info: any) => {
     if (!enabled) return;
     console.log(`🔍 [${tag}] Custom Info:`, {
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
       ...info,
     });
   };

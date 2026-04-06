@@ -18,6 +18,7 @@ import {
   createErrorResponse,
   ErrorCodes,
 } from '../../../shared/utils/responseHelper';
+import { formatDatesInShallowRecord } from '../../../shared/utils/kstDateTime';
 import { DataResponseSchema, DATA_RESPONSE_EXAMPLE } from '../schemas/data.schema';
 
 async function dataRoutes(app: FastifyInstance) {
@@ -51,7 +52,10 @@ async function dataRoutes(app: FastifyInstance) {
         let devices = datas.map((data) => ({
           id: data.deviceId,
           type: data.type,
-          units: data.units.map((u: any) => ({ id: u.unitId, data: u.data })),
+          units: data.units.map((u: any) => ({
+            id: u.unitId,
+            data: formatDatesInShallowRecord(u.data) as Record<string, unknown>,
+          })),
         }));
 
         const systemService = ServiceContainer.getInstance().getSystemService();

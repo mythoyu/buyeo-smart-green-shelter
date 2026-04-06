@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ClientErrorDto } from '../../api/dto';
+import { formatErrorTime } from '../../utils/format';
 
 interface ErrorPanelProps {
   isOpen: boolean;
@@ -216,16 +217,7 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({ isOpen, onClose, errors 
                     </div>
                     <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400'>
                       <Clock className='h-3 w-3' />
-                      <span>
-                        {new Date(error.errorAt).toLocaleString('ko-KR', {
-                          timeZone: 'Asia/Seoul',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false,
-                        })}
-                      </span>
+                      <span>{formatErrorTime(error.errorAt)}</span>
                     </div>
                   </div>
 

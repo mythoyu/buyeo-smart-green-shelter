@@ -77,22 +77,6 @@ jobs:
           echo "✅ Docker 이미지 저장 완료"
           ls -la docker-images/
 
-      - name: Build Network Control API bundle (offline)
-        run: |
-          echo "📦 Building Network Control API bundle for offline install..."
-          pushd packages/bushub-client/network-control-api
-
-          # npm을 사용하여 심볼릭 링크 문제 해결
-          echo "🔧 npm을 사용하여 의존성 설치 (심볼릭 링크 없음)..."
-          npm install --production
-          npm run build
-
-          # 번들 생성: dist + node_modules + package.json
-          mkdir -p ../../../nca-bundle
-          tar -czf ../../../nca-bundle/nca-bundle.tar.gz \
-            dist node_modules package.json
-          popd
-
       - name: Create USB Package (minimal offline contents)
         run: |
           echo "Creating USB package with tag: ${{ github.ref_name }}"
@@ -113,10 +97,6 @@ jobs:
           cp packages/bushub-client/nginx/nginx.conf usb-package/packages/bushub-client/nginx/
           cp packages/bushub-client/nginx/mime.types usb-package/packages/bushub-client/nginx/
 
-          # systemd 서비스 파일
-          mkdir -p usb-package/packages/bushub-client/scripts
-          cp packages/bushub-client/scripts/bushub-network-control-api.service usb-package/packages/bushub-client/scripts/
-
           # 운영 유틸 스크립트(tools) - USB_ROOT/tools 로 배치
           mkdir -p usb-package/tools
           if [ -d packages/bushub-client/tools ]; then
@@ -127,10 +107,6 @@ jobs:
 
           # Docker 이미지들
           cp -r docker-images usb-package/packages/bushub-client/
-
-          # Network Control API 번들
-          mkdir -p usb-package/packages/bushub-client/network-control-api
-          cp nca-bundle/nca-bundle.tar.gz usb-package/packages/bushub-client/network-control-api/
 
           # 압축 파일 생성
           echo "🗜️ Creating compressed package..."
@@ -184,7 +160,6 @@ jobs:
                  - Node.js 설치
                - **애플리케이션 설치** (오프라인):
                  - Docker 이미지 로드
-                 - Network Control API 설치
                  - 서비스 시작
 
             3. **완료**:
@@ -195,9 +170,8 @@ jobs:
 
             ### 포함된 구성요소
             - **애플리케이션 이미지**: bushub-backend:${{ github.ref_name }}, bushub-frontend:${{ github.ref_name }}, mongo:6.0.15, nginx:1.28.0
-            - **Network Control API**: 완전한 오프라인 번들 (dist + node_modules)
             - **설치 스크립트**: usb-installer.sh, deploy-hybrid.sh
-            - **설정 파일**: docker-compose.integrated.yml, nginx.conf, mime.types, systemd service
+            - **설정 파일**: docker-compose.integrated.yml, nginx.conf, mime.types
 
             ### 시스템 요구사항
             - **하드웨어**: miniBoo-1203GB-i7 (기본 비밀번호: `jecs`)

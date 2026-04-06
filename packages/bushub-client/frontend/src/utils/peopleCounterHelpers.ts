@@ -2,6 +2,14 @@
  * 피플카운터 데이터 집계 유틸리티 함수
  */
 
+import {
+  getKstDayOfMonth,
+  getKstDayOfWeekSun0,
+  getKstHour,
+  getKstMonth0,
+  parseApiDateTimeSafe,
+} from './kstDateTime';
+
 export interface RawDataPoint {
   timestamp: string;
   inCumulative: number;
@@ -16,7 +24,7 @@ export const aggregateByHour = (data: RawDataPoint[]) => {
   const hourlyData: Record<number, { in: number; out: number; count: number; samples: number }> = {};
 
   data.forEach((point) => {
-    const hour = new Date(point.timestamp).getHours();
+    const hour = getKstHour(parseApiDateTimeSafe(point.timestamp));
     if (!hourlyData[hour]) {
       hourlyData[hour] = { in: 0, out: 0, count: 0, samples: 0 };
     }
@@ -41,8 +49,8 @@ export const aggregateByDay = (data: RawDataPoint[]) => {
   const dailyData: Record<string, { in: number; out: number; count: number; samples: number }> = {};
 
   data.forEach((point) => {
-    const date = new Date(point.timestamp);
-    const dayKey = `${date.getMonth() + 1}/${date.getDate()}`;
+    const date = parseApiDateTimeSafe(point.timestamp);
+    const dayKey = `${getKstMonth0(date) + 1}/${getKstDayOfMonth(date)}`;
     if (!dailyData[dayKey]) {
       dailyData[dayKey] = { in: 0, out: 0, count: 0, samples: 0 };
     }
@@ -74,8 +82,8 @@ export const aggregateByWeek = (data: RawDataPoint[]) => {
   const weeklyData: Record<number, { in: number; out: number; count: number; samples: number }> = {};
 
   data.forEach((point) => {
-    const date = new Date(point.timestamp);
-    const dayOfWeek = date.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
+    const date = parseApiDateTimeSafe(point.timestamp);
+    const dayOfWeek = getKstDayOfWeekSun0(date); // 0=일요일, 1=월요일, ..., 6=토요일
     if (!weeklyData[dayOfWeek]) {
       weeklyData[dayOfWeek] = { in: 0, out: 0, count: 0, samples: 0 };
     }
@@ -101,7 +109,7 @@ export const aggregateByMonth = (data: RawDataPoint[]) => {
   const monthlyData: Record<number, { in: number; out: number; count: number; samples: number }> = {};
 
   data.forEach((point) => {
-    const month = new Date(point.timestamp).getMonth(); // 0-11
+    const month = getKstMonth0(parseApiDateTimeSafe(point.timestamp)); // 0-11
     if (!monthlyData[month]) {
       monthlyData[month] = { in: 0, out: 0, count: 0, samples: 0 };
     }
@@ -133,7 +141,7 @@ export const findPeakHours = (data: RawDataPoint[], topN: number = 5) => {
   const hourlyPeaks: Record<number, number[]> = {};
 
   data.forEach((point) => {
-    const hour = new Date(point.timestamp).getHours();
+    const hour = getKstHour(parseApiDateTimeSafe(point.timestamp));
     if (!hourlyPeaks[hour]) {
       hourlyPeaks[hour] = [];
     }
@@ -162,7 +170,7 @@ export const calculateHourlyNetIn = (data: RawDataPoint[]) => {
   const hourlyData: Record<number, { in: number; out: number; samples: number }> = {};
 
   data.forEach((point) => {
-    const hour = new Date(point.timestamp).getHours();
+    const hour = getKstHour(parseApiDateTimeSafe(point.timestamp));
     if (!hourlyData[hour]) {
       hourlyData[hour] = { in: 0, out: 0, samples: 0 };
     }

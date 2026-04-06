@@ -20,6 +20,18 @@
 - 시간대별/일별/주별/월별 누적치 필터링
 - 외부 API를 통한 데이터 제공
 
+### 1.2 시간(타임존) 운영 정책
+
+피플카운터 관련 API의 **요청·응답 시각 필드**는 다음 형식으로 통일합니다.
+
+- **형식**: `YYYY-MM-DDTHH:mm:ss` — **오프셋·`Z` 없음**. 값은 항상 **KST(Asia/Seoul) 벽시계** 의미입니다.
+- **달력일만**: `YYYY-MM-DD` — **KST 기준 그날** (예: `date` 쿼리).
+- **DB 저장**: MongoDB `Date`(BSON)는 **순간(instant)** 으로 저장하며, API 직렬화 시에만 위 KST 문자열로 변환합니다.
+- **수신 호환**: 클라이언트가 `Z` 또는 `+09:00` 등이 붙은 ISO 문자열을 보내도 서버가 파싱할 수 있으나, **응답은 항상 무오프셋 KST 문자열**입니다.
+- **UI 표시**: 응답 시각이 이미 KST 의미이므로, 표시 시 **추가 변환 없이** 동일 의미로 사용할 수 있습니다.
+
+> 참고: `date=YYYY-MM-DD`, `period=day` 등은 **KST 달력** 기준 파라미터입니다.
+
 ---
 
 ## 2. 하드웨어 사양
@@ -78,12 +90,12 @@
         limitExceeded: boolean,      // 인원제한 (s: 0=이내, 1=이상)
         
         // 메타데이터
-        timestamp: Date,             // 데이터 수집 시간
+        timestamp: string,          // 데이터 수집 시각 (KST `YYYY-MM-DDTHH:mm:ss`, API 응답)
         rawData: string              // 원본 프로토콜 응답 (선택사항)
       }
     }
   ],
-  updatedAt: Date
+  updatedAt: string
 }
 ```
 
@@ -124,7 +136,7 @@
 ### 4.2 로우데이터 (Raw Data, 1분 단위)
 
 - **저장 위치**: `people_counter_raw` 컬렉션
-- **보관 기간**: 30일 (TTL 인덱스)
+- **보관 기간**: 35일 (TTL 인덱스)
 - **저장 주기**: 1분당 1건. 분 경계를 넘을 때 직전 분에 대해 한 건 저장.
 - **저장 필드**: `inDelta`(해당 1분 동안 입실 증가분), `inRef`(해당 분 시점 입실 누적). 리셋 시 `inCumulative` 감소하면 해당 분의 `inDelta`는 리셋 후 누적값으로 저장.
 
@@ -181,7 +193,7 @@ every 10s:
             "buttonStatus": true,
             "sensorStatus": true,
             "limitExceeded": false,
-            "timestamp": "2025-01-09T14:30:00.000Z"
+            "timestamp": "2025-01-09T23:30:00"
           }
         }
       ]
@@ -220,8 +232,8 @@ every 10s:
 
 **Query Parameters:**
 - `period`: `hour` | `day` | `week` | `month`
-- `startDate`: 시작 날짜 (ISO 8601, 선택사항)
-- `endDate`: 종료 날짜 (ISO 8601, 선택사항)
+- `startDate`: 시작 시각 (KST `YYYY-MM-DDTHH:mm:ss` 또는 `Z`/`+09:00` 포함 ISO — 호환, 선택)
+- `endDate`: 종료 시각 (동일, 선택)
 
 **응답 예시:**
 ```json
@@ -230,8 +242,8 @@ every 10s:
   "message": "피플카운터 통계 조회 성공",
   "data": {
     "period": "day",
-    "startDate": "2025-01-09T00:00:00.000Z",
-    "endDate": "2025-01-09T14:30:00.000Z",
+    "startDate": "2025-01-09T00:00:00",
+    "endDate": "2025-01-09T23:30:00",
     "stats": {
       "inCount": 30,        // 입실 누적
       "outCount": 6,        // 퇴실 누적
@@ -241,7 +253,7 @@ every 10s:
     },
     "rawData": [            // 데이터가 많지 않으면 로우데이터 포함
       {
-        "timestamp": "2025-01-09T14:30:00.000Z",
+        "timestamp": "2025-01-09T23:30:00",
         "inCumulative": 30,
         "outCumulative": 6,
         "currentCount": 24
@@ -261,8 +273,8 @@ every 10s:
   - `date` (required): 기준 날짜 (`YYYY-MM-DD`, 예: `2025-01-09`)
   - `clientId` (optional): 클라이언트 ID (미지정 시 최신 클라이언트 사용)
 - **타임존 기준**:
-  - 집계 범위는 서버 OS 타임존을 기준으로 계산하며, 운영 환경에서는 `Asia/Seoul`(KST)을 사용합니다.
-  - DB에는 UTC 기준 `Date`로 저장되지만, `date` 및 각 버킷의 `start`, `end`는 한국 시간으로 해석해야 합니다.
+  - `date(YYYY-MM-DD)`는 **KST 달력일(00:00~24:00)** 을 의미합니다.
+  - 응답의 `buckets[].start/end`는 **KST 무오프셋 문자열** (`YYYY-MM-DDTHH:mm:ss`) 입니다.
 - **응답 예시:**
 ```json
 {
@@ -273,8 +285,8 @@ every 10s:
     "timezone": "Asia/Seoul",
     "buckets": [
       {
-        "start": "2025-01-09T00:00:00.000Z",
-        "end": "2025-01-09T01:00:00.000Z",
+        "start": "2025-01-09T00:00:00",
+        "end": "2025-01-09T01:00:00",
         "inCount": 5,
         "outCount": 2,
         "peakCount": 3,
@@ -295,32 +307,46 @@ every 10s:
   - `date` (required): 기준 날짜 (`YYYY-MM-DD`)
   - `clientId` (optional): 클라이언트 ID
 - **응답 구조**:
+- 
   - `data.date`, `data.timezone`, `data.buckets` 필드 구조는 외부 API와 동일합니다.
 
 ### 5.5 10분 단위 사용량 API (상위 플랫폼용)
 
 - **엔드포인트**: `GET /api/v1/external/people-counter/usage-10min`
-- **설명**: 지정 구간을 10분 버킷으로 나누어, 각 버킷별 입실 수(`inCount`)만 제공합니다. 요청/응답은 KST 기준입니다.
-- **Query Parameters** (하나의 방식만 지정):
-  - `date`: `YYYY-MM-DD` — 해당 일 00:00 ~ 다음날 00:00 (KST)
-  - `start`, `end`: 임의 구간 (ISO 8601 또는 KST 기준). 구간을 10분 버킷으로 분할하여 집계
-  - `period=day`: 오늘 00:00 KST ~ 현재 시각
-  - `period=last_24h`: 현재 시각 기준 직전 24시간
+- **설명**: 지정 구간을 10분 버킷으로 나누어, 각 버킷별 입실 수(`inCount`)만 제공합니다.
+- **요청/응답 시간 표기 정책**:
+  - 요청 `start/end`는 **KST 무오프셋** (`YYYY-MM-DDTHH:mm:ss`) 또는 **호환을 위해** `Z`/`+09:00` 포함 ISO를 전달할 수 있습니다.
+  - 응답의 `range.start/end`, `buckets[].start/end`는 **KST 무오프셋 문자열**입니다.
+- **Query Parameters**:
+  - `start`, `end` (**필수**): 임의 구간 `[start, end)` — **KST 무오프셋** (`YYYY-MM-DDTHH:mm:ss` 등) 또는 `Z`/`+09:00` 포함 ISO(호환).
+  - `date`, `period` 등 다른 방식은 **지원하지 않습니다**.
 - **clientId**: 미지정. 서버가 최신 클라이언트 사용(IP로 구분되는 환경 가정).
 - **응답 예시:**
 ```json
 {
   "success": true,
-  "message": "피플카운터 10분 단위 사용량 조회 성공",
+  "message": "피플카운터 10분 사용량 조회 성공",
   "data": {
-    "timezone": "Asia/Seoul",
+    "range": {
+      "start": "2025-01-09T00:00:00",
+      "end": "2025-01-10T00:00:00"
+    },
+    "bucketSizeMinutes": 10,
     "buckets": [
-      { "start": "2025-01-09T00:00:00.000Z", "end": "2025-01-09T00:10:00.000Z", "inCount": 2 },
-      { "start": "2025-01-09T00:10:00.000Z", "end": "2025-01-09T00:20:00.000Z", "inCount": 5 }
+      { "start": "2025-01-09T00:00:00", "end": "2025-01-09T00:10:00", "inCount": 2 },
+      { "start": "2025-01-09T00:10:00", "end": "2025-01-09T00:20:00", "inCount": 5 }
     ]
   }
 }
 ```
+
+#### 5.5.1 KST 하루 조회를 `start/end`로 요청하는 예시
+
+**KST 2025-01-09 하루(00:00~익일 00:00, KST 벽시계)** 를 조회하는 예:
+
+`GET /api/v1/external/people-counter/usage-10min?start=2025-01-09T00:00:00&end=2025-01-10T00:00:00`
+
+(KST 달력 하루를 조회할 때는 익일 00:00:00을 `end`로 두어 `[start, end)` 구간으로 요청합니다.)
 
 ---
 
@@ -387,7 +413,7 @@ interface PeopleCounterRaw {
 
 // 인덱스
 PeopleCounterRawSchema.index({ clientId: 1, timestamp: -1 });
-PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 }); // 30일 TTL
+PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 3024000 }); // 35일 TTL (35*24*60*60)
 ```
 
 ### 6.3 API 엔드포인트
@@ -405,8 +431,8 @@ PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
 - **인증**: API Key 필요
 - **Query Parameters**:
   - `period` (required): `hour` | `day` | `week` | `month`
-  - `startDate` (optional): ISO 8601 형식
-  - `endDate` (optional): ISO 8601 형식
+  - `startDate` (optional): KST 무오프셋 또는 호환 ISO
+  - `endDate` (optional): 동일
 
 #### 6.3.3 로우데이터 조회
 
@@ -414,16 +440,16 @@ PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
 - **설명**: 로우데이터 직접 조회 (1분 단위 문서, `inDelta`, `inRef` 포함)
 - **인증**: API Key 필요
 - **Query Parameters**:
-  - `startDate` (required): ISO 8601 형식
-  - `endDate` (required): ISO 8601 형식
+  - `startDate` (required): KST 무오프셋 또는 호환 ISO
+  - `endDate` (required): 동일
   - `limit` (optional): 최대 반환 개수 (기본값: 1000)
 
 #### 6.3.4 10분 단위 사용량 조회
 
 - **엔드포인트**: `GET /api/v1/external/people-counter/usage-10min`
-- **설명**: 10분 버킷별 입실 수(`inCount`)만 제공. 쿼리/응답은 KST 기준.
+- **설명**: 10분 버킷별 입실 수(`inCount`)만 제공. 요청/응답 시각은 **KST 무오프셋 문자열** 계약을 따릅니다.
 - **인증**: API Key 필요
-- **Query Parameters**: `date` (YYYY-MM-DD) 또는 `start`+`end` 또는 `period=day`|`period=last_24h`
+- **Query Parameters**: `start`, `end` (필수, 구간 `[start, end)`). KST 무오프셋 또는 호환 ISO.
 
 ---
 
@@ -439,7 +465,7 @@ PEOPLE_COUNTER_POLL_INTERVAL=10000  # 10초 (밀리초)
 PEOPLE_COUNTER_DEVICE_ID=0000      # 기본 ID
 
 # 로우데이터 보관 기간 (일)
-PEOPLE_COUNTER_RAW_DATA_RETENTION_DAYS=30
+PEOPLE_COUNTER_RAW_DATA_RETENTION_DAYS=35
 ```
 
 위 환경 변수들은 **포트/보드레이트/폴링 주기 등 기본 동작 파라미터를 설정하기 위한 선택 사항**입니다.  
@@ -490,7 +516,7 @@ services:
 
 - **조건부 저장**: IN누적 변경 시에만 저장하여 불필요한 저장 방지
 - **인덱스 최적화**: `timestamp` 기준 인덱스로 조회 성능 향상
-- **TTL 인덱스**: 30일 자동 삭제로 스토리지 관리
+- **TTL 인덱스**: 35일 자동 삭제로 스토리지 관리
 
 ### 9.2 통계 계산 최적화
 
@@ -514,7 +540,7 @@ services:
 1. IN누적 변경 시 저장 확인
 2. IN누적 동일 시 저장 안 함 확인
 3. 로우데이터 저장 확인
-4. 30일 TTL 동작 확인
+4. 35일 TTL 동작 확인
 
 ### 10.3 통계 조회 테스트
 

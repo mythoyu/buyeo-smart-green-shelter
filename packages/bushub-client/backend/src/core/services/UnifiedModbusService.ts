@@ -1,4 +1,5 @@
 import { ILogger } from '../../shared/interfaces/ILogger';
+import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { getModbusConfig } from '../../utils/environment';
 import {
   ModbusReadRequest,
@@ -269,7 +270,7 @@ export class UnifiedModbusService {
       mockMode: this.activeService === 'mock',
       activeService: this.activeService,
       queueStatus: this.getQueueStatus(),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
 
     if (this.activeService === 'real') {
@@ -342,7 +343,7 @@ export class UnifiedModbusService {
       normalPriority: status.normalPriority,
       lowPriority: status.lowPriority,
       processing: status.isProcessing,
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 

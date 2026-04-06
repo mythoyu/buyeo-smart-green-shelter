@@ -201,60 +201,6 @@ echo ""
 echo "🚀 Bushub 하이브리드 배포 시작..."
 echo "=================================="
 
-# 1. Network Control API 설치
-echo "🔧 Network Control API 설치 중..."
-
-# 기존 서비스 파일 복사 및 경로 수정
-echo "📦 Network Control API 서비스 파일 복사 및 수정 중..."
-
-# Node.js 경로 확인
-NODE_PATH=$(which node)
-if [ -z "$NODE_PATH" ]; then
-    echo "❌ Node.js를 찾을 수 없습니다. Node.js를 먼저 설치하세요."
-    exit 1
-fi
-
-# 현재 사용자 확인
-CURRENT_USER=$(whoami)
-CURRENT_GROUP=$(id -gn)
-
-# Network Control API 디렉토리 생성 및 설정
-NETWORK_API_DIR="/opt/bushub/network-control-api"
-sudo mkdir -p "$NETWORK_API_DIR"
-
-# 실제 서비스 파일 복사 및 경로 수정
-echo "📄 Network Control API 서비스 파일 복사 및 설정 중..."
-sudo sed "s|WorkingDirectory=.*|WorkingDirectory=$NETWORK_API_DIR|g; s|ExecStart=.*|ExecStart=$NODE_PATH dist/index.js|g; s|User=.*|User=root|g; s|Group=.*|Group=root|g" scripts/bushub-network-control-api.service | sudo tee /etc/systemd/system/bushub-network-control-api.service > /dev/null
-
-sudo systemctl daemon-reload
-echo "✅ Network Control API 서비스 파일 복사 및 수정 완료"
-
-# Network Control API 설치 및 설정
-echo "📦 Network Control API 설치 중..."
-
-# 오프라인 번들이 존재하면 그대로 사용, 없으면 에러 발생
-if [ -f "$SCRIPT_DIR/network-control-api/nca-bundle.tar.gz" ]; then
-    echo "📦 오프라인 번들 사용: Network Control API 전개 중..."
-    sudo mkdir -p "$NETWORK_API_DIR"
-    sudo tar -xzf "$SCRIPT_DIR/network-control-api/nca-bundle.tar.gz" -C "$NETWORK_API_DIR"
-    echo "✅ Network Control API 번들 전개 완료"
-else
-    echo "❌ nca-bundle.tar.gz가 없습니다!"
-    echo "ℹ️ 완전 오프라인 설치를 위해서는 Network Control API 번들이 필요합니다."
-    echo "📁 예상 위치: $SCRIPT_DIR/network-control-api/nca-bundle.tar.gz"
-    echo "📋 현재 디렉토리 내용:"
-    ls -la "$SCRIPT_DIR/network-control-api/" 2>/dev/null || echo "network-control-api 디렉토리가 존재하지 않습니다"
-    echo ""
-    echo "🔧 해결 방법:"
-    echo "1. GitHub Release에서 올바른 USB 패키지를 다운로드하세요"
-    echo "2. USB 패키지에 nca-bundle.tar.gz가 포함되어 있는지 확인하세요"
-    echo "3. 인터넷 연결이 필요한 경우, 온라인 설치 스크립트를 사용하세요"
-    exit 1
-fi
-
-# 원래 디렉토리로 돌아가기
-cd "$SCRIPT_DIR"
-
 # 2. Docker 컨테이너 서비스 시작
 cd "$SCRIPT_DIR"
 
@@ -297,21 +243,11 @@ docker compose -f docker-compose.integrated.yml down || true
 echo "🚀 Docker Compose 실행 중... (빌드 없이 이미지 사용)"
 docker compose -f docker-compose.integrated.yml up -d
 
-# 3. 호스트 서비스 시작 (network-control-api)
-echo "🖥️ 호스트 서비스 시작..."
-sudo systemctl enable bushub-network-control-api.service
-sudo systemctl restart bushub-network-control-api.service
-
-# 4. 서비스 상태 확인
+# 3. 서비스 상태 확인
 echo "📊 서비스 상태 확인..."
 echo ""
 echo "🐳 Docker 컨테이너:"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-echo ""
-echo "🖥️ 호스트 서비스:"
-echo "자동 시작 설정: $(systemctl is-enabled bushub-network-control-api.service)"
-sudo systemctl status bushub-network-control-api --no-pager -l
 
 # 5. 헬스체크
 echo ""
@@ -332,13 +268,6 @@ else
     echo "❌ Frontend: 오류"
 fi
 
-# Network Control API 헬스체크
-if curl -s http://localhost:3001/api/health > /dev/null; then
-    echo "✅ Network Control API: 정상"
-else
-    echo "❌ Network Control API: 오류"
-fi
-
 # Nginx 헬스체크
 if curl -s http://localhost > /dev/null; then
     echo "✅ Nginx Proxy: 정상"
@@ -350,12 +279,11 @@ echo ""
 echo "🎉 배포 완료!"
 echo "🌐 웹 인터페이스: http://localhost"
 echo "📚 API 문서: http://localhost:3000/docs"
-echo "🔧 네트워크 API: http://localhost:3001/docs"
 echo ""
 echo "📋 관리 명령어:"
-echo "  상태 확인: docker ps && sudo systemctl status bushub-network-control-api"
-echo "  로그 확인: docker logs bushub-backend && sudo journalctl -u bushub-network-control-api -f"
-echo "  서비스 중지: cd $SCRIPT_DIR && docker compose -f docker-compose.integrated.yml down && sudo systemctl stop bushub-network-control-api"
+echo "  상태 확인: docker ps"
+echo "  로그 확인: docker logs bushub-backend"
+echo "  서비스 중지: cd $SCRIPT_DIR && docker compose -f docker-compose.integrated.yml down"
 
 # tools 권한 보강 및 사용 예시 출력 (USB_ROOT/tools 가 있을 경우)
 if [ -d "$SCRIPT_DIR/../tools" ]; then

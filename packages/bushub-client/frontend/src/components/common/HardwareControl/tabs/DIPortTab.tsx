@@ -10,6 +10,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '../../../ui/
 import { DIPortTableRow } from '../components/DIPortTableRow';
 
 import type { DIPort, DIPortState, HardwareControlError } from '../../../../types/hardware';
+import { nowKstFormatted } from '../../../../utils/kstDateTime';
 
 // DI 포트 목록
 const DI_PORTS: DIPort[] = [
@@ -73,7 +74,7 @@ export const DIPortTab: React.FC<DIPortTabProps> = ({ disabled = false, onError,
         port,
         enabled: false,
         status: false,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: nowKstFormatted(),
       });
     });
     return initialState;
@@ -129,7 +130,7 @@ export const DIPortTab: React.FC<DIPortTabProps> = ({ disabled = false, onError,
                 }
               });
 
-              updatedState.lastUpdated = new Date().toISOString();
+              updatedState.lastUpdated = nowKstFormatted();
               newStates.set(port as DIPort, updatedState);
             }
           });
@@ -193,7 +194,7 @@ export const DIPortTab: React.FC<DIPortTabProps> = ({ disabled = false, onError,
             if (command === 'ENABLE') {
               updatedState.enabled = value;
             }
-            updatedState.lastUpdated = new Date().toISOString();
+            updatedState.lastUpdated = nowKstFormatted();
             newStates.set(port, updatedState);
           }
           return newStates;

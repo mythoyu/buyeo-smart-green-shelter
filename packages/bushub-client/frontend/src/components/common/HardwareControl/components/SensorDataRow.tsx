@@ -5,6 +5,7 @@ import { Badge } from '../../../ui/badge';
 import { TableCell, TableRow } from '../../../ui/table';
 
 import type { SensorPort, SensorData } from '../../../../types/hardware';
+import { formatToKoreanTime } from '../../../../utils/format';
 
 interface SensorDataRowProps {
   port: SensorPort;
@@ -19,12 +20,7 @@ export const SensorDataRow: React.FC<SensorDataRowProps> = ({ port, sensorData, 
   // 마지막 업데이트 시간 포맷팅
   const formatLastUpdated = (lastUpdated: string) => {
     try {
-      const date = new Date(lastUpdated);
-      return date.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
+      return formatToKoreanTime(lastUpdated, { showDate: false, showSeconds: true });
     } catch {
       return '알 수 없음';
     }

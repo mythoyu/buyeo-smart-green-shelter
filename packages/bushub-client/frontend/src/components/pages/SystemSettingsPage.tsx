@@ -1,10 +1,9 @@
-import { Wifi, Network, Clock, Sun, Cpu, Loader2, RefreshCcw, Users, RotateCw, Activity, Settings } from 'lucide-react';
+import { Clock, Sun, Cpu, RefreshCcw, Users, Activity, Settings } from 'lucide-react';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 import { useGetPeopleCounterState, useUpdatePeopleCounterState, useResetPeopleCounterData } from '../../api/queries/people-counter';
 import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
-import { SETTINGS_NAV } from '../../constants/sidebarConfig';
 import {
   useSaveSeasonal,
   useGetSeasonal,
@@ -13,39 +12,19 @@ import {
   useSyncDdcTime,
   useGetPollingInterval,
   useSetPollingInterval,
-  useRestartHostSystem,
   useRestartBackend,
   useRefreshDdcTime,
   useGetSystemTime,
-  useGetRebootSchedule,
-  useUpdateRebootSchedule,
 } from '../../api/queries/system';
-import {
-  useSetNtp,
-  useSetNetwork,
-  useSetSoftap,
-  useGetNtpStatus,
-  useGetSoftapStatus,
-  useCheckNtpConnectivity,
-  useGetNetworkInterfaces,
-} from '../../hooks/useSystemSettings';
-import { useValidation } from '../../hooks/useValidation';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { cn } from '../../lib/utils';
-import InputWithLabel from '../common/InputWithLabel';
 import OnOffToggleButton from '../common/OnOffToggleButton';
-import SelectWithCommand from '../common/SelectWithCommand';
 import SelectWithLabel from '../common/SelectWithLabel';
 import SettingsCard from '../common/SettingsCard';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Button } from '../ui/button';
 import { SelectItem } from '../ui/select';
-import { Badge } from '../ui/badge';
-import { Checkbox } from '../ui/checkbox';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { RightSidebarItem } from '../layout/RightSidebar';
-import type { NtpSettings, NetworkSettings, SoftapSettings } from '../../types/systemSettings';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 
 // 월별 이름 매핑
@@ -106,24 +85,21 @@ const SystemSettingsPage: React.FC = () => {
 
   // 설정 그룹 정의
   const SETTINGS_GROUPS = [
-    { id: 'all', label: '전체', icon: Activity },
-    { id: 'network', label: '네트\n워크', icon: Network, cardIds: ['settings-softap', 'settings-network', 'settings-ntp'] },
+    { id: 'all', label: '전체', icon: Activity, cardIds: [] },
     {
       id: 'system',
       label: '시스템',
       icon: Settings,
-      cardIds: ['settings-system-time', 'settings-ddc-time', 'settings-seasonal', 'settings-polling', 'settings-people-counter'],
+      cardIds: [
+        'settings-system-time',
+        'settings-ddc-time',
+        'settings-seasonal',
+        'settings-polling',
+        'settings-people-counter',
+        'settings-reboot',
+      ],
     },
-    { id: 'reboot', label: '재기동', icon: RotateCw, cardIds: ['settings-reboot'] },
-  ] as const;
-
-  // 커스텀 훅들
-  const { validateField, hasErrors, getFieldError } = useValidation();
-
-  // React Query 훅들
-  const { data: ntpStatus } = useGetNtpStatus();
-  const { data: networkIfaces } = useGetNetworkInterfaces();
-  const { data: softapStatus } = useGetSoftapStatus();
+  ];
 
   // 🌸 절기 설정 조회
   const { data: seasonalData, refetch: refetchSeasonal, isFetching: isSeasonalFetching } = useGetSeasonal();
@@ -142,96 +118,9 @@ const SystemSettingsPage: React.FC = () => {
     isFetching: isSystemTimeFetching,
   } = useGetSystemTime();
 
-  // 🔄 호스트 PC 재기동 훅
-  const restartHostSystemMutation = useRestartHostSystem();
-
   // 🔄 백엔드 재기동 훅
   const restartBackendMutation = useRestartBackend();
   const refreshDdcTimeMutation = useRefreshDdcTime();
-
-  // (미사용 옵션 제거)
-
-  // 네트워크 인터페이스 상태를 한국어로 변환하는 헬퍼 함수
-  const getStateText = (state: string): string => {
-    switch (state) {
-      case 'connected':
-        return '🟢 연결됨';
-      case 'disconnected':
-        return '🔴 연결 해제';
-      case 'unavailable':
-        return '⚫ 사용 불가';
-      case 'unmanaged':
-        return '⚪ 관리 안함';
-      default:
-        return `❓ ${state}`;
-    }
-  };
-
-  // 🌐 단일 인터페이스 데이터 소스에서 타입별로 필터링
-  const allIfaces: any[] = (networkIfaces as any)?.data?.interfaces || [];
-
-  // WiFi 인터페이스 필터링
-  const wifiInterfaces = allIfaces.filter((i: any) => i?.type === 'wifi');
-  const wifiInterfaceOptions = wifiInterfaces.map(iface => ({
-    value: iface.name,
-    label: `${iface.name} - ${iface.connection || '연결 없음'}`,
-    description: `${getStateText(iface.state)}${iface.ipv4 ? ` | IP: ${iface.ipv4}` : ''}`,
-    category: `${iface.type}-${iface.state}`,
-  }));
-
-  // Ethernet 인터페이스 필터링
-  const ethernetInterfaces = allIfaces.filter((i: any) => i?.type === 'ethernet');
-  const networkInterfaceOptions = ethernetInterfaces.map(iface => ({
-    value: iface.name,
-    label: `${iface.name} - ${iface.connection || '연결 없음'}`,
-    description: `${getStateText(iface.state)}${iface.ipv4 ? ` | IP: ${iface.ipv4}` : ''}`,
-    category: `${iface.type}-${iface.state}`,
-  }));
-
-  // 초기값 설정용 변수들
-  const currentWiredInterface = ethernetInterfaces.length > 0 ? ethernetInterfaces[0]?.name || '' : '';
-  const firstWifiName: string = wifiInterfaces.length > 0 ? wifiInterfaces[0]?.name || '' : '';
-
-  // 인터페이스 초기 선택: 응답 리스트의 첫 번째 유선 인터페이스로 설정
-  useEffect(() => {
-    if (!networkInput?.interface && currentWiredInterface) {
-      setNetworkInput(prev => ({ ...(prev as NetworkSettings), interface: currentWiredInterface } as NetworkSettings));
-    }
-  }, [currentWiredInterface]);
-
-  // WiFi 인터페이스 초기 선택: 응답 리스트의 첫 번째 WiFi 인터페이스로 설정
-  useEffect(() => {
-    if (!softapInput?.interface && firstWifiName) {
-      setSoftapInput(prev => ({ ...(prev as SoftapSettings), interface: firstWifiName } as SoftapSettings));
-    }
-  }, [firstWifiName]);
-
-  // (미사용 옵션 제거)
-
-  // 로컬 상태 (초기값은 빈 상태로 시작, useEffect에서 실제 데이터로 업데이트)
-  const [ntpInput, setNtpInput] = useState<NtpSettings>({
-    enabled: true,
-    primaryServer: '',
-    timezone: '',
-  });
-  const [networkInput, setNetworkInput] = useState<NetworkSettings>({
-    interface: '', // 초기값은 빈 문자열, useEffect에서 실제 데이터로 업데이트
-    dhcp4: true,
-    ipv4: '',
-    gateway: '',
-    nameservers: [''],
-    subnetmask: '',
-  });
-
-  // networkInput이 정의된 후에 selectedIface 계산
-  const selectedIface: any = allIfaces.find((i: any) => i.name === networkInput?.interface) || null;
-  const [softapInput, setSoftapInput] = useState<SoftapSettings>({
-    enabled: false,
-    interface: '', // 초기값은 빈 문자열, useEffect에서 실제 데이터로 업데이트
-    ssid: '',
-    password: '',
-    connectionName: '',
-  });
 
   // 절기 설정 상태 (DDCConfigurationPage와 동일한 구조)
   const [seasonInput, setSeasonInput] = useState<SeasonalData>({
@@ -253,21 +142,10 @@ const SystemSettingsPage: React.FC = () => {
   // 폴링 간격 상태
   const [pollingIntervalInput, setPollingIntervalInput] = useState<number>(20000);
 
-  // 호스트 자동 재부팅 스케줄 상태
-  const { data: rebootSchedule } = useGetRebootSchedule();
-  const [autoRebootEnabled, setAutoRebootEnabled] = useState<boolean>(false);
-  const [autoRebootMode, setAutoRebootMode] = useState<'daily' | 'weekly'>('daily');
-  const [autoRebootHour, setAutoRebootHour] = useState<number>(3);
-  const [autoRebootDaysOfWeek, setAutoRebootDaysOfWeek] = useState<number[]>([1]); // 기본: 월요일
-
   // 현재 시간 상태 (1초마다 업데이트)
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
   // 뮤테이션 훅들
-  const setNtpMutation = useSetNtp();
-  const checkNtpMutation = useCheckNtpConnectivity();
-  const setNetworkMutation = useSetNetwork();
-  const setSoftapMutation = useSetSoftap();
   const saveSeasonalMutation = useSaveSeasonal();
   const syncDdcTimeMutation = useSyncDdcTime();
   const setPollingIntervalMutation = useSetPollingInterval();
@@ -275,7 +153,6 @@ const SystemSettingsPage: React.FC = () => {
   const updatePeopleCounterMutation = useUpdatePeopleCounterState();
   const resetPeopleCounterDataMutation = useResetPeopleCounterData();
   const [openResetDialog, setOpenResetDialog] = useState(false);
-  const updateRebootScheduleMutation = useUpdateRebootSchedule();
 
   // 🌸 절기 설정 초기 로드 (저장된 설정이 있으면 불러오기)
   useEffect(() => {
@@ -291,272 +168,8 @@ const SystemSettingsPage: React.FC = () => {
     }
   }, [pollingIntervalData]);
 
-  // 🔁 호스트 자동 재부팅 스케줄 초기 로드
-  useEffect(() => {
-    if (rebootSchedule) {
-      setAutoRebootEnabled(!!rebootSchedule.enabled);
-      setAutoRebootMode(rebootSchedule.mode || 'daily');
-      setAutoRebootHour(
-        typeof rebootSchedule.hour === 'number' && rebootSchedule.hour >= 0 && rebootSchedule.hour <= 23
-          ? rebootSchedule.hour
-          : 3,
-      );
-      if (Array.isArray(rebootSchedule.daysOfWeek) && rebootSchedule.daysOfWeek.length > 0) {
-        setAutoRebootDaysOfWeek(rebootSchedule.daysOfWeek);
-      }
-    }
-  }, [rebootSchedule]);
-
-  // 🌐 네트워크 설정 초기 로드 (선택된 인터페이스의 현재 설정으로 자동 채우기)
-  useEffect(() => {
-    if (selectedIface && !networkInput?.ipv4 && !networkInput?.gateway) {
-      setNetworkInput(prev => ({
-        ...prev,
-        dhcp4: selectedIface?.dhcp4 ?? true,
-        ipv4: selectedIface?.ipv4 || '',
-        subnetmask: selectedIface?.subnetmask || '',
-        gateway: selectedIface?.gateway || '',
-        nameservers: selectedIface?.dns?.length ? [selectedIface.dns[0]] : [''],
-      }));
-    }
-  }, [selectedIface]);
-
-  // 📶 SoftAP 설정 초기 로드 (백엔드에서 받은 실제 데이터로 업데이트)
-  useEffect(() => {
-    if (softapStatus?.data) {
-      setSoftapInput(prev => {
-        // 이미 입력된 값이 있으면 유지, 없으면 API 데이터로 초기화
-        const hasUserInput = prev.ssid || prev.password || prev.interface;
-
-        if (hasUserInput) {
-          // 사용자가 입력한 값이 있으면 유지
-          return prev;
-        } else {
-          // 사용자 입력이 없으면 API 데이터로 초기화
-          return {
-            enabled: softapStatus.data.enabled ?? false,
-            interface: firstWifiName, // WiFi 인터페이스 자동 설정
-            ssid: softapStatus.data.ssid || '',
-            // password는 서버에서 주지 않음: 입력값으로만 관리
-            password: prev.password || '',
-            connectionName: softapStatus.data.connectionName || '',
-          };
-        }
-      });
-    }
-  }, [softapStatus, firstWifiName]);
-
-  // 🕐 NTP 설정 초기 로드 (백엔드에서 받은 실제 데이터로 업데이트)
-  useEffect(() => {
-    if (ntpStatus?.data) {
-      setNtpInput(prev => {
-        // 이미 입력된 값이 있으면 유지, 없으면 API 데이터로 초기화
-        const hasUserInput = prev.primaryServer || prev.timezone;
-
-        if (hasUserInput) {
-          // 사용자가 입력한 값이 있으면 유지
-          return prev;
-        } else {
-          // 사용자 입력이 없으면 API 데이터로 초기화
-          return {
-            enabled: ntpStatus.data.enabled ?? true,
-            primaryServer: ntpStatus.data.primaryServer || '',
-            primaryServerCommented: ntpStatus.data.primaryServerCommented ?? false,
-            fallbackServer: ntpStatus.data.fallbackServer || '',
-            fallbackServerCommented: ntpStatus.data.fallbackServerCommented ?? false,
-            timezone: ntpStatus.data.timezone || '',
-          };
-        }
-      });
-    }
-  }, [ntpStatus]);
-
-  // 입력 핸들러
-  const handleInput = (section: string, field: string, value: string) => {
-    validateField(section, field, value);
-
-    if (section === 'softap') {
-      const newValue = { ...softapInput, [field]: value } as SoftapSettings;
-      setSoftapInput(newValue);
-    } else if (section === 'network') {
-      if (field === 'ipv4') {
-        const newValue = { ...networkInput, ipv4: value } as NetworkSettings;
-        setNetworkInput(newValue);
-      } else if (field === 'nameservers') {
-        // 단일 DNS 서버를 배열로 변환
-        const newValue = { ...networkInput, nameservers: [value.trim()] } as NetworkSettings;
-        setNetworkInput(newValue);
-      } else {
-        const newValue = { ...networkInput, [field]: value } as NetworkSettings;
-        setNetworkInput(newValue);
-      }
-    } else if (section === 'ntp') {
-      const newValue = { ...ntpInput, [field]: value } as NtpSettings;
-      setNtpInput(newValue);
-    }
-  };
-
-  // NTP 주석 상태 핸들러 (체크박스용)
-  const handleNtpCommentChange = (field: 'primaryServerCommented' | 'fallbackServerCommented', checked: boolean) => {
-    setNtpInput(prev => ({
-      ...prev,
-      [field]: checked,
-    }));
-  };
-
-  // SoftAP 토글 핸들러
-  const handleSoftapToggle = (enabled: boolean) => {
-    const newValue = {
-      ...softapInput,
-      enabled,
-    } as SoftapSettings;
-    setSoftapInput(newValue);
-  };
-
-  // DHCP 토글 핸들러
-  const handleDhcpToggle = (dhcp4: boolean) => {
-    const newValue = {
-      ...networkInput,
-      dhcp4,
-    } as NetworkSettings;
-    setNetworkInput(newValue);
-  };
-
-  // 네트워크 인터페이스 선택 시 현재 설정값으로 자동 채우기
-  const handleNetworkInterfaceSelect = (value: string) => {
-    handleInput('network', 'interface', value);
-    const iface = allIfaces.find((i: any) => i.name === value);
-
-    setNetworkInput(
-      prev =>
-        ({
-          ...prev,
-          interface: value,
-          dhcp4: iface?.dhcp4 ?? true,
-          ipv4: iface?.ipv4 || '',
-          subnetmask: iface?.subnetmask || '',
-          gateway: iface?.gateway || prev.gateway || '',
-          nameservers: iface?.dns?.length ? [iface.dns[0]] : [''],
-        } as NetworkSettings)
-    );
-  };
-
   const currentMonthField = monthFieldByIndex[currentTime.getMonth()];
   const currentMonthSeasonValue = seasonInput[currentMonthField] ?? 0;
-
-  // NTP 적용 핸들러
-  const handleNtpApply = () => {
-    const payload: NtpSettings = {
-      enabled: ntpInput?.enabled || false,
-      primaryServer: ntpInput?.primaryServer || '',
-      primaryServerCommented: ntpInput?.primaryServerCommented || false,
-      fallbackServer: ntpInput?.fallbackServer || '',
-      fallbackServerCommented: ntpInput?.fallbackServerCommented || false,
-      timezone: ntpInput?.timezone || '',
-    };
-
-    setNtpMutation.mutate(payload, {
-      onSuccess: response => {
-        const message = response?.message || 'NTP 설정이 저장되었습니다.';
-        toast.success(message, { id: 'system-ntp-save-success' });
-      },
-      onError: (error: any) => {
-        const message = error?.response?.data?.message || error?.response?.data?.error || 'NTP 설정 저장 실패';
-        toast.error(message, { id: 'system-ntp-save-error' });
-      },
-    });
-  };
-
-  // 네트워크 적용 핸들러 (유선 전용)
-  const handleNetworkApply = () => {
-    if (!networkInput) {
-      toast.error('네트워크 설정 정보가 없습니다.', { id: 'network-input-required' });
-      return;
-    }
-
-    // 인터페이스 검증
-    if (!networkInput.interface?.trim()) {
-      toast.error('네트워크 인터페이스를 선택해주세요.', { id: 'network-interface-required' });
-      return;
-    }
-
-    // 무선 인터페이스 차단
-    if (/^wlan/i.test(networkInput.interface) || /^wifi/i.test(networkInput.interface)) {
-      toast.error('유선 네트워크 전용 카드입니다. 무선 설정은 SoftAP 카드를 사용하세요.', {
-        id: 'network-ethernet-only-error',
-      });
-      return;
-    }
-
-    // 정적 IP 모드일 때 필수 필드 검증
-    if (!networkInput.dhcp4) {
-      if (!networkInput.ipv4?.trim()) {
-        toast.error('IP 주소를 입력해주세요.', { id: 'network-ipv4-required' });
-        return;
-      }
-      if (!networkInput.gateway?.trim()) {
-        toast.error('게이트웨이를 입력해주세요.', { id: 'network-gateway-required' });
-        return;
-      }
-      if (!networkInput.subnetmask?.trim()) {
-        toast.error('서브넷 마스크를 입력해주세요.', { id: 'network-subnetmask-required' });
-        return;
-      }
-    }
-
-    setNetworkMutation.mutate(networkInput, {
-      onSuccess: response => {
-        const message = response?.message || '유선 네트워크 설정이 저장되었습니다.';
-        toast.success(message, { id: 'system-network-save-success' });
-      },
-      onError: (error: any) => {
-        const message =
-          error?.response?.data?.message || error?.response?.data?.error || '유선 네트워크 설정 저장 실패';
-        toast.error(message, { id: 'system-network-save-error' });
-      },
-    });
-  };
-
-  // SoftAP 적용 핸들러
-  const handleSoftapApply = () => {
-    // 전송 전 추가 검증
-    if (!softapInput?.interface) {
-      toast.error('WiFi 인터페이스를 선택해주세요.', { id: 'softap-interface-required' });
-      return;
-    }
-
-    if (softapInput?.enabled) {
-      if (!softapInput?.ssid?.trim()) {
-        toast.error('SSID를 입력해주세요.', { id: 'softap-ssid-required' });
-        return;
-      }
-      if (!softapInput?.password?.trim()) {
-        toast.error('비밀번호를 입력해주세요.', { id: 'softap-password-required' });
-        return;
-      }
-    }
-
-    const payload: SoftapSettings = softapInput?.enabled
-      ? softapInput
-      : {
-          enabled: false,
-          interface: softapInput?.interface || '',
-          ssid: '', // 비활성화 시에는 빈 문자열
-          password: '', // 비활성화 시에는 빈 문자열
-          connectionName: 'hotspot', // 기본값
-        };
-
-    setSoftapMutation.mutate(payload, {
-      onSuccess: response => {
-        const message = response?.message || 'SoftAP 설정이 저장되었습니다.';
-        toast.success(message, { id: 'system-softap-save-success' });
-      },
-      onError: (error: any) => {
-        const message = error?.response?.data?.message || error?.response?.data?.error || 'SoftAP 설정 저장 실패';
-        toast.error(message, { id: 'system-softap-save-error' });
-      },
-    });
-  };
 
   // 절기 설정 관련 핸들러들 (DDCConfigurationPage에서 이동)
   const handleSeasonalChange = (field: keyof SeasonalData, value: number) => {
@@ -633,34 +246,6 @@ const SystemSettingsPage: React.FC = () => {
     }
   };
 
-  const toggleAutoRebootDay = (day: number) => {
-    setAutoRebootDaysOfWeek(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort(),
-    );
-  };
-
-  const handleSaveAutoRebootSchedule = () => {
-    updateRebootScheduleMutation.mutate(
-      {
-        enabled: autoRebootEnabled,
-        mode: autoRebootMode,
-        hour: autoRebootHour,
-        daysOfWeek: autoRebootMode === 'weekly' ? autoRebootDaysOfWeek : undefined,
-      },
-      {
-        onSuccess: (res: any) => {
-          const message = res?.message || '자동 재부팅 스케줄이 저장되었습니다.';
-          toast.success(message, { id: 'system-auto-reboot-save-success' });
-        },
-        onError: (error: any) => {
-          const msg =
-            error?.response?.data?.message || error?.response?.data?.error || '자동 재부팅 스케줄 저장에 실패했습니다.';
-          toast.error(msg, { id: 'system-auto-reboot-save-error' });
-        },
-      },
-    );
-  };
-
   // 현재 시간을 1초마다 업데이트하는 useEffect
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -679,9 +264,6 @@ const SystemSettingsPage: React.FC = () => {
   const visibleCardIds = useMemo(() => {
     if (selectedSettingsId === 'all') {
       return [
-        'settings-softap',
-        'settings-network',
-        'settings-ntp',
         'settings-system-time',
         'settings-ddc-time',
         'settings-seasonal',
@@ -723,200 +305,6 @@ const SystemSettingsPage: React.FC = () => {
       <TopLogPanel isConnected={isConnected} />
 
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'>
-        {/* SoftAP 설정 */}
-        {visibleCardIds.includes('settings-softap') && (
-        <div
-          id='settings-softap'
-          style={{
-            animationDelay: '0ms',
-            animation: 'fadeInUp 0.6s ease-out forwards',
-          }}
-        >
-          <SettingsCard
-            icon={Wifi}
-            title='SoftAP 설정'
-            description='WiFi 핫스팟 설정'
-            onApply={handleSoftapApply}
-            applyDisabled={
-              hasErrors('softap') ||
-              // 인터페이스는 항상 필요 (비활성화 시에도)
-              !softapInput?.interface ||
-              // SoftAP 활성화 시에만 추가 필드들 필요
-              (softapInput?.enabled && (!softapInput?.ssid || !softapInput?.password))
-            }
-            currentSettings={null}
-            isLoading={setSoftapMutation.isPending}
-          >
-            {/* SoftAP 활성화 토글 */}
-            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
-                <span className='text-sm font-medium'>SoftAP 활성화</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  현재: {softapStatus?.data?.enabled ? '활성화' : '비활성화'}
-                </p>
-              </div>
-              <OnOffToggleButton
-                checked={!!softapInput?.enabled}
-                onChange={handleSoftapToggle}
-                labelOn='ON'
-                labelOff='OFF'
-              />
-            </div>
-            {/* SoftAP 설정 입력들 */}
-            <SelectWithCommand
-              label='WiFi 인터페이스'
-              value={softapInput?.interface || ''}
-              onChange={value => handleInput('softap', 'interface', value)}
-              placeholder='WiFi 인터페이스 선택...'
-              description={`현재: ${firstWifiName || '설정되지 않음'}`}
-              error={getFieldError('softap', 'interface')}
-              disabled={!softapInput?.enabled}
-              options={wifiInterfaceOptions}
-              searchPlaceholder='WiFi 인터페이스 검색...'
-              allowCustomInput={false}
-            />
-            <InputWithLabel
-              label='WiFi 이름 (SSID)'
-              value={softapInput?.ssid || ''}
-              onChange={e => handleInput('softap', 'ssid', e.target.value)}
-              placeholder='WiFi 이름을 입력하세요'
-              description={`현재: ${softapStatus?.data?.ssid || '설정되지 않음'}`}
-              error={getFieldError('softap', 'ssid')}
-              disabled={!softapInput?.enabled}
-              showDefaultValueButton={true}
-              defaultValue='YouJobs'
-            />
-            <InputWithLabel
-              label='WiFi 비밀번호'
-              value={softapInput?.password || ''}
-              onChange={e => handleInput('softap', 'password', e.target.value)}
-              placeholder=''
-              description={`입력된 값만 사용됩니다`}
-              error={getFieldError('softap', 'password')}
-              type='password'
-              showPasswordToggle={true}
-              showDefaultValueButton={true}
-              defaultValue='1357913579'
-              disabled={!softapInput?.enabled}
-            />
-            {/* WiFi 인터페이스 IPv4 (읽기 전용 표시) */}
-            <InputWithLabel
-              label='WiFi IPv4 (읽기 전용)'
-              value={(() => {
-                const iface = allIfaces.find((i: any) => i.name === softapInput?.interface);
-                return iface?.ipv4?.split('/')?.[0] || '';
-              })()}
-              onChange={() => {}}
-              placeholder=''
-              description={`현재 WiFi 인터페이스의 IPv4 주소`}
-              error={''}
-              disabled={true}
-            />
-          </SettingsCard>
-        </div>
-        )}
-
-        {/* 유선 네트워크 설정 */}
-        {visibleCardIds.includes('settings-network') && (
-        <div
-          id='settings-network'
-          style={{
-            animationDelay: '100ms',
-            animation: 'fadeInUp 0.6s ease-out forwards',
-          }}
-        >
-          <SettingsCard
-            icon={Network}
-            title='유선 네트워크 설정'
-            description='Ethernet 전용 IP/DHCP 설정'
-            onApply={handleNetworkApply}
-            applyDisabled={
-              hasErrors('network') ||
-              !networkInput ||
-              !networkInput?.interface || // 인터페이스는 항상 필요
-              // 정적 IP 모드 시: 추가 필드들 필요
-              (!networkInput?.dhcp4 && (!networkInput?.ipv4 || !networkInput?.gateway || !networkInput?.subnetmask))
-            }
-            currentSettings={null}
-            isLoading={setNetworkMutation.isPending}
-          >
-            {/* 네트워크 DHCP 토글 */}
-            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
-                <span className='text-sm font-medium'>DHCP 사용</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  현재: {selectedIface?.dhcp4 !== undefined ? (selectedIface.dhcp4 ? 'ON' : 'OFF') : '알 수 없음'}
-                </p>
-              </div>
-              <OnOffToggleButton
-                checked={!!networkInput?.dhcp4}
-                onChange={handleDhcpToggle}
-                labelOn='ON'
-                labelOff='OFF'
-              />
-            </div>
-            {/* 네트워크 인터페이스 선택 */}
-            <SelectWithCommand
-              label='유선 네트워크 인터페이스'
-              value={networkInput?.interface || ''}
-              onChange={value => handleNetworkInterfaceSelect(value)}
-              placeholder='유선 네트워크 인터페이스 선택...'
-              description={`현재: ${currentWiredInterface || '설정되지 않음'}`}
-              error={getFieldError('network', 'interface')}
-              options={networkInterfaceOptions}
-              searchPlaceholder='유선 네트워크 인터페이스 검색...'
-              allowCustomInput={false}
-            />
-
-            {/* 네트워크 입력들 */}
-            <InputWithLabel
-              label='IP 주소'
-              value={networkInput?.ipv4 || ''}
-              onChange={e => handleInput('network', 'ipv4', e.target.value)}
-              placeholder='IP 주소를 입력하세요 (예: 192.168.0.120)'
-              description={`현재: ${(selectedIface?.ipv4 || '').split('/')?.[0] || '설정되지 않음'}`}
-              error={getFieldError('network', 'ipv4')}
-              disabled={networkInput?.dhcp4}
-              showDefaultValueButton={true}
-              defaultValue='192.168.0.120'
-            />
-            <InputWithLabel
-              label='게이트웨이'
-              value={networkInput?.gateway || ''}
-              onChange={e => handleInput('network', 'gateway', e.target.value)}
-              placeholder='게이트웨이를 입력하세요 (예: 192.168.0.1)'
-              description={`현재: ${selectedIface?.gateway || '설정되지 않음'}`}
-              error={getFieldError('network', 'gateway')}
-              disabled={networkInput?.dhcp4}
-              showDefaultValueButton={true}
-              defaultValue='192.168.0.1'
-            />
-            <InputWithLabel
-              label='서브넷 마스크'
-              value={networkInput?.subnetmask || ''}
-              onChange={e => handleInput('network', 'subnetmask', e.target.value)}
-              placeholder='서브넷 마스크를 입력하세요 (예: 255.255.255.0)'
-              description={`현재: ${selectedIface?.subnetmask || '설정되지 않음'}`}
-              error={getFieldError('network', 'subnetmask')}
-              disabled={networkInput?.dhcp4}
-              showDefaultValueButton={true}
-              defaultValue='255.255.255.0'
-            />
-            <InputWithLabel
-              label='DNS 서버'
-              value={networkInput?.nameservers?.[0] || ''}
-              onChange={e => handleInput('network', 'nameservers', e.target.value)}
-              placeholder='DNS 서버를 입력하세요 (예: 8.8.8.8)'
-              description={`현재: ${(selectedIface?.dns && selectedIface?.dns[0]) || '설정되지 않음'}`}
-              error={getFieldError('network', 'nameservers')}
-              disabled={networkInput?.dhcp4}
-              showDefaultValueButton={true}
-              defaultValue='8.8.8.8'
-            />
-          </SettingsCard>
-        </div>
-        )}
-
         {/* 시스템 시간 테스트 (서버 시간만 표시) */}
         {visibleCardIds.includes('settings-system-time') && (
         <div
@@ -974,287 +362,6 @@ const SystemSettingsPage: React.FC = () => {
                 </span>
               </div>
             </div>
-          </SettingsCard>
-        </div>
-        )}
-
-        {/* NTP 설정 */}
-        {visibleCardIds.includes('settings-ntp') && (
-        <div
-          id='settings-ntp'
-          style={{
-            animationDelay: '200ms',
-            animation: 'fadeInUp 0.6s ease-out forwards',
-          }}
-        >
-          <SettingsCard
-            icon={Clock}
-            title='NTP 설정'
-            description='시스템 시간 동기화 설정'
-            onApply={handleNtpApply}
-            applyDisabled={hasErrors('ntp') || (!!ntpInput?.enabled && !ntpInput?.primaryServer)}
-            currentSettings={null}
-            isLoading={setNtpMutation.isPending}
-          >
-            {/* NTP 활성화 토글 */}
-            {/* enabled는 실제 NTP 동기화 상태 (주석 처리 여부와 독립적) */}
-            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
-                <span className='text-sm font-medium'>NTP 서비스 활성화</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  현재: {ntpStatus?.data?.enabled ? '활성화' : '비활성화'} (실제 동기화 상태)
-                </p>
-              </div>
-              <OnOffToggleButton
-                checked={!!ntpInput?.enabled}
-                onChange={enabled => setNtpInput({ ...ntpInput, enabled } as NtpSettings)}
-                labelOn='ON'
-                labelOff='OFF'
-              />
-            </div>
-            {/* NTP 상태 정보 */}
-            {ntpStatus?.data && (
-              <div className='p-3 bg-muted rounded-lg space-y-2'>
-                {/* 동기화 상태 */}
-                <div className='flex justify-between items-center'>
-                  <span className='text-sm font-medium'>동기화 상태</span>
-                  <Badge
-                    variant={ntpStatus.data.synchronized ? 'default' : 'destructive'}
-                    className={`text-xs ${
-                      ntpStatus.data.synchronized
-                        ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100'
-                        : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100'
-                    }`}
-                  >
-                    {ntpStatus.data.synchronized ? '✅ 동기화됨' : '❌ 동기화 안됨'}
-                  </Badge>
-                </div>
-                {/* 마지막 동기화 시간 */}
-                {ntpStatus.data.lastSync && (
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm font-medium'>마지막 동기화</span>
-                    <span className='text-sm text-muted-foreground'>{ntpStatus.data.lastSync}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* NTP 입력들 */}
-            <div>
-              {/* 주 NTP 서버 */}
-              <div className='mb-3'>
-                <div className='flex items-center justify-between mb-1'>
-                  <Label className='text-sm font-medium text-gray-700 dark:text-gray-300'>주 NTP 서버</Label>
-                  <span className='text-xs text-gray-500 dark:text-gray-400 ml-2'>
-                    현재: {ntpStatus?.data?.primaryServer || 'time.google.com'}{' '}
-                    {ntpStatus?.data?.primaryServerCommented ? '(주석 처리됨)' : '(활성화됨)'}
-                  </span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <Input
-                    value={ntpInput?.primaryServer || ''}
-                    onChange={e => handleInput('ntp', 'primaryServer', e.target.value)}
-                    placeholder='NTP 서버 주소를 입력하세요 (예: time.google.com)'
-                    disabled={!ntpInput?.enabled}
-                    className={`flex-1 ${
-                      getFieldError('ntp', 'primaryServer') ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
-                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
-                  />
-                  <Button
-                    variant='secondary'
-                    size='sm'
-                    className='gap-2 shrink-0'
-                    onClick={async () => {
-                      try {
-                        const ip = (ntpInput?.primaryServer || '').trim();
-                        const res = await checkNtpMutation.mutateAsync(ip);
-
-                        // 백엔드에서 이미 성공/실패를 판단하여 응답
-                        if (res.success) {
-                          // 성공: 백엔드에서 200 상태 코드로 응답
-                          const p = res.data?.primary;
-                          const server = p?.timesync?.server || p?.ip || 'unknown';
-                          const offset = p?.timesync?.offsetMs;
-                          const stratum = p?.timesync?.stratum;
-                          const link = res.data?.ifaceLink;
-
-                          toast.success(
-                            `✅ NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
-                            { id: 'ntp-check-success' }
-                          );
-                        } else {
-                          // 실패: 백엔드에서 에러 정보 제공
-                          const errorCode = res.error?.code || 'UNKNOWN';
-                          const errorMessage = res.error?.message || '알 수 없는 오류';
-
-                          toast.error(`❌ NTP 확인 실패 (${errorCode}) - ${errorMessage}`, { id: 'ntp-check-failure' });
-                        }
-                      } catch (e: any) {
-                        // 네트워크 오류나 기타 예외
-                        const errorData = e?.response?.data;
-                        if (errorData?.error) {
-                          toast.error(
-                            `❌ NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${errorData.error.message}`,
-                            { id: 'ntp-check-error' }
-                          );
-                        } else {
-                          const msg = e?.message || 'NTP 확인 실패';
-                          toast.error(msg, { id: 'ntp-check-error' });
-                        }
-                      }
-                    }}
-                    disabled={!ntpInput?.enabled || checkNtpMutation.isPending || !ntpInput?.primaryServer}
-                  >
-                    {checkNtpMutation.isPending ? (
-                      <span className='inline-flex items-center gap-2'>
-                        <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
-                      </span>
-                    ) : (
-                      <span className='inline-flex items-center gap-2'>
-                        <Network className='h-4 w-4' /> 연결 확인
-                      </span>
-                    )}
-                  </Button>
-                </div>
-                {getFieldError('ntp', 'primaryServer') && (
-                  <div className='text-xs text-red-500 mt-1'>{getFieldError('ntp', 'primaryServer')}</div>
-                )}
-              </div>
-              {/* 주 NTP 서버 주석 처리 체크박스 */}
-              <div className='mb-3 flex items-center gap-2'>
-                <Checkbox
-                  id='primary-server-commented'
-                  checked={ntpInput?.primaryServerCommented || false}
-                  onCheckedChange={checked => handleNtpCommentChange('primaryServerCommented', !!checked)}
-                  disabled={!ntpInput?.enabled || !ntpInput?.primaryServer}
-                />
-                <label
-                  htmlFor='primary-server-commented'
-                  className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer'
-                >
-                  주석 처리됨
-                </label>
-              </div>
-            </div>
-            {/* Secondary NTP 서버 (편집 가능) */}
-            <div>
-              {/* 백업 NTP 서버 */}
-              <div className='mb-3'>
-                <div className='flex items-center justify-between mb-1'>
-                  <Label className='text-sm font-medium text-gray-700 dark:text-gray-300'>백업 NTP 서버</Label>
-                  <span className='text-xs text-gray-500 dark:text-gray-400 ml-2'>
-                    현재: {ntpStatus?.data?.fallbackServer || '설정되지 않음'}{' '}
-                    {ntpStatus?.data?.fallbackServerCommented
-                      ? '(주석 처리됨)'
-                      : ntpStatus?.data?.fallbackServer
-                      ? '(활성화됨)'
-                      : ''}
-                  </span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <Input
-                    value={ntpInput?.fallbackServer || ''}
-                    onChange={e => handleInput('ntp', 'fallbackServer', e.target.value)}
-                    placeholder='백업 NTP 서버 주소를 입력하세요 (예: ntp.ubuntu.com)'
-                    disabled={!ntpInput?.enabled}
-                    className={`flex-1 ${
-                      getFieldError('ntp', 'fallbackServer') ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
-                    } ${!ntpInput?.enabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
-                  />
-                  <Button
-                    variant='secondary'
-                    size='sm'
-                    className='gap-2 shrink-0'
-                    onClick={async () => {
-                      try {
-                        const fallbackServer = (ntpInput?.fallbackServer || '').trim();
-                        if (!fallbackServer) {
-                          toast.error('백업 NTP 서버 주소를 입력해주세요.', { id: 'ntp-fallback-check-no-ip' });
-                          return;
-                        }
-                        const res = await checkNtpMutation.mutateAsync(fallbackServer);
-
-                        // 백엔드에서 이미 성공/실패를 판단하여 응답
-                        if (res.success) {
-                          // 성공: 백엔드에서 200 상태 코드로 응답
-                          const p = res.data?.primary;
-                          const server = p?.timesync?.server || p?.ip || 'unknown';
-                          const offset = p?.timesync?.offsetMs;
-                          const stratum = p?.timesync?.stratum;
-                          const link = res.data?.ifaceLink;
-
-                          toast.success(
-                            `✅ 백업 NTP 동기화 성공 - server: ${server}, offset: ${offset}ms, stratum: ${stratum}, link: ${link}`,
-                            { id: 'ntp-fallback-check-success' }
-                          );
-                        } else {
-                          // 실패: 백엔드에서 에러 정보 제공
-                          const errorCode = res.error?.code || 'UNKNOWN';
-                          const errorMessage = res.error?.message || '알 수 없는 오류';
-
-                          toast.error(`❌ 백업 NTP 확인 실패 (${errorCode}) - ${errorMessage}`, {
-                            id: 'ntp-fallback-check-failure',
-                          });
-                        }
-                      } catch (e: any) {
-                        // 네트워크 오류나 기타 예외
-                        const errorData = e?.response?.data;
-                        if (errorData?.error) {
-                          toast.error(
-                            `❌ 백업 NTP 확인 실패 (${errorData.error.code || 'SYSTEM_ERROR'}) - ${
-                              errorData.error.message
-                            }`,
-                            { id: 'ntp-fallback-check-error' }
-                          );
-                        } else {
-                          const msg = e?.message || '백업 NTP 확인 실패';
-                          toast.error(msg, { id: 'ntp-fallback-check-error' });
-                        }
-                      }
-                    }}
-                    disabled={!ntpInput?.fallbackServer || checkNtpMutation.isPending || !ntpInput?.enabled}
-                  >
-                    {checkNtpMutation.isPending ? (
-                      <span className='inline-flex items-center gap-2'>
-                        <Loader2 className='h-4 w-4 animate-spin' /> 확인 중...
-                      </span>
-                    ) : (
-                      <span className='inline-flex items-center gap-2'>
-                        <Network className='h-4 w-4' /> 연결 확인
-                      </span>
-                    )}
-                  </Button>
-                </div>
-                {getFieldError('ntp', 'fallbackServer') && (
-                  <div className='text-xs text-red-500 mt-1'>{getFieldError('ntp', 'fallbackServer')}</div>
-                )}
-              </div>
-              {/* 백업 NTP 서버 주석 처리 체크박스 */}
-              <div className='mb-3 flex items-center gap-2'>
-                <Checkbox
-                  id='fallback-server-commented'
-                  checked={ntpInput?.fallbackServerCommented || false}
-                  onCheckedChange={checked => handleNtpCommentChange('fallbackServerCommented', !!checked)}
-                  disabled={!ntpInput?.enabled || !ntpInput?.fallbackServer}
-                />
-                <label
-                  htmlFor='fallback-server-commented'
-                  className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer'
-                >
-                  주석 처리됨
-                </label>
-              </div>
-            </div>
-            <InputWithLabel
-              label='타임존'
-              value={ntpInput?.timezone || ''}
-              onChange={e => handleInput('ntp', 'timezone', e.target.value)}
-              placeholder='타임존을 입력하세요 (예: Asia/Seoul)'
-              description={`현재: ${ntpStatus?.data?.timezone || '설정되지 않음'}`}
-              error={getFieldError('ntp', 'timezone')}
-              disabled={!ntpInput?.enabled}
-              showDefaultValueButton={true}
-              defaultValue='Asia/Seoul'
-            />
           </SettingsCard>
         </div>
         )}
@@ -1612,41 +719,8 @@ const SystemSettingsPage: React.FC = () => {
             animation: 'fadeInUp 0.6s ease-out forwards',
           }}
         >
-          <SettingsCard icon={Cpu} title='시스템 재기동' description='호스트 PC 또는 백엔드 서비스를 재시작합니다'>
+          <SettingsCard icon={Cpu} title='시스템 재기동' description='백엔드 API 서비스를 재시작합니다. MongoDB 등 다른 컨테이너는 그대로 유지됩니다.'>
             <div className='space-y-4'>
-              {/* 호스트 PC 재기동 */}
-              <div className='flex flex-col gap-2'>
-                <h4 className='text-sm font-medium'>호스트 PC 재기동</h4>
-                <p className='text-xs text-muted-foreground'>
-                  전체 시스템을 완전히 재시작합니다. 진행 중인 모든 작업이 종료됩니다.
-                </p>
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={() => {
-                    if (window.confirm('호스트 PC를 재기동하시겠습니까? 진행 중인 모든 작업이 종료됩니다.')) {
-                      restartHostSystemMutation.mutate(undefined, {
-                        onSuccess: response => {
-                          const message = response?.message || '호스트 PC 재기동이 시작되었습니다';
-                          toast.success(message);
-                        },
-                        onError: (error: any) => {
-                          const message =
-                            error?.response?.data?.message ||
-                            error?.response?.data?.error ||
-                            '호스트 PC 재기동에 실패했습니다';
-                          toast.error(message);
-                        },
-                      });
-                    }
-                  }}
-                  disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
-                  className='w-fit'
-                >
-                  {restartHostSystemMutation.isPending ? '재기동 중...' : '호스트 PC 재기동'}
-                </Button>
-              </div>
-
               {/* 백엔드 재기동 */}
               <div className='flex flex-col gap-2'>
                 <h4 className='text-sm font-medium'>백엔드 재기동</h4>
@@ -1674,117 +748,10 @@ const SystemSettingsPage: React.FC = () => {
                       });
                     }
                   }}
-                  disabled={restartHostSystemMutation.isPending || restartBackendMutation.isPending}
+                  disabled={restartBackendMutation.isPending}
                 >
                   {restartBackendMutation.isPending ? '재기동 중...' : '백엔드 재기동'}
                 </Button>
-              </div>
-
-              {/* 자동 재부팅 스케줄 */}
-              <div className='mt-6 border-t pt-4 space-y-3'>
-                <h4 className='text-sm font-medium'>자동 재부팅 스케줄</h4>
-                <p className='text-xs text-muted-foreground'>
-                  매일 또는 지정한 요일에 설정된 시각(정시 기준)에 호스트 PC를 자동으로 재시작합니다. 운영 시간
-                  외(예: 새벽 3시)로 설정하는 것을 권장합니다.
-                </p>
-
-                {/* 사용 여부 토글 */}
-                <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-                  <div>
-                    <span className='text-sm font-medium'>자동 재부팅 사용</span>
-                    <p className='text-xs text-muted-foreground mt-1'>
-                      {autoRebootEnabled ? '사용 중' : '사용 안 함'}
-                    </p>
-                  </div>
-                  <OnOffToggleButton
-                    checked={autoRebootEnabled}
-                    onChange={setAutoRebootEnabled}
-                    labelOn='ON'
-                    labelOff='OFF'
-                  />
-                </div>
-
-                {/* 모드/시간/요일 설정 */}
-                <div className='grid grid-cols-1 gap-3'>
-                  {/* 모드 선택 */}
-                  <div className='flex items-center justify-between'>
-                    <span className='text-xs text-muted-foreground'>스케줄 모드</span>
-                    <div className='inline-flex gap-2'>
-                      <Button
-                        type='button'
-                        variant={autoRebootMode === 'daily' ? 'default' : 'outline'}
-                        size='sm'
-                        className='text-xs'
-                        onClick={() => setAutoRebootMode('daily')}
-                        disabled={!autoRebootEnabled}
-                      >
-                        매일
-                      </Button>
-                      <Button
-                        type='button'
-                        variant={autoRebootMode === 'weekly' ? 'default' : 'outline'}
-                        size='sm'
-                        className='text-xs'
-                        onClick={() => setAutoRebootMode('weekly')}
-                        disabled={!autoRebootEnabled}
-                      >
-                        요일별
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* 시간 선택 */}
-                  <SelectWithLabel
-                    label='재부팅 시각 (정시 기준)'
-                    value={autoRebootHour.toString()}
-                    onValueChange={value => setAutoRebootHour(parseInt(value, 10))}
-                    placeholder='시각 선택'
-                    description='서버 로컬 시간 기준 0~23시 중 선택'
-                  >
-                    {Array.from({ length: 24 }).map((_, h) => (
-                      <SelectItem key={h} value={String(h)}>
-                        {h.toString().padStart(2, '0')}시
-                      </SelectItem>
-                    ))}
-                  </SelectWithLabel>
-
-                  {/* 요일 선택 (weekly 모드일 때만) */}
-                  {autoRebootMode === 'weekly' && (
-                    <div className='space-y-1'>
-                      <p className='text-xs text-muted-foreground'>재부팅할 요일 선택</p>
-                      <div className='grid grid-cols-7 gap-1'>
-                        {['일', '월', '화', '수', '목', '금', '토'].map((label, idx) => {
-                          const selected = autoRebootDaysOfWeek.includes(idx);
-                          return (
-                            <Button
-                              key={label}
-                              type='button'
-                              size='sm'
-                              variant={selected ? 'default' : 'outline'}
-                              className='text-[11px] px-0 py-1'
-                              onClick={() => toggleAutoRebootDay(idx)}
-                              disabled={!autoRebootEnabled}
-                            >
-                              {label}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className='flex justify-end'>
-                  <Button
-                    type='button'
-                    size='sm'
-                    className='text-xs'
-                    onClick={handleSaveAutoRebootSchedule}
-                    disabled={updateRebootScheduleMutation.isPending}
-                  >
-                    {updateRebootScheduleMutation.isPending ? '저장 중...' : '스케줄 저장'}
-                  </Button>
-                </div>
               </div>
             </div>
           </SettingsCard>

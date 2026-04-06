@@ -19,6 +19,7 @@ import {
   HttpValidationError,
   HttpAuthenticationError,
 } from '../../../shared/utils/responseHelper';
+import { toApiDateTimeString } from '../../../shared/utils/kstDateTime';
 import {
   LoginRequestSchema,
   LoginResponseSchema,
@@ -68,7 +69,7 @@ async function authRoutes(app: FastifyInstance) {
           username: user.username,
           role: user.role,
         },
-        expiresAt: apiKey ? apiKey.expiresAt : undefined,
+        expiresAt: apiKey ? toApiDateTimeString(apiKey.expiresAt) : undefined,
       });
     } catch (error) {
       logError(`로그인 실패: ${error}`);

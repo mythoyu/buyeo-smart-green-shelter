@@ -16,6 +16,7 @@ import statusRoutes from '../api/v1/routes/status';
 import systemRoutes from '../api/v1/routes/system';
 import systemMonitoringRoutes from '../api/v1/routes/system-monitoring';
 import systemSeasonalRoutes from '../api/v1/routes/system/seasonal';
+import systemRestartBackendExternalRoutes from '../api/v1/routes/system/restart-backend-external';
 import usersRoutes from '../api/v1/routes/users';
 import { logInfo, logError, logDebug } from '../logger';
 
@@ -115,6 +116,7 @@ export class RouterManager {
       errorsRoutes,
       controlRoutes,
       systemSeasonalRoutes,
+      systemRestartBackendExternalRoutes,
       peopleCounterExternalRoutes,
     ];
   }

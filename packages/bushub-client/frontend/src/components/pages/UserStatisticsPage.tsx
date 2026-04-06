@@ -15,6 +15,13 @@ import { Alert, AlertDescription } from '../ui';
 import { DatePickerField } from '../common/DatePickerField';
 import { PageSectionLoading } from '../common/PageSectionLoading';
 import { LOADING_MESSAGES } from '../../constants/loadingMessages';
+import {
+  formatKstHm,
+  getKstHour,
+  kstDayExclusiveEndRange,
+  parseApiDateTimeSafe,
+  todayYmdKst,
+} from '../../utils/kstDateTime';
 
 function datePart(dt: string): string {
   if (!dt) return '';
@@ -42,18 +49,21 @@ const UserStatisticsPage: React.FC = () => {
   const { data: pcState, isLoading: pcStateLoading } = useGetPeopleCounterState();
 
   // 오늘 날짜 (YYYY-MM-DD)
-  const todayDate = useMemo(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }, []);
+  const todayDate = useMemo(() => todayYmdKst(), []);
 
   // 최초 마운트 시 오늘 날짜로 초기화
   useEffect(() => {
     if (!selectedDate) {
       setSelectedDate(todayDate);
+    }
+  }, [selectedDate, todayDate]);
+
+  const usage10MinRange = useMemo(() => {
+    const ymd = selectedDate || todayDate;
+    try {
+      return kstDayExclusiveEndRange(ymd);
+    } catch {
+      return { start: '', end: '' };
     }
   }, [selectedDate, todayDate]);
 
@@ -64,8 +74,10 @@ const UserStatisticsPage: React.FC = () => {
     error: usageError,
     refetch: refetchUsage,
   } = useGetPeopleCounterUsage10Min({
-    date: selectedDate || todayDate,
-    enabled: pcState?.peopleCounterEnabled === true && !!(selectedDate || todayDate),
+    start: usage10MinRange.start,
+    end: usage10MinRange.end,
+    enabled:
+      pcState?.peopleCounterEnabled === true && !!usage10MinRange.start && !!usage10MinRange.end,
   });
 
   // 통계 계산 (입실 총합, 피크, 데이터 포인트)
@@ -83,11 +95,8 @@ const UserStatisticsPage: React.FC = () => {
   const chartData = useMemo(() => {
     if (!usage10MinData?.buckets) return [];
     return usage10MinData.buckets.map(b => {
-      const startTime = new Date(b.start);
-      const hour = String(startTime.getHours()).padStart(2, '0');
-      const min = String(startTime.getMinutes()).padStart(2, '0');
       return {
-        time: `${hour}:${min}`,
+        time: formatKstHm(parseApiDateTimeSafe(b.start)),
         입실: b.inCount,
       };
     });
@@ -98,7 +107,7 @@ const UserStatisticsPage: React.FC = () => {
     if (!usage10MinData?.buckets) return [];
     const hourMap: Record<number, number> = {};
     for (const b of usage10MinData.buckets) {
-      const hour = new Date(b.start).getHours();
+      const hour = getKstHour(parseApiDateTimeSafe(b.start));
       hourMap[hour] = (hourMap[hour] || 0) + b.inCount;
     }
     return Array.from({ length: 24 }, (_, i) => ({
@@ -204,8 +213,9 @@ const UserStatisticsPage: React.FC = () => {
         <span>{selectedDate || todayDate}</span>
         {usage10MinData?.range && (
           <span className='text-xs'>
-            ({new Date(usage10MinData.range.start).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} ~{' '}
-            {new Date(usage10MinData.range.end).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })})
+            ({formatKstHm(parseApiDateTimeSafe(usage10MinData.range.start))}{' '}
+            ~ {formatKstHm(parseApiDateTimeSafe(usage10MinData.range.end))}
+            )
           </span>
         )}
       </div>

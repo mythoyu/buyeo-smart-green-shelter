@@ -9,6 +9,7 @@ import { ExternalHttpClient } from '../../../core/services/ExternalHttpClient';
 import { isConnectedToDb, getConnection } from '../../../database/mongoose';
 import { logInfo } from '../../../logger';
 import { createSuccessResponse, createErrorResponse, handleRouteError } from '../../../shared/utils/responseHelper';
+import { formatKstLocal, nowKstFormatted } from '../../../shared/utils/kstDateTime';
 
 // 🆕 새로운 모니터링 데이터 타입 정의
 interface PollingStatus {
@@ -121,7 +122,7 @@ function getServerStatus() {
       platform: process.platform,
       arch: process.arch,
     },
-    timestamp: new Date().toISOString(),
+    timestamp: nowKstFormatted(),
   };
 }
 
@@ -135,7 +136,7 @@ async function getDatabaseStatus() {
       status: 'disconnected',
       readyState: connection.readyState,
       readyStateText: getReadyStateText(connection.readyState),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 
@@ -152,7 +153,7 @@ async function getDatabaseStatus() {
       indexes: stats.indexes,
       objects: stats.objects,
       avgObjSize: Math.round(stats.avgObjSize / 1024), // KB
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   } catch (error) {
     return {
@@ -160,7 +161,7 @@ async function getDatabaseStatus() {
       error: error instanceof Error ? error.message : String(error),
       readyState: connection.readyState,
       readyStateText: getReadyStateText(connection.readyState),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 }
@@ -218,7 +219,7 @@ async function getHardwareStatus() {
         connected: isAllServicesHealthy,
         services: safeServices,
         summary: isAllServicesHealthy ? '모두정상' : '일부문제',
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       },
       modbus: {
         isConnected: modbusService.isConnected(),
@@ -231,9 +232,9 @@ async function getHardwareStatus() {
           mockMode: modbusServiceStatus.mockMode,
           activeService: modbusServiceStatus.activeService,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       },
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   } catch (error) {
     // 에러 발생 시에도 실제 서비스 상태 확인 시도
@@ -251,7 +252,7 @@ async function getHardwareStatus() {
           services: {},
           summary: 'DDC 상태 확인 실패',
           error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         },
         modbus: {
           isConnected: false,
@@ -261,9 +262,9 @@ async function getHardwareStatus() {
             activeService: modbusServiceStatus.activeService,
           },
           error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         },
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       };
     } catch (fallbackError) {
       // 완전 실패 시 기본값 사용
@@ -273,16 +274,16 @@ async function getHardwareStatus() {
           services: {},
           summary: 'DDC 상태 확인 실패',
           error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         },
         modbus: {
           isConnected: false,
           connectionStatus: { isConnected: false, retryCount: 0, maxRetries: 0 },
           serviceStatus: { mockMode: true, activeService: 'mock' },
           error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         },
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       };
     }
   }
@@ -293,7 +294,7 @@ function getMemoryMetrics() {
   // 현재 시스템에서는 메모리 Repository를 사용하지 않으므로 빈 객체 반환
   return {
     metrics: {},
-    timestamp: new Date().toISOString(),
+    timestamp: nowKstFormatted(),
   };
 }
 
@@ -318,9 +319,9 @@ async function getPollingStatus(): Promise<PollingStatus> {
         successfulPolls: performanceMetrics.successfulPolls,
         failedPolls: performanceMetrics.failedPolls,
         averageResponseTime: performanceMetrics.averageResponseTime,
-        lastCleanup: performanceMetrics.lastCleanup.toISOString(),
+        lastCleanup: formatKstLocal(performanceMetrics.lastCleanup),
       },
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   } catch (error) {
     logInfo(`[getPollingStatus] 폴링 상태 조회 실패: ${error}`);
@@ -334,10 +335,10 @@ async function getPollingStatus(): Promise<PollingStatus> {
         successfulPolls: 0,
         failedPolls: 0,
         averageResponseTime: 0,
-        lastCleanup: new Date().toISOString(),
+        lastCleanup: nowKstFormatted(),
       },
       error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 }
@@ -348,11 +349,12 @@ async function getPollingRecoveryStatus(): Promise<PollingRecoveryStatus> {
     const serviceContainer = ServiceContainer.getInstance();
     const recoveryService = serviceContainer.getPollingAutoRecoveryService();
 
+    const lastRec = recoveryService.getLastRecoveryTime();
     return {
       isRunning: recoveryService.isRunning(),
-      lastRecoveryTime: recoveryService.getLastRecoveryTime()?.toISOString() || null,
+      lastRecoveryTime: lastRec ? formatKstLocal(lastRec) : null,
       recoveryCount: recoveryService.getRecoveryCount(),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   } catch (error) {
     logInfo(`[getPollingRecoveryStatus] 폴링 복구 상태 조회 실패: ${error}`);
@@ -361,7 +363,7 @@ async function getPollingRecoveryStatus(): Promise<PollingRecoveryStatus> {
       lastRecoveryTime: null,
       recoveryCount: 0,
       error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 }
@@ -380,9 +382,9 @@ async function getDdcTimeSyncStatus(): Promise<DdcTimeSyncStatus> {
 
     return {
       isRunning,
-      lastSyncTime: lastSyncTime?.toISOString() || null,
+      lastSyncTime: lastSyncTime ? formatKstLocal(lastSyncTime) : null,
       syncCount,
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   } catch (error) {
     logInfo(`[getDdcTimeSyncStatus] DDC 시간 동기화 상태 조회 실패: ${error}`);
@@ -391,7 +393,7 @@ async function getDdcTimeSyncStatus(): Promise<DdcTimeSyncStatus> {
       lastSyncTime: null,
       syncCount: 0,
       error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 }
@@ -562,7 +564,7 @@ async function checkExternalServer(url: string) {
         status: result.status,
         responseTime,
         data: result.data,
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       };
     } else {
       // 실제 에러 메시지 사용 (없으면 기본 메시지)
@@ -572,7 +574,7 @@ async function checkExternalServer(url: string) {
         status: result.status,
         responseTime,
         error: errorMessage,
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       };
     }
   } catch (error) {
@@ -583,7 +585,7 @@ async function checkExternalServer(url: string) {
       status: 0,
       responseTime,
       error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 }
@@ -652,7 +654,7 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
               apiKeyService: { available: !!rawDomainStatus.userDomain?.apiKeyService, status: 'active' },
               clientService: { available: !!rawDomainStatus.userDomain?.clientService, status: 'active' },
             },
-            timestamp: new Date().toISOString(),
+            timestamp: nowKstFormatted(),
           };
         } catch (error) {
           logInfo(`[GET /system/monitoring] 서비스 도메인 상태 수집 실패: ${error}`);
@@ -660,7 +662,7 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
             deviceDomain: {},
             systemDomain: {},
             userDomain: {},
-            timestamp: new Date().toISOString(),
+            timestamp: nowKstFormatted(),
           };
         }
 
@@ -677,7 +679,7 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
           name: '도시정보센터',
           status: 'manual_check_required',
           message: '수동 확인이 필요합니다. 외부 서버 상태 확인 기능을 사용하세요.',
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         };
 
         // 전체 시스템 상태 계산 (polling, pollingRecovery, ddcTimeSync 포함)
@@ -704,9 +706,9 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
           ddcTimeSync: ddcTimeSyncStatus,
           overall: {
             status: overallStatus,
-            timestamp: new Date().toISOString(),
+            timestamp: nowKstFormatted(),
           },
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         };
 
         reply.send(

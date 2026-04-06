@@ -16,7 +16,7 @@ export interface KstTimeParts {
  * - 서버 OS 타임존(UTC 등)과 무관하게 항상 Asia/Seoul 기준으로 계산
  * - DDC 시간 동기화 및 기본값 생성에 사용
  */
-export const getKstNowParts = (): KstTimeParts => {
+export const getKstNowParts = (at: Date = new Date()): KstTimeParts => {
   const dtf = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Seoul',
     year: 'numeric',
@@ -29,7 +29,7 @@ export const getKstNowParts = (): KstTimeParts => {
     hour12: false,
   });
 
-  const parts = Object.fromEntries(dtf.formatToParts(new Date()).map((p) => [p.type, p.value])) as Record<
+  const parts = Object.fromEntries(dtf.formatToParts(at).map((p) => [p.type, p.value])) as Record<
     string,
     string
   >;

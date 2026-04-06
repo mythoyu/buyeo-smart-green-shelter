@@ -6,6 +6,7 @@ const HEALTH_ENDPOINTS = {
 } as const;
 
 import { createErrorResponse, ErrorCodes, ErrorMessages, handleHttpSuccess } from '../../shared/utils/responseHelper';
+import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 
 // 헬스체크 엔드포인트
 export const healthCheckHandler = async (_request: FastifyRequest, reply: FastifyReply) => {
@@ -18,7 +19,7 @@ export const healthCheckHandler = async (_request: FastifyRequest, reply: Fastif
       ErrorMessages.TEST_HEALTH_SUCCESS,
       {
         status: 'healthy',
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
         uptime: process.uptime(),
         memory: process.memoryUsage(),
         database: 'connected',

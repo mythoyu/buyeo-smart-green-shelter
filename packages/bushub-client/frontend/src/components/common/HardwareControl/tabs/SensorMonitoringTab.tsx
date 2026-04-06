@@ -11,6 +11,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '../../../ui/
 import { SensorDataRow } from '../components/SensorDataRow';
 
 import type { SensorPort, SensorData, HardwareControlError } from '../../../../types/hardware';
+import { nowKstFormatted } from '../../../../utils/kstDateTime';
 
 // 센서 포트 목록 (읽기 전용)
 const SENSOR_PORTS: SensorPort[] = ['INTEGRATED_SENSOR'];
@@ -45,7 +46,7 @@ export const SensorMonitoringTab: React.FC<SensorMonitoringTabProps> = ({
     voc: 0,
     temperature: 0,
     humidity: 0,
-    lastUpdated: new Date().toISOString(),
+    lastUpdated: nowKstFormatted(),
   });
 
   // 전체 센서 데이터 읽기 함수
@@ -76,7 +77,7 @@ export const SensorMonitoringTab: React.FC<SensorMonitoringTabProps> = ({
         voc: results[sensorPort]?.VOC?.[0] ?? 0,
         temperature: results[sensorPort]?.TEMP?.[0] ?? 0,
         humidity: results[sensorPort]?.HUM?.[0] ?? 0,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: nowKstFormatted(),
       };
 
       setSensorData(newSensorData);

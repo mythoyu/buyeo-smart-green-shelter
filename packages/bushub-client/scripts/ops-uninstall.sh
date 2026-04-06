@@ -1,34 +1,30 @@
 #!/bin/bash
-set -e
+# Compose 스택 제거 + (선택) 볼륨 삭제. 레거시 systemd bushub-* 유닛이 있으면 함께 정리합니다.
+set -euo pipefail
 
-echo "🗑️ USB에서 시스템 제거..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-# 서비스 중지 및 비활성화
-echo "서비스 중지 및 비활성화..."
-sudo systemctl stop bushub-frontend bushub-backend bushub-nginx bushub-mongodb
-sudo systemctl disable bushub-frontend bushub-backend bushub-nginx bushub-mongodb
+COMPOSE_FILE="${BUSHUB_COMPOSE_FILE:-docker-compose.integrated.yml}"
 
-# 서비스 파일 제거
-echo "서비스 파일 제거..."
-sudo rm -f /etc/systemd/system/bushub-*.service
-sudo systemctl daemon-reload
-
-# 데이터 백업 확인
-echo "데이터 백업 확인..."
-if [ -d "/opt/bushub/data" ]; then
-    echo "⚠️ 데이터 백업을 원하시면 수동으로 백업해주세요:"
-    echo "sudo cp -r /opt/bushub/data /home/backup-$(date +%Y%m%d_%H%M%S)"
-    read -p "계속하시겠습니까? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "제거가 취소되었습니다."
-        exit 1
-    fi
+echo "🗑️ Bushub Docker 스택 제거"
+if [ -f "$COMPOSE_FILE" ]; then
+  read -r -p "DB 볼륨(db_data 등)까지 삭제할까요? (y/N): " reply
+  if [[ ${reply:-N} =~ ^[Yy]$ ]]; then
+    docker compose -f "$COMPOSE_FILE" down -v
+    echo "✅ compose down -v 완료"
+  else
+    docker compose -f "$COMPOSE_FILE" down
+    echo "✅ compose down 완료 (볼륨 유지)"
+  fi
+else
+  echo "ℹ️  $COMPOSE_FILE 없음 — compose down 생략"
 fi
 
-# 파일 제거
-echo "파일 제거..."
-sudo rm -rf /opt/bushub
+echo "🧹 레거시 systemd 유닛 정리 (있을 경우만)..."
+sudo rm -f /etc/systemd/system/bushub-*.service 2>/dev/null || true
+sudo systemctl daemon-reload 2>/dev/null || true
 
-echo "✅ 제거 완료!"
-echo "시스템이 완전히 제거되었습니다."
+echo "ℹ️  예전 /opt/bushub 호스트 설치가 있다면 수동으로 삭제하세요."
+echo "✅ 제거 절차 완료"

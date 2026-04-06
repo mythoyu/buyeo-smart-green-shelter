@@ -9,6 +9,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - json import typing
 import packageJson from '../../package.json';
+import { todayYmdKst } from './kstDateTime';
 const PACKAGE_VERSION: string = (packageJson as { version?: string }).version || '0.0.0';
 
 // Git 태그 정보를 가져오는 함수 (빌드 시점에 주입됨)
@@ -29,7 +30,7 @@ export const getGitTag = (): string => {
 
 // 빌드 날짜를 가져오는 함수
 export const getBuildDate = (): string => {
-  return import.meta.env.VITE_BUILD_DATE || new Date().toISOString().split('T')[0];
+  return import.meta.env.VITE_BUILD_DATE || todayYmdKst();
 };
 
 // 전체 버전 정보 객체를 반환하는 함수

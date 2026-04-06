@@ -3,6 +3,7 @@ import path from 'path';
 
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { DateTime } from 'luxon';
 import { defineConfig } from 'vite';
 
 // Git 정보를 가져오는 함수들
@@ -25,7 +26,7 @@ function getGitCommitHash(): string {
 }
 
 function getBuildDate(): string {
-  return new Date().toISOString().split('T')[0];
+  return DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd');
 }
 
 export default defineConfig(({ mode }) => {

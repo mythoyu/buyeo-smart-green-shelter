@@ -34,7 +34,7 @@ export const ERRORS_RESPONSE_EXAMPLE = {
             id: 'u001',
             errorId: 'e001',
             errorDesc: '통신에러',
-            errorAt: '2025-06-29T10:09:55Z',
+            errorAt: '2025-06-29T10:09:55',
           },
         ],
       },

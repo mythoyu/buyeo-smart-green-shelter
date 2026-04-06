@@ -1,6 +1,8 @@
 // Vercel 배포용 샘플 데이터
 // 실제 백엔드 API와 동일한 구조로 제공
 
+import { formatKstLocal } from '../utils/kstDateTime';
+
 // 클라이언트 정보
 export const sampleClient = {
   id: 'c0101',
@@ -344,7 +346,7 @@ export const sampleErrorLogs = [
     unitName: '후문',
     errorCode: 'DOOR_001',
     errorDesc: '출입문 센서 오작동 - 센서 연결이 끊어졌습니다.',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    timestamp: formatKstLocal(new Date(Date.now() - 2 * 60 * 60 * 1000)),
     resolved: false,
   },
   {
@@ -355,7 +357,7 @@ export const sampleErrorLogs = [
     unitName: '공기질 센서',
     errorCode: 'SENSOR_001',
     errorDesc: 'PM2.5 센서 값이 정상 범위를 벗어났습니다.',
-    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    timestamp: formatKstLocal(new Date(Date.now() - 6 * 60 * 60 * 1000)),
     resolved: true,
   },
 ];

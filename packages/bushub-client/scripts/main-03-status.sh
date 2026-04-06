@@ -1,38 +1,49 @@
 #!/bin/bash
-set -e
+# Docker Compose / 컨테이너 상태
+set -euo pipefail
 
-echo "📊 3단계: USB에서 서비스 상태 확인..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-echo "=== 서비스 상태 ==="
-sudo systemctl status bushub-mongodb --no-pager -l
-echo ""
-sudo systemctl status bushub-nginx --no-pager -l
-echo ""
-sudo systemctl status bushub-backend --no-pager -l
-echo ""
-sudo systemctl status bushub-frontend --no-pager -l
+COMPOSE_FILE="${BUSHUB_COMPOSE_FILE:-docker-compose.integrated.yml}"
 
-echo ""
-echo "=== 포트 확인 ==="
-netstat -tlnp | grep -E ":(27017|80|3000|8080)" || echo "포트가 열려있지 않습니다."
-
-echo ""
-echo "=== 프로세스 확인 ==="
-ps aux | grep -E "(mongod|nginx|node|python3)" | grep -v grep || echo "프로세스가 실행되지 않았습니다."
-
-echo ""
-echo "=== 웹 접속 테스트 ==="
-if curl -s http://localhost > /dev/null; then
-    echo "✅ 웹 접속 성공: http://localhost"
+echo "📊 3단계: Docker 상태"
+echo "=== docker compose ($COMPOSE_FILE) ==="
+if [ -f "$COMPOSE_FILE" ]; then
+  docker compose -f "$COMPOSE_FILE" ps
 else
-    echo "❌ 웹 접속 실패"
+  echo "⚠️  $COMPOSE_FILE 없음"
 fi
 
-if curl -s http://localhost/api/health > /dev/null; then
-    echo "✅ API 접속 성공: http://localhost/api/health"
+echo ""
+echo "=== 컨테이너 (bushub-*) ==="
+docker ps -a --filter "name=bushub-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+
+echo ""
+echo "=== 포트 (80, 3000, 8080, 27017) ==="
+if command -v ss >/dev/null 2>&1; then
+  ss -tlnp 2>/dev/null | grep -E ':(80|3000|8080|27017)\b' || echo "(해당 포트 리슨 없음)"
 else
-    echo "❌ API 접속 실패"
+  netstat -tlnp 2>/dev/null | grep -E ':(80|3000|8080|27017)\b' || echo "(netstat/ss 로 확인 불가)"
 fi
 
-echo "✅ 3단계: 상태 확인 완료!"
-echo "다음 단계: ./scripts/main-04-logs.sh (로그 확인)"
+echo ""
+echo "=== 웹 / API (호스트) ==="
+if curl -sSf "http://localhost" >/dev/null 2>&1; then
+  echo "✅ http://localhost (Nginx)"
+else
+  echo "❌ http://localhost"
+fi
+if curl -sSf "http://localhost:3000/api/v1/health" >/dev/null 2>&1; then
+  echo "✅ Backend health (직접 3000)"
+else
+  echo "❌ Backend health (직접 3000)"
+fi
+if curl -sSf "http://localhost/api/v1/health" >/dev/null 2>&1; then
+  echo "✅ API via Nginx /api/v1/health"
+else
+  echo "❌ API via Nginx /api/v1/health"
+fi
+
+echo "✅ 3단계 완료 — 로그: ./scripts/main-04-logs.sh"

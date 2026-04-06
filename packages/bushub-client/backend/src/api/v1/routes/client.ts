@@ -19,6 +19,7 @@ import { Error as ErrorSchema } from '../../../models/schemas/ErrorSchema';
 import { Status as StatusSchema } from '../../../models/schemas/StatusSchema';
 import { Unit as UnitSchema } from '../../../models/schemas/UnitSchema';
 import { BushubOperationManager } from '../../../operationManager';
+import { toApiDateTimeStringOrNow } from '../../../shared/utils/kstDateTime';
 import {
   createSuccessResponse,
   ErrorMessages,
@@ -165,7 +166,7 @@ async function handleExistingClient(existingClient: any, reply: FastifyReply) {
     latitude: existingClient.latitude,
     longitude: existingClient.longitude,
     devices: devicesForApi,
-    updatedAt: existingClient.updatedAt.toISOString(),
+    updatedAt: toApiDateTimeStringOrNow(existingClient.updatedAt),
   };
 
   return handleHttpSuccess(
@@ -504,7 +505,7 @@ async function buildClientResponse(savedClient: any, initialize: boolean) {
     status: await StatusSchema.findOne({}),
     data: initialize ? await DataSchema.findOne({}) : null,
     errors: await ErrorSchema.findOne({}),
-    updatedAt: savedClient.updatedAt.toISOString(),
+    updatedAt: toApiDateTimeStringOrNow(savedClient.updatedAt),
   };
 
   return {
@@ -580,7 +581,7 @@ async function clientRoutes(app: FastifyInstance) {
           latitude: client.latitude,
           longitude: client.longitude,
           devices: devicesForApi,
-          updatedAt: client.updatedAt.toISOString(),
+          updatedAt: toApiDateTimeStringOrNow(client.updatedAt),
         };
 
         logDebug(`클라이언트 정보 조회 성공: ${client.id}`);

@@ -21,7 +21,6 @@ tmpdir=$(mktemp -d)
 
   docker logs --since=30m bushub-backend > "$tmpdir/logs-backend.txt" 2>&1 || true
   docker logs --since=30m bushub-frontend > "$tmpdir/logs-frontend.txt" 2>&1 || true
-  journalctl -u bushub-network-control-api -n 1000 --no-pager > "$tmpdir/logs-nca.txt" 2>&1 || true
 ) 
 
 tar -czf "$OUT_FILE" -C "$tmpdir" .

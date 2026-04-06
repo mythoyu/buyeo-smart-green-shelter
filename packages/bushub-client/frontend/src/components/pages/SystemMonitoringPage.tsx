@@ -21,6 +21,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { RightSidebarItem } from '../layout/RightSidebar';
+import { formatToKoreanTime } from '../../utils/format';
 
 const SystemMonitoringPage = () => {
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
@@ -218,7 +219,9 @@ const SystemMonitoringPage = () => {
               <div className='flex justify-between'>
                 <span>마지막 업데이트</span>
                 <span className='text-muted-foreground'>
-                  {data?.timestamp ? new Date(data.timestamp).toLocaleString('ko-KR') : '알 수 없음'}
+                  {data?.timestamp
+                    ? formatToKoreanTime(data.timestamp, { showDate: true, showSeconds: true })
+                    : '알 수 없음'}
                 </span>
               </div>
               <div className='flex justify-between'>

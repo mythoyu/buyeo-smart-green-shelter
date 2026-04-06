@@ -1,3 +1,7 @@
+import { DateTime } from 'luxon';
+
+import { KST_ZONE, formatKstLocal, nowKstFormatted, parseApiDateTimeSafe } from './kstDateTime';
+
 /**
  * 필드 라벨에 단위를 추가하는 함수
  * @param label 원본 라벨
@@ -21,20 +25,24 @@ export const getFormattedLabel = (fieldSpec: { label: string; unit?: string }): 
 // 날짜/시간 포맷팅 유틸
 
 export function formatErrorTime(errorAt: string) {
-  const date = new Date(errorAt);
-  return date.toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  const z = DateTime.fromJSDate(parseApiDateTimeSafe(errorAt)).setZone(KST_ZONE);
+  return z.toLocaleString(
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    },
+    { locale: 'ko-KR' }
+  );
 }
 
 export function getTimeAgo(errorAt: string) {
   const now = new Date();
-  const errorTime = new Date(errorAt);
+  const errorTime = parseApiDateTimeSafe(errorAt);
   const diffMs = now.getTime() - errorTime.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
@@ -47,13 +55,10 @@ export function getTimeAgo(errorAt: string) {
 }
 
 /**
- * UTC+0 ISO 문자열을 한국 시간으로 변환하여 표시용 문자열 반환
- * @param isoString UTC+0 ISO 문자열 (예: "2024-01-01T09:00:00.000Z")
- * @param options 표시 옵션
- * @returns 한국 시간 문자열
+ * API 시각 문자열(KST 무오프셋 또는 기존 `Z` 호환)을 표시용 한국어 로캘 문자열로 변환
  */
 export function formatToKoreanTime(
-  isoString: string,
+  apiDateTime: string,
   options: {
     showDate?: boolean;
     showSeconds?: boolean;
@@ -62,39 +67,40 @@ export function formatToKoreanTime(
 ): string {
   const { showDate = false, showSeconds = true, showMilliseconds = false } = options;
 
-  const date = new Date(isoString);
+  const instant = parseApiDateTimeSafe(apiDateTime);
+  const z = DateTime.fromJSDate(instant).setZone(KST_ZONE);
 
-  // 날짜 표시 옵션
   if (showDate) {
-    const dateString = date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-
-    const timeString = date.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: showSeconds ? '2-digit' : undefined,
-    });
-
+    const dateString = z.toLocaleString(
+      { year: 'numeric', month: '2-digit', day: '2-digit' },
+      { locale: 'ko-KR' }
+    );
+    const timeString = z.toLocaleString(
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: showSeconds ? '2-digit' : undefined,
+      },
+      { locale: 'ko-KR', hour12: false }
+    );
     if (showMilliseconds) {
-      const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+      const milliseconds = z.millisecond.toString().padStart(3, '0');
       return `${dateString} ${timeString}.${milliseconds}`;
     }
-
     return `${dateString} ${timeString}`;
   }
 
-  // 시간만 표시
-  const timeString = date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: showSeconds ? '2-digit' : undefined,
-  });
+  const timeString = z.toLocaleString(
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: showSeconds ? '2-digit' : undefined,
+    },
+    { locale: 'ko-KR', hour12: false }
+  );
 
   if (showMilliseconds) {
-    const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+    const milliseconds = z.millisecond.toString().padStart(3, '0');
     return `${timeString}.${milliseconds}`;
   }
 
@@ -102,24 +108,34 @@ export function formatToKoreanTime(
 }
 
 /**
- * 현재 시간을 UTC+0 ISO 문자열로 반환
- * @returns UTC+0 ISO 문자열
+ * 현재 시각을 API 계약 문자열(KST `YYYY-MM-DDTHH:mm:ss`)로 반환
  */
 export function getCurrentUTCTime(): string {
-  return new Date().toISOString();
+  return nowKstFormatted();
+}
+
+/** @deprecated 이름 유지. `getCurrentUTCTime`과 동일. */
+export function getCurrentApiDateTime(): string {
+  return nowKstFormatted();
 }
 
 /**
- * 한국 시간을 UTC+0으로 변환하여 ISO 문자열 반환
- * @param koreanTime 한국 시간 문자열 (HH:mm 형식)
- * @returns UTC+0 ISO 문자열
+ * 오늘 날짜 기준 KST 벽시계 `HH:mm` → API 시각 문자열(같은 달력일)
  */
 export function convertKoreanTimeToUTC(koreanTime: string): string {
   const [hours, minutes] = koreanTime.split(':').map(Number);
-  const now = new Date();
-  const koreanDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-
-  // 한국 시간대(UTC+9)를 UTC로 변환
-  const utcDate = new Date(koreanDate.getTime() - 9 * 60 * 60 * 1000);
-  return utcDate.toISOString();
+  const z = DateTime.now().setZone(KST_ZONE).set({ hour: hours, minute: minutes, second: 0, millisecond: 0 });
+  return formatKstLocal(z.toJSDate());
 }
+
+export {
+  formatKstHm,
+  formatKstLocal,
+  getKstHour,
+  nowKstCalendarParts,
+  nowKstFormatted,
+  parseApiDateTimeSafe,
+  parseApiDateTimeToUtc,
+  todayYmdKst,
+  toKstDateTime,
+} from './kstDateTime';

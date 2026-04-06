@@ -63,28 +63,6 @@ export const SystemSettingsResponseSchema = Type.Object({
         peopleCounterEnabled: Type.Optional(
           Type.Boolean({ description: '피플카운터 기능 활성화 여부' }),
         ),
-        rebootSchedule: Type.Optional(
-          Type.Object({
-            enabled: Type.Boolean({ description: '자동 재부팅 사용 여부' }),
-            mode: Type.Union(
-              [Type.Literal('daily'), Type.Literal('weekly')],
-              { description: '스케줄 모드(daily/weekly)' },
-            ),
-            hour: Type.Number({
-              description: '재부팅 시각(시 단위, 0~23)',
-              minimum: 0,
-              maximum: 23,
-            }),
-            daysOfWeek: Type.Optional(
-              Type.Array(Type.Number({ minimum: 0, maximum: 6 }), {
-                description: '요일 배열(0:일요일 ~ 6:토요일)',
-              }),
-            ),
-            lastExecutedAt: Type.Optional(
-              Type.String({ description: '마지막 재부팅 실행 시각(ISO 문자열)' }),
-            ),
-          }),
-        ),
       }),
     ),
   }),
@@ -174,11 +152,6 @@ export const SYSTEM_SETTINGS_RESPONSE_EXAMPLE = {
       pollingInterval: 20000,
       applyInProgress: false,
       peopleCounterEnabled: false,
-      rebootSchedule: {
-        enabled: false,
-        mode: 'daily',
-        hour: 3,
-      },
     },
   },
 };

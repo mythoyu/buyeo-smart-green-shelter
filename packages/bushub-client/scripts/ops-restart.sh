@@ -1,24 +1,18 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-echo "🔄 USB에서 서비스 재시작..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-# 서비스 재시작
-echo "MongoDB 재시작..."
-sudo systemctl restart bushub-mongodb
-sleep 3
+COMPOSE_FILE="${BUSHUB_COMPOSE_FILE:-docker-compose.integrated.yml}"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "❌ $ROOT_DIR/$COMPOSE_FILE 없음"
+  exit 1
+fi
 
-echo "Nginx 재시작..."
-sudo systemctl restart bushub-nginx
-sleep 2
+echo "🔄 Docker Compose 재시작: $COMPOSE_FILE"
+docker compose -f "$COMPOSE_FILE" restart
 
-echo "Backend 재시작..."
-sudo systemctl restart bushub-backend
-sleep 2
-
-echo "Frontend 재시작..."
-sudo systemctl restart bushub-frontend
-sleep 2
-
-echo "✅ 재시작 완료!"
-echo "다음 단계: ./scripts/main-03-status.sh (상태 확인)"
+echo "✅ 완료"
+echo "   상태: ./scripts/main-03-status.sh"

@@ -11,6 +11,7 @@ import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import { logInfo } from '../../../logger';
 import { createSuccessResponse, handleRouteError } from '../../../shared/utils/responseHelper';
 import { ApiKeysResponseSchema, APIKEYS_RESPONSE_EXAMPLE } from '../schemas/apiKeys.schema';
+import { toApiDateTimeString, toApiDateTimeStringOrNow } from '../../../shared/utils/kstDateTime';
 
 async function apiKeysRoutes(fastify: FastifyInstance) {
   const serviceContainer = ServiceContainer.getInstance();
@@ -35,21 +36,9 @@ async function apiKeysRoutes(fastify: FastifyInstance) {
           permissions: key.permissions || [],
           status: key.status,
           description: key.description || '',
-          createdAt: key.createdAt
-            ? typeof key.createdAt === 'string'
-              ? key.createdAt
-              : key.createdAt.toISOString()
-            : new Date().toISOString(),
-          updatedAt: key.updatedAt
-            ? typeof key.updatedAt === 'string'
-              ? key.updatedAt
-              : key.updatedAt.toISOString()
-            : new Date().toISOString(),
-          expiresAt: key.expiresAt
-            ? typeof key.expiresAt === 'string'
-              ? key.expiresAt
-              : key.expiresAt.toISOString()
-            : undefined,
+          createdAt: toApiDateTimeStringOrNow(key.createdAt),
+          updatedAt: toApiDateTimeStringOrNow(key.updatedAt),
+          expiresAt: toApiDateTimeString(key.expiresAt),
         }));
 
         logInfo('API 키 목록 조회 응답 완료');

@@ -6,6 +6,7 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { useCheckExternalServer } from '../../../api/queries/system';
+import { formatToKoreanTime } from '../../../utils/format';
 import { toast } from 'sonner';
 import { MonitoringCard } from './MonitoringCard';
 
@@ -174,7 +175,7 @@ const SuperiorServerStatusCard: React.FC = () => {
               )}
 
               <div className='text-xs text-muted-foreground border-t pt-2'>
-                확인시간: {new Date(checkResult.timestamp).toLocaleString('ko-KR')}
+                확인시간: {formatToKoreanTime(checkResult.timestamp, { showDate: true, showSeconds: true })}
               </div>
             </div>
           )}

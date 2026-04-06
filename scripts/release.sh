@@ -51,15 +51,6 @@ if ! pnpm build:production; then
 fi
 cd - > /dev/null
 
-# Network Control API 빌드 테스트
-echo "📦 Network Control API 빌드 테스트..."
-cd packages/bushub-client/network-control-api
-if ! npm run build; then
-  echo "❌ Network Control API 빌드 실패. 릴리즈를 중단합니다." >&2
-  exit 1
-fi
-cd - > /dev/null
-
 echo "✅ 모든 빌드 테스트 통과"
 
 # 3) 루트 버전 갱신 (태그와 동일)

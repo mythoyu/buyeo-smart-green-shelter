@@ -10,8 +10,6 @@ else
   echo "⚠️ $COMPOSE_FILE 를 찾을 수 없습니다. (USB_ROOT에서 실행 중인지 확인)"
 fi
 
-echo "🛑 Network Control API(systemd) 중지..."
-sudo systemctl stop bushub-network-control-api || true
 echo "✅ 완료"
 
 

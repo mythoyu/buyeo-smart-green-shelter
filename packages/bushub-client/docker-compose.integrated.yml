@@ -1,3 +1,5 @@
+# PC A: 내장 RS-485 두 포트 — DDC/Modbus(ttyS0), 피플카운터 APC(ttyS1). 보드에 맞게 경로 수정.
+# USB 변환기만 쓰는 PC B는 docker-compose.usb485.yml 사용.
 services:
   # MongoDB 데이터베이스
   db:
@@ -35,10 +37,8 @@ services:
       - "3000:3000"
     volumes:
       - backend_logs:/app/logs
-      # 시리얼 포트 마운트 (Modbus 통신용)
       - /dev/ttyS0:/dev/ttyS0:rw
-      # (선택) 피플카운터(APC100) 사용 시에만 ttyS1 마운트
-      # - /dev/ttyS1:/dev/ttyS1:rw
+      - /dev/ttyS1:/dev/ttyS1:rw
       # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
     privileged: true
@@ -48,8 +48,11 @@ services:
       - MONGODB_URI=mongodb://db:27017/bushub_client
       - LOG_LEVEL=info
       - MODBUS_MOCK_ENABLED=false
+      - MODBUS_PORT=/dev/ttyS0
       - MODBUS_BAUD_RATE=9600
       - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
+      - PEOPLE_COUNTER_PORT=/dev/ttyS1
+      - PEOPLE_COUNTER_BAUD_RATE=9600
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:
       - db

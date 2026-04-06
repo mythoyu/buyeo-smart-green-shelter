@@ -1,34 +1,32 @@
 #!/bin/bash
-set -e
+# 새 tar 이미지를 docker load 한 뒤 컨테이너를 재생성합니다.
+set -euo pipefail
 
-echo "🔄 USB에서 업데이트 시작..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-# 기존 서비스 중지
-echo "서비스 중지..."
-sudo systemctl stop bushub-frontend bushub-backend bushub-nginx bushub-mongodb
+COMPOSE_FILE="${BUSHUB_COMPOSE_FILE:-docker-compose.integrated.yml}"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "❌ $ROOT_DIR/$COMPOSE_FILE 없음"
+  exit 1
+fi
 
-# 백업 생성
-echo "백업 생성..."
-sudo cp -r /opt/bushub /opt/bushub.backup.$(date +%Y%m%d_%H%M%S)
+echo "🔄 Docker Compose 업데이트: $COMPOSE_FILE"
 
-# 새 파일 복사
-echo "새 파일 복사..."
-sudo cp -r frontend/* /opt/bushub/frontend/
-sudo cp -r backend/* /opt/bushub/backend/
-sudo cp -r mongodb/* /opt/bushub/mongodb/
-sudo cp -r nginx/* /opt/bushub/nginx/
-sudo cp -r config/* /opt/bushub/config/
+if [ -d "$ROOT_DIR/docker-images" ]; then
+  echo "📦 docker-images/*.tar 로드..."
+  shopt -s nullglob
+  for image_file in "$ROOT_DIR"/docker-images/*.tar; do
+    echo "   로드: $image_file"
+    docker load -i "$image_file"
+  done
+  shopt -u nullglob
+else
+  echo "ℹ️  docker-images/ 없음 — 이미지는 이미 있는 상태여야 합니다."
+fi
 
-# 권한 설정
-sudo chmod +x /opt/bushub/mongodb/*
-sudo chmod +x /opt/bushub/nginx/*
-sudo chown -R 999:999 /opt/bushub/data  # MongoDB 권한
-sudo chown -R root:root /opt/bushub/frontend
-sudo chown -R root:root /opt/bushub/backend
+docker compose -f "$COMPOSE_FILE" up -d --force-recreate
 
-# 서비스 시작
-echo "서비스 시작..."
-sudo systemctl start bushub-mongodb bushub-nginx bushub-backend bushub-frontend
-
-echo "✅ 업데이트 완료!"
-echo "다음 단계: ./scripts/main-03-status.sh (상태 확인)"
+echo "✅ 업데이트 완료"
+echo "   상태: ./scripts/main-03-status.sh"

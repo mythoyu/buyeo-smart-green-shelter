@@ -1,5 +1,6 @@
 import { Activity } from 'lucide-react';
 
+import { formatToKoreanTime } from '../../../utils/format';
 import { Badge } from '../../ui/badge';
 import { MonitoringCard } from './MonitoringCard';
 
@@ -50,8 +51,7 @@ const PollingStatusCard: React.FC<PollingStatusCardProps> = ({ data }) => {
 
   const formatLastCleanup = (timestamp: string): string => {
     try {
-      const date = new Date(timestamp);
-      return date.toLocaleString('ko-KR');
+      return formatToKoreanTime(timestamp, { showDate: true, showSeconds: true });
     } catch {
       return '알 수 없음';
     }

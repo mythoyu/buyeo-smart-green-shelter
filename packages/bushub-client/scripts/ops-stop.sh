@@ -1,24 +1,19 @@
 #!/bin/bash
-set -e
+# Docker Compose 스택 중지 (systemd bushub-* 사용 안 함)
+set -euo pipefail
 
-echo "🛑 USB에서 서비스 중지..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-# 서비스 중지 (역순)
-echo "Frontend 중지..."
-sudo systemctl stop bushub-frontend
-sleep 1
+COMPOSE_FILE="${BUSHUB_COMPOSE_FILE:-docker-compose.integrated.yml}"
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "❌ $ROOT_DIR/$COMPOSE_FILE 없음"
+  exit 1
+fi
 
-echo "Backend 중지..."
-sudo systemctl stop bushub-backend
-sleep 1
+echo "🛑 Docker Compose 중지: $COMPOSE_FILE"
+docker compose -f "$COMPOSE_FILE" down
 
-echo "Nginx 중지..."
-sudo systemctl stop bushub-nginx
-sleep 1
-
-echo "MongoDB 중지..."
-sudo systemctl stop bushub-mongodb
-sleep 1
-
-echo "✅ 모든 서비스가 중지되었습니다!"
-echo "다음 단계: ./scripts/main-02-start.sh (다시 시작)"
+echo "✅ 완료"
+echo "   다시 시작: ./scripts/main-02-start.sh 또는 deploy-hybrid.sh"

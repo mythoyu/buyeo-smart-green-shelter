@@ -9,6 +9,7 @@ const CLIENTS_ENDPOINTS = {
 import { clients } from '../../../data/clients';
 import { logInfo, logDebug } from '../../../logger';
 import { ErrorMessages, handleHttpSuccess, handleRouteError } from '../../../shared/utils/responseHelper';
+import { nowKstFormatted } from '../../../shared/utils/kstDateTime';
 
 async function clientsRoutes(app: FastifyInstance) {
   logDebug('🚀 clientsRoutes 플러그인 시작...');
@@ -37,7 +38,7 @@ async function clientsRoutes(app: FastifyInstance) {
           longitude: client.longitude,
           status: 'active', // 테스트에서 기대하는 status 필드 추가
           devices: client.devices,
-          updatedAt: new Date().toISOString(),
+          updatedAt: nowKstFormatted(),
         }));
 
         // 필터 적용

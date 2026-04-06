@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { SystemSettingRow } from '../components/SystemSettingRow';
 
 import type { SystemPort, SystemSettings, HardwareControlError } from '../../../../types/hardware';
+import { getKstDayOfWeekSun0, nowKstCalendarParts } from '../../../../utils/kstDateTime';
 
 // 시스템 포트별 설명 정보
 const SYSTEM_PORT_DESCRIPTIONS: Record<SystemPort, { name: string; icon: React.ComponentType<any> }> = {
@@ -37,33 +38,36 @@ export const SystemSettingsTab: React.FC<SystemSettingsTabProps> = ({ disabled =
   const seasonalRead = useSeasonalRead();
   const seasonalSet = useSeasonalSet();
   const [isApplyingDdc, setIsApplyingDdc] = useState(false);
-  const [ddcDow, setDdcDow] = useState<number>(new Date().getDay());
+  const [ddcDow, setDdcDow] = useState<number>(() => getKstDayOfWeekSun0(new Date()));
 
-  // 시스템 설정 상태 관리
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
-    season: false,
-    monthlySummer: {
-      JAN: false,
-      FEB: false,
-      MAR: false,
-      APR: false,
-      MAY: false,
-      JUN: true,
-      JUL: true,
-      AUG: true,
-      SEP: true,
-      OCT: false,
-      NOV: false,
-      DEC: false,
-    },
-    ddcTime: {
-      year: new Date().getFullYear(),
-      month: new Date().getMonth() + 1,
-      day: new Date().getDate(),
-      hour: new Date().getHours(),
-      minute: new Date().getMinutes(),
-      second: new Date().getSeconds(),
-    },
+  // 시스템 설정 상태 관리 (DDC 시각 초깃값은 KST 달력·시계 기준)
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => {
+    const kst = nowKstCalendarParts();
+    return {
+      season: false,
+      monthlySummer: {
+        JAN: false,
+        FEB: false,
+        MAR: false,
+        APR: false,
+        MAY: false,
+        JUN: true,
+        JUL: true,
+        AUG: true,
+        SEP: true,
+        OCT: false,
+        NOV: false,
+        DEC: false,
+      },
+      ddcTime: {
+        year: kst.year,
+        month: kst.month,
+        day: kst.day,
+        hour: kst.hour,
+        minute: kst.minute,
+        second: kst.second,
+      },
+    };
   });
 
   // 절기 설정 읽기 함수

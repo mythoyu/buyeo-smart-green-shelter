@@ -7,6 +7,7 @@ import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { Badge } from '../../ui/badge';
 import { usePingTest } from '../../../api/queries/system';
+import { formatToKoreanTime } from '../../../utils/format';
 import { toast } from 'sonner';
 import { MonitoringCard } from './MonitoringCard';
 
@@ -205,7 +206,8 @@ const PingTestCard: React.FC = () => {
               </div>
 
               <div className='text-xs text-muted-foreground border-t border-gray-200 dark:border-gray-700 pt-2'>
-                테스트 시간: {new Date(pingResult.timestamp).toLocaleString('ko-KR')}
+                테스트 시간:{' '}
+                {formatToKoreanTime(pingResult.timestamp, { showDate: true, showSeconds: true })}
               </div>
             </div>
           )}

@@ -19,14 +19,21 @@ export interface IPeopleCounterRaw extends Document {
   createdAt: Date;
 }
 
-const TTL_SECONDS = 30 * 24 * 60 * 60; // 30일
+/** 로우데이터 TTL(초). `ensurePeopleCounterRawTtlIndex`와 동일 값 유지 */
+export const PEOPLE_COUNTER_RAW_TTL_SECONDS = 35 * 24 * 60 * 60; // 35일
+
+/** TTL 인덱스 이름(기본 `timestamp_1` 대신 식별용) */
+export const PEOPLE_COUNTER_RAW_TIMESTAMP_TTL_INDEX_NAME = 'people_counter_raw_timestamp_ttl';
+
+const TTL_SECONDS = PEOPLE_COUNTER_RAW_TTL_SECONDS;
 
 const PeopleCounterRawSchema = new Schema<IPeopleCounterRaw>(
   {
     clientId: { type: String, required: true, index: true },
     deviceId: { type: String, required: true, default: 'd082' },
     unitId: { type: String, required: true, default: 'u001' },
-    timestamp: { type: Date, required: true, index: true },
+    // timestamp 인덱스는 TTL용 스키마 인덱스 한 곳에서만 생성 (필드 index:true 와 중복 시 비-TTL만 남는 문제 방지)
+    timestamp: { type: Date, required: true },
     inCumulative: { type: Number, required: true },
     inDelta: { type: Number },
     inRef: { type: Number },
@@ -45,7 +52,10 @@ const PeopleCounterRawSchema = new Schema<IPeopleCounterRaw>(
 );
 
 PeopleCounterRawSchema.index({ clientId: 1, timestamp: -1 });
-PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: TTL_SECONDS });
+PeopleCounterRawSchema.index(
+  { timestamp: 1 },
+  { expireAfterSeconds: TTL_SECONDS, name: PEOPLE_COUNTER_RAW_TIMESTAMP_TTL_INDEX_NAME },
+);
 
 export const PeopleCounterRaw = mongoose.model<IPeopleCounterRaw>(
   'PeopleCounterRaw',

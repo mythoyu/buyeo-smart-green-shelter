@@ -90,9 +90,6 @@ export class MongoSystemRepository implements ISystemRepository {
           if (settingsData.runtime.peopleCounterEnabled !== undefined) {
             runtimeSet['runtime.peopleCounterEnabled'] = settingsData.runtime.peopleCounterEnabled;
           }
-          if (settingsData.runtime.rebootSchedule !== undefined) {
-            runtimeSet['runtime.rebootSchedule'] = settingsData.runtime.rebootSchedule;
-          }
 
           result = await SystemSchema.findByIdAndUpdate(
             existing._id,

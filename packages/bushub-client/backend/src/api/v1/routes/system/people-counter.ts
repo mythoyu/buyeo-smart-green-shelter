@@ -10,6 +10,7 @@ import { getPeopleCounterHourlyStats } from '../../../../core/services/PeopleCou
 import { Data } from '../../../../models/schemas/DataSchema';
 import { PeopleCounterRaw } from '../../../../models/schemas/PeopleCounterRawSchema';
 import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
+import { startOfKstDayFromYmd } from '../../../../shared/utils/kstDateTime';
 
 export default async function peopleCounterRoutes(fastify: FastifyInstance) {
   const logger: ILogger = fastify.log;
@@ -412,14 +413,6 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const baseDate = new Date(`${date}T00:00:00`);
-        if (Number.isNaN(baseDate.getTime())) {
-          return (reply as any).code(400).send({
-            success: false,
-            message: '유효한 date(YYYY-MM-DD) 값을 입력해주세요.',
-          });
-        }
-
         // internal 라우트에서는 필요 시 clientService를 통해 명시적인 clientId를 사용할 수도 있음
         let resolvedClientId = clientId;
         if (!resolvedClientId) {
@@ -434,7 +427,17 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           }
         }
 
-        const params: { date: Date; clientId?: string } = { date: baseDate };
+        let kstBaseDate: Date;
+        try {
+          kstBaseDate = startOfKstDayFromYmd(date.trim());
+        } catch {
+          return (reply as any).code(400).send({
+            success: false,
+            message: '유효한 date(YYYY-MM-DD) 값을 입력해주세요.',
+          });
+        }
+
+        const params: { date: Date; dateString: string; clientId?: string } = { date: kstBaseDate, dateString: date };
         if (resolvedClientId) {
           params.clientId = resolvedClientId;
         }

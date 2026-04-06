@@ -12,6 +12,7 @@ import {
   getValidationStatusColor,
   getValidationIcon,
 } from '../../utils/passwordValidation';
+import { nowKstFormatted } from '../../utils/kstDateTime';
 import VersionInfo from '../common/VersionInfo';
 import {
   Badge,
@@ -79,7 +80,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   // 로그인 페이지 로드 시 환경 정보 로깅
   useEffect(() => {
     console.log('🔐 LoginPage Mount Debug:', {
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
       userAgent: navigator.userAgent,
       location: window.location.href,
     });

@@ -20,12 +20,6 @@ import {
   useChangePassword,
   // 새로운 시스템 API 훅들
   useGetSystemSettings,
-  useGetNtpStatus,
-  useSetNtpServer,
-  useSetNetworkDhcp,
-  useSetNetworkStatic,
-  useGetSoftapStatus,
-  useSetSoftap,
 } from '../api/queries';
 
 // 🆕 새로운 하드웨어 제어 훅들 import (임시로 주석 처리)
@@ -115,18 +109,6 @@ export const useApi = () => {
       // 새로운 시스템 API
       settings: useGetSystemSettings,
       getPollingStatus: usePollingStatus,
-      ntp: {
-        status: useGetNtpStatus,
-        setServer: useSetNtpServer,
-      },
-      network: {
-        setDhcp: useSetNetworkDhcp,
-        setStatic: useSetNetworkStatic,
-      },
-      softap: {
-        status: useGetSoftapStatus,
-        set: useSetSoftap,
-      },
     },
     // logs 훅에 명시적인 타입을 지정합니다.
     logs: useGetLogs,
@@ -263,10 +245,4 @@ export {
   useChangePassword,
   // 새로운 시스템 API 훅들
   useGetSystemSettings,
-  useGetNtpStatus,
-  useSetNtpServer,
-  useSetNetworkDhcp,
-  useSetNetworkStatic,
-  useGetSoftapStatus,
-  useSetSoftap,
 };

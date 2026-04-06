@@ -8,6 +8,7 @@ import DashboardPage from './components/pages/DashboardPage';
 import { useAuth } from './contexts/AuthContext';
 import { useApi } from './hooks/useApi';
 import { useEnvironmentLogger } from './hooks/useEnvironmentLogger';
+import { nowKstFormatted } from './utils/kstDateTime';
 
 // 동적 임포트로 큰 페이지들을 지연 로딩
 const DeviceRegistrationPage = lazy(() => import('./components/pages/DeviceRegistrationPage'));
@@ -27,7 +28,7 @@ function PageLogger() {
   const { user } = useAuth();
 
   useEffect(() => {
-    const timestamp = new Date().toISOString();
+    const timestamp = nowKstFormatted();
     const pageInfo = {
       timestamp,
       path: location.pathname,

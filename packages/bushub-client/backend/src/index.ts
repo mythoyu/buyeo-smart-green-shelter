@@ -15,6 +15,7 @@ import { ServerInitializer } from './core/ServerInitializer';
 // import { UpstreamHealthScheduler } from './core/services/UpstreamHealthScheduler'; // 제거됨 - 수동 확인으로 대체
 import { logInfo, logError, logWarn } from './logger';
 import { BushubOperationManager } from './operationManager';
+import { setGracefulShutdownHandler } from './shutdown/gracefulShutdownRegistry';
 import { getAppEnvironment, getPort, getHost, getCorsOrigin, logEnvironmentInfo } from './utils/environment';
 
 import path from 'path';
@@ -117,6 +118,50 @@ app.get('/health', healthCheckHandler);
 
 // WebSocket 서버는 서버 시작 후 초기화
 
+let serverInitializerRef: ServerInitializer | undefined;
+let shutdownInProgress = false;
+
+const gracefulShutdown = async (signal: string) => {
+  if (shutdownInProgress) {
+    logWarn(`[SHUTDOWN] 이미 종료 진행 중입니다. 신호 무시: ${signal}`);
+    return;
+  }
+  shutdownInProgress = true;
+
+  logInfo(`[SHUTDOWN] 신호 수신: ${signal} — 우아한 종료 시작`);
+
+  // Fastify 종료: 새 요청을 받지 않게 하고 기존 요청을 종료
+  logInfo('[SHUTDOWN] Fastify app.close() 호출…');
+  try {
+    await app.close();
+    logInfo('[SHUTDOWN] Fastify app.close() 완료');
+  } catch (e) {
+    logWarn(`[SHUTDOWN] app.close() 실패: ${e}`);
+  }
+
+  // 백그라운드 서비스/리소스 정리
+  logInfo('[SHUTDOWN] ServerInitializer.shutdown() 호출…');
+  try {
+    await serverInitializerRef?.shutdown();
+    logInfo('[SHUTDOWN] ServerInitializer.shutdown() 완료');
+  } catch (e) {
+    logWarn(`[SHUTDOWN] ServerInitializer.shutdown() 실패: ${e}`);
+  }
+
+  // Docker restart 정책을 이용해 컨테이너가 다시 떠야 하므로 프로세스 종료
+  logInfo('[SHUTDOWN] process.exit(0) — 프로세스 종료 (Compose restart 정책에 따름)');
+  process.exit(0);
+};
+
+setGracefulShutdownHandler(gracefulShutdown);
+
+process.on('SIGTERM', () => {
+  void gracefulShutdown('SIGTERM');
+});
+process.on('SIGINT', () => {
+  void gracefulShutdown('SIGINT');
+});
+
 // 장비/외부 장비 라우트만 등록
 (async () => {
   let serverInitializer: ServerInitializer;
@@ -124,6 +169,7 @@ app.get('/health', healthCheckHandler);
   try {
     // ServerInitializer를 사용한 깔끔한 초기화
     serverInitializer = new ServerInitializer();
+    serverInitializerRef = serverInitializer;
 
     // 1-6단계: 기본 초기화
     logInfo('[INIT] 🔍 ServerInitializer.initialize() 시작...');

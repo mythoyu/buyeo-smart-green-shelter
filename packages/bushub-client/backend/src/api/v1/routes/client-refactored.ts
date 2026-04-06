@@ -26,6 +26,7 @@ import {
   handleHttpError,
   handleRouteError,
 } from '../../../shared/utils/responseHelper';
+import { formatKstLocal } from '../../../shared/utils/kstDateTime';
 import { ClientResponseSchema, CLIENT_RESPONSE_EXAMPLE } from '../schemas/client.schema';
 
 // 요청 검증 및 파싱 함수
@@ -85,7 +86,7 @@ async function handleExistingClient(existingClient: any, reply: FastifyReply) {
     latitude: existingClient.latitude,
     longitude: existingClient.longitude,
     devices: devicesForApi,
-    updatedAt: existingClient.updatedAt.toISOString(),
+    updatedAt: formatKstLocal(existingClient.updatedAt),
   };
 
   return handleHttpSuccess(
@@ -419,7 +420,7 @@ async function buildClientResponse(savedClient: any, initialize: boolean) {
     status: await StatusSchema.findOne({}),
     data: initialize ? await DataSchema.findOne({}) : null,
     errors: await ErrorSchema.findOne({}),
-    updatedAt: savedClient.updatedAt.toISOString(),
+    updatedAt: formatKstLocal(savedClient.updatedAt),
   };
 
   return {
@@ -492,7 +493,7 @@ async function clientRoutes(app: FastifyInstance) {
           latitude: client.latitude,
           longitude: client.longitude,
           devices: devicesForApi,
-          updatedAt: client.updatedAt.toISOString(),
+          updatedAt: formatKstLocal(client.updatedAt),
         };
 
         logDebug(`클라이언트 정보 조회 성공: ${client.id}`);

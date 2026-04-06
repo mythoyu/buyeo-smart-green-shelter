@@ -142,6 +142,10 @@ const userService = new UserService(mockUserRepository);
 4. **의존성 관리**: 명확한 의존성 주입으로 결합도 낮춤
 5. **코드 재사용**: 인터페이스를 통한 다형성 활용
 
+## API 날짜·시각 (KST)
+
+HTTP 요청·응답에서 **시각 필드**는 `YYYY-MM-DDTHH:mm:ss` 형식으로 내려가며, 값은 **Asia/Seoul 벽시계**입니다(오프셋·`Z` 없음). 달력일만 쓸 때는 `YYYY-MM-DD`(KST 그날). 구현은 [`shared/utils/kstDateTime.ts`](../../shared/utils/kstDateTime.ts)를 사용합니다.
+
 ## 🔄 마이그레이션 가이드
 
 기존 코드를 새로운 아키텍처로 마이그레이션하는 방법:

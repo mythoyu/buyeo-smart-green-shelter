@@ -3,12 +3,13 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getKstNowParts } from '../../../../utils/time';
 import { logError } from '../../../../logger';
 import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
+import { formatKstLocal } from '../../../../shared/utils/kstDateTime';
 
 export default async function systemTimeRoutes(app: FastifyInstance) {
   /**
    * GET /system/time
    * - Bushub 백엔드 서버가 인식하는 현재 시간을 조회
-   * - nowIso: 서버 OS 시간 기준 ISO 문자열
+   * - nowIso: 현재 시각 (KST `YYYY-MM-DDTHH:mm:ss`, API 계약과 동일. 필드명은 하위 호환 유지)
    * - kst: Asia/Seoul 기준으로 분해된 시각 정보
    */
   app.get(
@@ -61,8 +62,8 @@ export default async function systemTimeRoutes(app: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const now = new Date();
-        const nowIso = now.toISOString();
-        const kst = getKstNowParts();
+        const nowIso = formatKstLocal(now);
+        const kst = getKstNowParts(now);
 
         return reply.send(
           createSuccessResponse('시스템 시간 조회 성공', {

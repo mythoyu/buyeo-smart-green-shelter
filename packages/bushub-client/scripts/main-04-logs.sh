@@ -1,43 +1,26 @@
 #!/bin/bash
-set -e
+# 컨테이너 로그 (journalctl bushub-* 대신 docker logs)
+set -euo pipefail
 
-echo "📋 4단계: USB에서 로그 확인..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-echo "=== MongoDB 로그 ==="
-sudo journalctl -u bushub-mongodb --no-pager -n 20
+TAIL="${1:-40}"
 
-echo ""
-echo "=== Nginx 로그 ==="
-sudo journalctl -u bushub-nginx --no-pager -n 20
+echo "📋 4단계: 컨테이너 로그 (각 마지막 ${TAIL}줄)"
 
-echo ""
-echo "=== Backend 로그 ==="
-sudo journalctl -u bushub-backend --no-pager -n 20
-
-echo ""
-echo "=== Frontend 로그 ==="
-sudo journalctl -u bushub-frontend --no-pager -n 20
-
-echo ""
-echo "=== 파일 로그 ==="
-if [ -f "/opt/bushub/logs/mongodb.log" ]; then
-    echo "MongoDB 파일 로그 (마지막 10줄):"
-    sudo tail -n 10 /opt/bushub/logs/mongodb.log
-fi
+for c in bushub-db bushub-nginx bushub-backend bushub-frontend; do
+  if docker ps -a --format '{{.Names}}' | grep -qx "$c"; then
+    echo ""
+    echo "=== $c ==="
+    docker logs "$c" --tail "$TAIL" 2>&1 || true
+  else
+    echo ""
+    echo "=== $c (없음) ==="
+  fi
+done
 
 echo ""
-echo "=== Nginx 액세스 로그 ==="
-if [ -f "/var/log/nginx/access.log" ]; then
-    echo "Nginx 액세스 로그 (마지막 10줄):"
-    sudo tail -n 10 /var/log/nginx/access.log
-fi
-
-echo ""
-echo "=== Nginx 에러 로그 ==="
-if [ -f "/var/log/nginx/error.log" ]; then
-    echo "Nginx 에러 로그 (마지막 10줄):"
-    sudo tail -n 10 /var/log/nginx/error.log
-fi
-
-echo "✅ 4단계: 로그 확인 완료!"
-echo "다음 단계: ./scripts/ops-stop.sh (중지) 또는 ./scripts/ops-restart.sh (재시작)"
+echo "✅ 4단계 완료"
+echo "   중지: ./scripts/ops-stop.sh | 재시작: ./scripts/ops-restart.sh"

@@ -1,5 +1,8 @@
-import { Activity, Clock } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { Activity, Clock } from 'lucide-react';
+
+import { formatToKoreanTime } from '../../../../utils/format';
+import { nowKstFormatted } from '../../../../utils/kstDateTime';
 
 import { Badge } from '../../../ui/badge';
 import { Switch } from '../../../ui/switch';
@@ -57,15 +60,10 @@ export const DIPortTableRow: React.FC<DIPortTableRowProps> = ({
     return status ? '활성' : '비활성';
   };
 
-  // 마지막 업데이트 시간 포맷팅
+  // 마지막 업데이트 시간 포맷팅 (API 시각 문자열 → KST 표시)
   const formatLastUpdated = (lastUpdated: string) => {
     try {
-      const date = new Date(lastUpdated);
-      return date.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
+      return formatToKoreanTime(lastUpdated, { showDate: false, showSeconds: true });
     } catch {
       return '알 수 없음';
     }
@@ -120,7 +118,7 @@ export const DIPortTableRow: React.FC<DIPortTableRowProps> = ({
         <div className='flex items-center justify-center gap-1'>
           <Clock className='h-3 w-3 text-muted-foreground' />
           <span className='text-sm text-muted-foreground'>
-            {formatLastUpdated(portState?.lastUpdated ?? new Date().toISOString())}
+            {formatLastUpdated(portState?.lastUpdated ?? nowKstFormatted())}
           </span>
         </div>
       </TableCell>

@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { internalApi, networkControlApi } from '../axiosInstance';
+import { externalApi, internalApi } from '../axiosInstance';
 
 // 절기 설정 데이터 타입
 interface SeasonalData {
@@ -19,13 +19,6 @@ interface SeasonalData {
   december: number;
 }
 
-export interface RebootSchedule {
-  enabled: boolean;
-  mode: 'daily' | 'weekly';
-  hour: number; // 0~23, 예: 3 → 새벽 3시
-  daysOfWeek?: number[];
-}
-
 // 절기 설정 응답 타입
 interface SeasonalResponse {
   success: boolean;
@@ -42,29 +35,6 @@ interface SeasonalResponse {
 // interface ModeToggleParams {
 //   mode: 'auto' | 'manual';
 // }
-
-interface NtpServerParams {
-  ntp_server: string;
-}
-
-interface NetworkDhcpParams {
-  ifname: string;
-  con_name: string;
-}
-
-interface NetworkStaticParams {
-  ifname: string;
-  con_name: string;
-  ip_address: string;
-  gateway: string;
-  dns: string;
-}
-
-interface SoftapParams {
-  ifname: string;
-  ssid: string;
-  password: string;
-}
 
 interface DdcTimeSyncParams {
   enabled: boolean;
@@ -106,56 +76,13 @@ const getSystemTime = async (): Promise<any> => {
   return internalApi.get('/system/time').then(res => res.data);
 };
 
-const getNtpStatus = async (): Promise<any> => {
-  return networkControlApi.get('/ntp/status').then(res => res.data.data);
-};
-
-const setNtpServer = async (params: NtpServerParams): Promise<any> => {
-  return networkControlApi.post('/ntp/configure', params).then(res => res.data);
-};
-
-const setNetworkDhcp = async (params: NetworkDhcpParams): Promise<any> => {
-  return networkControlApi.post('/configure', params).then(res => res.data);
-};
-
-const setNetworkStatic = async (params: NetworkStaticParams): Promise<any> => {
-  return networkControlApi.post('/configure', params).then(res => res.data);
-};
-
-const getSoftapStatus = async (): Promise<any> => {
-  return networkControlApi.get('/softap/status').then(res => res.data.data);
-};
-
-const setSoftap = async (params: SoftapParams): Promise<any> => {
-  return networkControlApi.post('/softap/configure', params).then(res => res.data);
-};
-
 const setDdcTimeSync = async (params: DdcTimeSyncParams): Promise<any> => {
   return internalApi.post('/system/ddc-time-sync', params).then(res => res.data);
 };
 
-// 호스트 PC 재기동
-const restartHostSystem = async (): Promise<any> => {
-  return internalApi.post('/system', { action: 'restart' }).then(res => res.data);
-};
-
-// 백엔드 재기동
+// 백엔드 재기동 (외부 API와 동일 경로: /api/v1/external/system/restart-backend)
 const restartBackend = async (): Promise<any> => {
-  return internalApi.post('/system', { action: 'restart-backend' }).then(res => res.data);
-};
-
-const getRebootSchedule = async (): Promise<RebootSchedule | undefined> => {
-  const settings = await getSystemSettings();
-  return settings?.runtime?.rebootSchedule as RebootSchedule | undefined;
-};
-
-const updateRebootScheduleApi = async (schedule: RebootSchedule): Promise<any> => {
-  return internalApi
-    .post('/system', {
-      action: 'update-reboot-schedule',
-      rebootSchedule: schedule,
-    })
-    .then(res => res.data);
+  return externalApi.post('/system/restart-backend').then(res => res.data);
 };
 
 // 절기 설정 저장 (season 필드 제외 - readonly)
@@ -204,59 +131,10 @@ export const useUpdateSystemSettings = () =>
     mutationFn: updateSystemSettings,
   });
 
-export const useGetRebootSchedule = () =>
-  useQuery<RebootSchedule | undefined>({
-    queryKey: ['system', 'reboot-schedule'],
-    queryFn: getRebootSchedule,
-  });
-
-export const useUpdateRebootSchedule = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: updateRebootScheduleApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system', 'reboot-schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['system', 'settings'] });
-    },
-  });
-};
-
 export const useGetSystemTime = () =>
   useQuery({
     queryKey: ['system', 'time'],
     queryFn: getSystemTime,
-  });
-
-export const useGetNtpStatus = () =>
-  useQuery({
-    queryKey: ['system', 'ntp', 'status'],
-    queryFn: getNtpStatus,
-  });
-
-export const useSetNtpServer = () =>
-  useMutation({
-    mutationFn: setNtpServer,
-  });
-
-export const useSetNetworkDhcp = () =>
-  useMutation({
-    mutationFn: setNetworkDhcp,
-  });
-
-export const useSetNetworkStatic = () =>
-  useMutation({
-    mutationFn: setNetworkStatic,
-  });
-
-export const useGetSoftapStatus = () =>
-  useQuery({
-    queryKey: ['system', 'softap', 'status'],
-    queryFn: getSoftapStatus,
-  });
-
-export const useSetSoftap = () =>
-  useMutation({
-    mutationFn: setSoftap,
   });
 
 export const useSetDdcTimeSync = () =>
@@ -387,18 +265,6 @@ export const useUpdateDeviceAdvancedSettings = () =>
     },
     onError: error => {
       console.error('디바이스 상세설정 저장 실패:', error);
-    },
-  });
-
-// 호스트 PC 재기동 훅
-export const useRestartHostSystem = () =>
-  useMutation({
-    mutationFn: restartHostSystem,
-    onSuccess: () => {
-      console.log('호스트 PC 재기동이 시작되었습니다.');
-    },
-    onError: error => {
-      console.error('호스트 PC 재기동 실패:', error);
     },
   });
 

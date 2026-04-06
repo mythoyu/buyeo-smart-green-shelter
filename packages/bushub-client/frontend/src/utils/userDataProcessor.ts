@@ -1,5 +1,7 @@
 import type { User, ApiKey } from '../hooks/useUserManagement';
 
+import { nowKstFormatted, parseApiDateTimeSafe } from './kstDateTime';
+
 // 백엔드 응답을 프론트엔드 형식으로 변환
 export const processUserData = (user: any): User => {
   return {
@@ -51,7 +53,7 @@ export const createDefaultApiKey = (user: User): ApiKey => {
     type: user.role === 'superuser' ? 'universal' : 'external',
     permissions: [],
     status: 'active',
-    createdAt: new Date().toISOString(),
+    createdAt: nowKstFormatted(),
     description: `${userName} 기본 API 키`,
     createdBy: user.id,
     rateLimit: {
@@ -99,8 +101,8 @@ export const sortUsers = (
         bValue = b.role;
         break;
       case 'createdAt':
-        aValue = new Date(a.createdAt);
-        bValue = new Date(b.createdAt);
+        aValue = parseApiDateTimeSafe(a.createdAt as string).getTime();
+        bValue = parseApiDateTimeSafe(b.createdAt as string).getTime();
         break;
       default:
         aValue = a.name || a.username;

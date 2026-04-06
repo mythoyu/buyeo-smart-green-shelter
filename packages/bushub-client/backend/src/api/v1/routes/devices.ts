@@ -24,6 +24,7 @@ import {
   ErrorCodes,
   handleRouteError,
 } from '../../../shared/utils/responseHelper';
+import { nowKstFormatted, toApiDateTimeString } from '../../../shared/utils/kstDateTime';
 import {
   CommandRequestSchema,
   CommandResponseSchema,
@@ -201,7 +202,7 @@ async function deviceRoutes(fastify: FastifyInstance) {
             action: log.action,
             status: log.status,
             error: log.error,
-            finishedAt: log.finishedAt,
+            finishedAt: toApiDateTimeString(log.finishedAt),
           }));
 
           // logInfo(`🔍 최종 응답 데이터: ${JSON.stringify(result)}`);
@@ -579,7 +580,7 @@ async function deviceRoutes(fastify: FastifyInstance) {
             available: !!sngilDDCService,
             status: 'active',
           },
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         };
 
         reply.send(

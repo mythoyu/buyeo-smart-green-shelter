@@ -1,4 +1,5 @@
 // HTTP_API_SPEC.md 명세 기반 Client DTO 및 변환 함수
+import { toApiDateTimeStringOrNow } from '../shared/utils/kstDateTime';
 export interface UnitSummaryDTO {
   id: string;
   name: string;
@@ -48,7 +49,7 @@ export function toClientResponseDTO(client: Record<string, unknown>): ClientResp
     location: client.location as string,
     latitude: client.latitude as number,
     longitude: client.longitude as number,
-    updatedAt: client.updatedAt instanceof Date ? client.updatedAt.toISOString() : (client.updatedAt as string),
+    updatedAt: toApiDateTimeStringOrNow(client.updatedAt),
     devices: ((client.devices || []) as Record<string, unknown>[]).map(toDeviceSummaryDTO),
   };
 }

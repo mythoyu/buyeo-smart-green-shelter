@@ -1,5 +1,6 @@
 import { buildReverseIndex, generateBySpec, initializeMockGenerator } from '../../meta/protocols/mockValueGenerator';
 import { ILogger } from '../../shared/interfaces/ILogger';
+import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { ServiceContainer } from '../container/ServiceContainer';
 import {
   ModbusReadRequest,
@@ -305,7 +306,7 @@ export class MockModbusService implements IModbusCommunication {
     return {
       isConnected: this._isConnected,
       mode: 'mock',
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 

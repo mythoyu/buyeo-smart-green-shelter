@@ -9,6 +9,7 @@ import * as yauzl from 'yauzl';
 
 import { logError, logWarn } from '../../../logger';
 import { createErrorResponse, ErrorCodes, createSuccessResponse } from '../../../shared/utils/responseHelper';
+import { formatKstLocal } from '../../../shared/utils/kstDateTime';
 
 // 로그 디렉토리 경로 설정 (logger.ts와 동일)
 const getLogDir = () => {
@@ -199,11 +200,12 @@ export default async function logsRoutes(app: FastifyInstance): Promise<void> {
             return {
               filename,
               size: stats.size,
-              modified: stats.mtime.toISOString(),
+              modified: formatKstLocal(stats.mtime),
+              mtimeMs: stats.mtimeMs,
               isCompressed: filename.endsWith('.gz') || filename.endsWith('.zip'),
             };
           })
-          .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
+          .sort((a, b) => b.mtimeMs - a.mtimeMs);
 
         logWarn(`필터링된 로그 파일: ${files}`);
         logWarn(`필터링된 파일 개수: ${files.length}`);
@@ -506,8 +508,8 @@ export default async function logsRoutes(app: FastifyInstance): Promise<void> {
             compressedSize: stats.size,
             originalSize,
             compressionRatio: compressionRatio ? `${compressionRatio}%` : null,
-            modified: stats.mtime.toISOString(),
-            created: stats.birthtime.toISOString(),
+            modified: formatKstLocal(stats.mtime),
+            created: formatKstLocal(stats.birthtime),
           }),
         );
       } catch (error) {

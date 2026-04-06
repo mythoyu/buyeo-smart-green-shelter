@@ -11,6 +11,7 @@ import { ILogger } from '../interfaces/ILogger';
 import type { PeopleCounterQueueService } from './PeopleCounterQueueService';
 import type { IStatusService } from './interfaces/IStatusService';
 import type { IErrorService } from './interfaces/IErrorService';
+import { formatKstLocal, getKstCalendarParts, startOfKstMinute } from '../../shared/utils/kstDateTime';
 
 const POLL_INTERVAL_MS = Number(process.env.PEOPLE_COUNTER_POLL_INTERVAL) || 10000;
 const DEVICE_ID = 'd082';
@@ -89,7 +90,7 @@ export class PeopleCounterPollerService {
         buttonStatus: false,
         sensorStatus: true,
         limitExceeded: false,
-        timestamp: new Date().toISOString(),
+        timestamp: formatKstLocal(new Date()),
       };
 
       const unitData = {
@@ -181,11 +182,15 @@ export class PeopleCounterPollerService {
     }
 
     if (!data) {
+      this.logger?.warn('[PeopleCounterPoller] poll: 장비 응답 없음(null)');
       await this.setCommunicationErrorState();
       return;
     }
 
     await this.clearCommunicationErrorState();
+    this.logger?.info(
+      `[PeopleCounterPoller] poll ok in=${data.inCumulative} out=${data.outCumulative} room=${data.currentCount}`,
+    );
 
     let clientId = 'c0101';
     try {
@@ -202,9 +207,10 @@ export class PeopleCounterPollerService {
       await this.upsertData(clientId, data);
     }
 
-    // 1분 경계 감지: 직전 저장한 분보다 현재 분이 진행되었으면 직전 분에 대한 1건 저장
+    // 1분 경계 감지 (KST 달력·시각 기준)
     const now = new Date();
-    const currentMinuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+    const kst = getKstCalendarParts(now);
+    const currentMinuteKey = `${kst.year}-${kst.month}-${kst.day}-${kst.hour}-${kst.minute}`;
 
     if (this.lastSavedMinuteKey !== null && currentMinuteKey !== this.lastSavedMinuteKey) {
       await this.saveOneMinuteRaw(clientId, data, this.lastSavedMinuteKey);
@@ -219,7 +225,7 @@ export class PeopleCounterPollerService {
 
   /**
    * 직전 분 1건을 people_counter_raw에 저장 (inDelta, inRef 포함)
-   * lastSavedMinuteKey 형식: "YYYY-M-D-H-m"
+   * lastSavedMinuteKey 형식: "YYYY-M-D-H-m" (M/D/H/m은 KST 연·월·일·시·분)
    */
   private async saveOneMinuteRaw(
     clientId: string,
@@ -228,7 +234,7 @@ export class PeopleCounterPollerService {
   ): Promise<void> {
     try {
       const [y, mon, d, h, min] = minuteKey.split('-').map(Number);
-      const minuteStart = new Date(y, mon, d, h, min, 0, 0);
+      const minuteStart = startOfKstMinute(y, mon, d, h, min);
 
       const startRef = this.refAtStartOfCurrentMinute;
       const endRef = this.lastMinuteInRef;
@@ -278,7 +284,7 @@ export class PeopleCounterPollerService {
           buttonStatus: d.buttonStatus,
           sensorStatus: d.sensorStatus,
           limitExceeded: d.limitExceeded,
-          timestamp: d.timestamp.toISOString(),
+          timestamp: formatKstLocal(d.timestamp),
         },
       };
       await Data.updateOne(

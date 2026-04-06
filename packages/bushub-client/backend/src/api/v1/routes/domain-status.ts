@@ -16,6 +16,7 @@ import {
   ErrorCodes,
   handleRouteError,
 } from '../../../shared/utils/responseHelper';
+import { nowKstFormatted } from '../../../shared/utils/kstDateTime';
 
 async function domainStatusRoutes(app: FastifyInstance) {
   const serviceContainer = ServiceContainer.getInstance();
@@ -35,7 +36,7 @@ async function domainStatusRoutes(app: FastifyInstance) {
             domains: allDomainStatus,
             description: '모든 도메인의 서비스 상태 정보입니다.',
             usage: '/api/v1/internal/domain/status',
-            timestamp: new Date().toISOString(),
+            timestamp: nowKstFormatted(),
           }),
         );
       } catch (error) {
@@ -81,7 +82,7 @@ async function domainStatusRoutes(app: FastifyInstance) {
             services: domainStatus,
             description: domainDescription,
             usage: `/api/v1/internal/domain/${domainName}/status`,
-            timestamp: new Date().toISOString(),
+            timestamp: nowKstFormatted(),
           }),
         );
       } catch (error) {
@@ -115,7 +116,7 @@ async function domainStatusRoutes(app: FastifyInstance) {
             status: 'healthy',
           },
           overall: 'healthy',
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         };
 
         // 전체 상태가 healthy인지 확인

@@ -160,25 +160,21 @@ export interface PeopleCounterUsage10Min {
 }
 
 export const useGetPeopleCounterUsage10Min = (options: {
-  date?: string;
-  start?: string;
-  end?: string;
-  period?: 'day' | 'last_24h';
+  start: string;
+  end: string;
   enabled?: boolean;
 }) => {
   return useQuery<PeopleCounterUsage10Min>({
-    queryKey: ['people-counter', 'usage-10min', options.date, options.start, options.end, options.period],
+    queryKey: ['people-counter', 'usage-10min', options.start, options.end],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (options.date) params.append('date', options.date);
-      if (options.start) params.append('start', options.start);
-      if (options.end) params.append('end', options.end);
-      if (options.period) params.append('period', options.period);
+      params.append('start', options.start);
+      params.append('end', options.end);
       const response = await externalApi.get(`/people-counter/usage-10min?${params.toString()}`);
       return response.data.data;
     },
     staleTime: 10000,
-    enabled: (options.enabled ?? true) && !!(options.date || (options.start && options.end) || options.period),
+    enabled: (options.enabled ?? true) && !!options.start && !!options.end,
   });
 };
 

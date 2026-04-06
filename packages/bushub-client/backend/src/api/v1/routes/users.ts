@@ -21,6 +21,7 @@ import {
   handleRouteError,
   handleHttpError,
 } from '../../../shared/utils/responseHelper';
+import { nowKstFormatted } from '../../../shared/utils/kstDateTime';
 import { validatePassword } from '../../middleware/security';
 import { UsersResponseSchema, USERS_RESPONSE_EXAMPLE } from '../schemas/users.schema';
 
@@ -382,7 +383,7 @@ async function usersRoutes(app: FastifyInstance) {
           userConfigService: userConfigServiceStatus,
           apiKeyService: apiKeyServiceStatus,
           clientService: clientServiceStatus,
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         };
 
         return createSuccessResponse('User 도메인 서비스 상태 조회 성공', result);

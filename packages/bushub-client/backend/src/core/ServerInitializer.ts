@@ -1,4 +1,5 @@
-import { connectToDatabase, mongoConnectionManager } from '../database/mongoose';
+import { connectToDatabase, disconnectFromDatabase, mongoConnectionManager } from '../database/mongoose';
+import { ensurePeopleCounterRawTtlIndex } from '../init/ensurePeopleCounterRawTtlIndex';
 import { seedUsers, checkDatabaseStatus } from '../init/seedUsers';
 import { logInfo, logError, logWarn, logDebug } from '../logger';
 // SNGILDDCPollingManager는 UnifiedModbusPollerService로 대체됨
@@ -19,7 +20,6 @@ export interface InitStatus {
   modbusService: boolean;
   ddcTimeSync: boolean; // 🎯 추가
   pollingRecovery: boolean; // 🔄 추가
-  hostRebootScheduler: boolean; // 🖥️ 자동 재부팅 스케줄러
 }
 
 export class ServerInitializer {
@@ -36,12 +36,12 @@ export class ServerInitializer {
     modbusService: false,
     ddcTimeSync: false, // 🎯 추가
     pollingRecovery: false, // 🔄 추가
-    hostRebootScheduler: false,
   };
 
   private serviceContainer: any;
   private apiKeyService: any;
   private systemService: any;
+  private isShuttingDown = false;
 
   constructor() {
   }
@@ -61,6 +61,7 @@ export class ServerInitializer {
   private async initializeMongoDB(): Promise<void> {
     logInfo('📡 MongoDB 연결 중...');
     await connectToDatabase();
+    await ensurePeopleCounterRawTtlIndex();
     mongoConnectionManager.startConnectionMonitoring();
     logInfo('✅ MongoDB 연결 및 모니터링 시작 완료');
     this.updateInitStatus('mongodb', true);
@@ -157,20 +158,6 @@ export class ServerInitializer {
     } catch (error) {
       logError(`❌ 로그 스케줄러 시작 실패: ${error}`);
       logWarn('⚠️ 로그 스케줄러 없이 계속 진행합니다.');
-    }
-  }
-
-  private async startHostRebootScheduler(): Promise<void> {
-    try {
-      logInfo('🖥️ 호스트 자동 재부팅 스케줄러 시작 중...');
-      const rebootSchedulerService = this.serviceContainer.getRebootSchedulerService();
-      rebootSchedulerService.start();
-      logInfo('✅ 호스트 자동 재부팅 스케줄러 시작 완료');
-      this.updateInitStatus('hostRebootScheduler', true);
-    } catch (error) {
-      logError(`❌ 호스트 자동 재부팅 스케줄러 시작 실패: ${error}`);
-      logWarn('⚠️ 호스트 자동 재부팅 스케줄러 없이 계속 진행합니다.');
-      this.updateInitStatus('hostRebootScheduler', false);
     }
   }
 
@@ -309,9 +296,6 @@ export class ServerInitializer {
     // 8단계: 로그 스케줄러 시작
     await this.startLogScheduler();
 
-    // 8-1단계: 호스트 자동 재부팅 스케줄러 시작
-    await this.startHostRebootScheduler();
-
     // 9단계: SNGIL DDC 폴링 시작
     await this.startDDCPolling();
 
@@ -326,6 +310,112 @@ export class ServerInitializer {
 
     // 13단계: 피플카운터 폴러 시작 (peopleCounterEnabled일 때만 실제 폴링)
     await this.startPeopleCounterPoller();
+  }
+
+  /**
+   * Fastify/컨테이너 “우아한 종료”를 위한 정리 파이프라인.
+   * - 타이머/폴러 stop
+   * - WebSocket close
+   * - Modbus disconnect
+   * - Mongo monitoring 중지 + disconnect
+   */
+  public async shutdown(): Promise<void> {
+    if (this.isShuttingDown) {
+      logWarn('[SHUTDOWN] shutdown() 중복 호출 — 무시');
+      return;
+    }
+    this.isShuttingDown = true;
+
+    logInfo('[SHUTDOWN] ServerInitializer: graceful shutdown 파이프라인 시작');
+
+    const sc = this.serviceContainer;
+    if (!sc) {
+      logWarn('[SHUTDOWN] ServiceContainer 없음 — 서비스 단계 생략');
+    }
+
+    // 1) 폴링/스케줄러부터 먼저 중지
+    logInfo('[SHUTDOWN] ① PeopleCounterPoller stop…');
+    try {
+      sc?.getPeopleCounterPoller?.()?.stop?.();
+      logInfo('[SHUTDOWN] ① PeopleCounterPoller stop 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ① PeopleCounterPoller stop 실패: ${e}`);
+    }
+
+    logInfo('[SHUTDOWN] ② PollingAutoRecovery stop…');
+    try {
+      sc?.getPollingAutoRecoveryService?.()?.stopAutoRecovery?.();
+      logInfo('[SHUTDOWN] ② PollingAutoRecovery stop 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ② PollingAutoRecovery stop 실패: ${e}`);
+    }
+
+    logInfo('[SHUTDOWN] ③ DdcTimeSync stopScheduledSync…');
+    try {
+      sc?.getDdcTimeSyncService?.()?.stopScheduledSync?.();
+      logInfo('[SHUTDOWN] ③ DdcTimeSync stop 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ③ DdcTimeSync stop 실패: ${e}`);
+    }
+
+    logInfo('[SHUTDOWN] ④ UnifiedModbusPoller stopAllPolling…');
+    try {
+      sc?.getUnifiedModbusPollerService?.()?.stopAllPolling?.();
+      logInfo('[SHUTDOWN] ④ UnifiedModbusPoller stopAllPolling 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ④ UnifiedModbusPoller stopAllPolling 실패: ${e}`);
+    }
+
+    // 2) 나머지 스케줄러/로깅 중지
+    logInfo('[SHUTDOWN] ⑤ LogScheduler stop…');
+    try {
+      sc?.getLogSchedulerService?.()?.stop?.();
+      logInfo('[SHUTDOWN] ⑤ LogScheduler stop 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ⑤ LogScheduler stop 실패: ${e}`);
+    }
+
+    // 3) WebSocket 종료 (클라이언트 정리)
+    logInfo('[SHUTDOWN] ⑥ WebSocket close…');
+    try {
+      sc?.getWebSocketService?.()?.close?.();
+      logInfo('[SHUTDOWN] ⑥ WebSocket close 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ⑥ WebSocket close 실패: ${e}`);
+    }
+
+    // 4) Modbus 통신 연결 해제
+    logInfo('[SHUTDOWN] ⑦ UnifiedModbusService disconnect…');
+    try {
+      const unifiedModbusService = sc?.getUnifiedModbusService?.();
+      if (unifiedModbusService?.disconnect) {
+        await unifiedModbusService.disconnect();
+        logInfo('[SHUTDOWN] ⑦ UnifiedModbusService disconnect 완료');
+      } else {
+        logInfo('[SHUTDOWN] ⑦ UnifiedModbusService disconnect 생략 (서비스 없음)');
+      }
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ⑦ UnifiedModbusService disconnect 실패: ${e}`);
+    }
+
+    // 5) Mongo 연결/모니터링 정리
+    logInfo('[SHUTDOWN] ⑧ Mongo 연결 모니터링 중지…');
+    try {
+      mongoConnectionManager.stopConnectionMonitoring?.();
+      logInfo('[SHUTDOWN] ⑧ Mongo 연결 모니터링 중지 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ⑧ mongoConnectionManager stop 실패: ${e}`);
+    }
+
+    logInfo('[SHUTDOWN] ⑨ Mongoose disconnect…');
+    try {
+      await disconnectFromDatabase();
+      logInfo('[SHUTDOWN] ⑨ Mongoose disconnect 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ⑨ disconnectFromDatabase 실패: ${e}`);
+    }
+
+    logInfo('[SHUTDOWN] ServerInitializer: graceful shutdown 파이프라인 끝');
   }
 
   private async startPeopleCounterPoller(): Promise<void> {

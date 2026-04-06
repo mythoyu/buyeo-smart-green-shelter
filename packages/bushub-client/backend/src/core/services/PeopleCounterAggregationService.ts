@@ -1,5 +1,6 @@
 import { Client as ClientSchema } from '../../models/schemas/ClientSchema';
 import { PeopleCounterRaw } from '../../models/schemas/PeopleCounterRawSchema';
+import { formatKstLocal, getKstHourOfDay } from '../../shared/utils/kstDateTime';
 
 export interface PeopleCounterHourlyBucket {
   start: string;
@@ -19,9 +20,14 @@ export interface PeopleCounterHourlyStats {
 
 interface GetHourlyStatsParams {
   /**
-   * 기준 날짜 (로컬 타임존 기준, 시/분/초는 무시)
+   * 기준 날짜.
+   * 라우트 계층에서 KST 달력일 00:00의 instant(`startOfKstDayFromYmd`)를 전달한다.
    */
   date: Date;
+  /**
+   * 요청으로 들어온 date(YYYY-MM-DD). KST 달력일 문자열을 그대로 보존하기 위해 사용한다.
+   */
+  dateString: string;
   /**
    * 명시적인 clientId가 없으면 최신 클라이언트를 사용
    */
@@ -31,13 +37,11 @@ interface GetHourlyStatsParams {
 export async function getPeopleCounterHourlyStats(
   params: GetHourlyStatsParams,
 ): Promise<PeopleCounterHourlyStats> {
-  const { date, clientId: explicitClientId } = params;
+  const { date, dateString, clientId: explicitClientId } = params;
 
-  // 기준 날짜의 0시~다음날 0시 범위 계산 (로컬 타임존 기준)
+  // KST 달력일(00:00~24:00) 기준 범위. date는 이미 KST 00:00을 가리키는 UTC Date로 들어온다.
   const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setDate(endOfDay.getDate() + 1);
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
   // clientId 결정: 명시적 값 > 최신 클라이언트 > 기본값
   let clientId = explicitClientId;
@@ -67,10 +71,9 @@ export async function getPeopleCounterHourlyStats(
   }[] = [];
 
   for (let h = 0; h < 24; h += 1) {
-    const bucketStart = new Date(startOfDay);
-    bucketStart.setHours(h, 0, 0, 0);
-    const bucketEnd = new Date(bucketStart);
-    bucketEnd.setHours(h + 1, 0, 0, 0);
+    // startOfDay는 "KST 00:00" 시각의 UTC Date이므로, 단순 ms 덧셈으로도 KST 시간 버킷 경계가 유지된다.
+    const bucketStart = new Date(startOfDay.getTime() + h * 60 * 60 * 1000);
+    const bucketEnd = new Date(bucketStart.getTime() + 60 * 60 * 1000);
 
     bucketsInternal.push({
       start: bucketStart,
@@ -87,7 +90,7 @@ export async function getPeopleCounterHourlyStats(
   // 문서들을 24개 버킷에 분배 (1분 문서: inDelta 합산, 나머지는 out/current 유지)
   for (const d of docs) {
     const ts = d.timestamp instanceof Date ? d.timestamp : new Date(d.timestamp);
-    const hour = ts.getHours();
+    const hour = getKstHourOfDay(ts);
     if (hour < 0 || hour > 23) {
       continue;
     }
@@ -110,7 +113,7 @@ export async function getPeopleCounterHourlyStats(
   }
 
   const timezone = 'Asia/Seoul';
-  const isoDate = startOfDay.toISOString().slice(0, 10);
+  const isoDate = dateString;
 
   const buckets: PeopleCounterHourlyBucket[] = bucketsInternal.map((b) => {
     const outCount =
@@ -119,8 +122,8 @@ export async function getPeopleCounterHourlyStats(
     const avgCount = Math.round(((b.sumCurrent / b.count) || 0) * 100) / 100;
 
     return {
-      start: b.start.toISOString(),
-      end: b.end.toISOString(),
+      start: formatKstLocal(b.start),
+      end: formatKstLocal(b.end),
       inCount: b.inCountSum,
       outCount,
       peakCount,

@@ -20,6 +20,7 @@ import {
   Moon,
   Sun,
 } from 'lucide-react';
+import { DateTime } from 'luxon';
 import { useTheme } from 'next-themes';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -34,6 +35,7 @@ import { useLayoutData } from '../../hooks/useLayoutData';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { canAccessPage, getRoleDisplayName } from '../../lib/permissions';
 import { getCurrentUTCTime } from '../../utils/format';
+import { KST_ZONE } from '../../utils/kstDateTime';
 import { getFormattedVersion } from '../../utils/version';
 import { ErrorPanel } from '../common/ErrorPanel';
 import { ProcessDialog } from '../common/ProcessDialog';
@@ -194,7 +196,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       addLog(disconnectLog);
     },
     onError: error => {
-      const timestamp = new Date().toISOString();
+      const timestamp = getCurrentUTCTime();
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       const errorLog: any = {
         type: 'log' as const,
@@ -231,18 +233,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // 시간 업데이트 (1초마다)
   useEffect(() => {
     const updateTime = () => {
-      const now = new Date();
-      const dateString = now.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      const timeString = now.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false, // 24시간 형식
-      });
+      const z = DateTime.now().setZone(KST_ZONE);
+      const dateString = z.toLocaleString(
+        { year: 'numeric', month: '2-digit', day: '2-digit' },
+        { locale: 'ko-KR' }
+      );
+      const timeString = z.toLocaleString(
+        { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false },
+        { locale: 'ko-KR' }
+      );
       setCurrentTime({ date: dateString.replace(/\. /g, '.').replace(/\.$/, ''), time: timeString });
     };
 

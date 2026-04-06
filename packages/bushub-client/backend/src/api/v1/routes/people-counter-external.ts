@@ -4,6 +4,7 @@
  * @see docs/PEOPLE_COUNTER_SPEC.md
  */
 
+import { DateTime } from 'luxon';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
@@ -11,51 +12,47 @@ import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import { Client as ClientSchema } from '../../../models/schemas/ClientSchema';
 import { PeopleCounterRaw } from '../../../models/schemas/PeopleCounterRawSchema';
 import { getPeopleCounterHourlyStats } from '../../../core/services/PeopleCounterAggregationService';
+import {
+  formatKstLocal,
+  KST_ZONE,
+  parseApiDateTimeToUtc,
+  startOfKstDayFromYmd,
+} from '../../../shared/utils/kstDateTime';
 import { createSuccessResponse, handleRouteError } from '../../../shared/utils/responseHelper';
 import logger from '../../../logger';
 
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
-
 type Period = 'hour' | 'day' | 'week' | 'month';
 
+/** KST 달력 기준 기간 범위 (통계 등) */
 function getDateRange(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date(end);
+  const nowZ = DateTime.now().setZone(KST_ZONE);
+  const end = nowZ.toJSDate();
+  let startDt: DateTime;
   switch (period) {
     case 'hour':
-      start.setHours(start.getHours() - 1);
+      startDt = nowZ.minus({ hours: 1 });
       break;
     case 'day':
-      start.setHours(0, 0, 0, 0);
+      startDt = nowZ.startOf('day');
       break;
     case 'week': {
-      const d = start.getDay();
-      const mon = d === 0 ? -6 : 1 - d;
-      start.setDate(start.getDate() + mon);
-      start.setHours(0, 0, 0, 0);
+      const wd = nowZ.weekday;
+      const offset = wd === 7 ? 6 : wd - 1;
+      startDt = nowZ.minus({ days: offset }).startOf('day');
       break;
     }
     case 'month':
-      start.setDate(1);
-      start.setHours(0, 0, 0, 0);
+      startDt = nowZ.startOf('month');
       break;
     default:
-      start.setHours(start.getHours() - 1);
+      startDt = nowZ.minus({ hours: 1 });
   }
-  return { start, end };
-}
-
-/** KST 기준 오늘 날짜 문자열 YYYY-MM-DD */
-function getKstDateString(now: Date): string {
-  const kst = new Date(now.getTime() + KST_OFFSET_MS);
-  const y = kst.getUTCFullYear();
-  const m = String(kst.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(kst.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return { start: startDt.toJSDate(), end };
 }
 
 /**
- * usage-10min 쿼리 해석: date | start+end | period → [start, end) (KST 기준)
+ * usage-10min: start·end 필수. date / period 미지원. 구간 [start, end).
+ * 무오프셋 start/end는 KST 벽시계. Z/오프셋 포함 ISO는 호환 파싱.
  */
 function getUsage10MinRange(q: {
   date?: string;
@@ -63,44 +60,34 @@ function getUsage10MinRange(q: {
   end?: string;
   period?: string;
 }): { start: Date; end: Date } | { error: string } {
-  if (q.date) {
-    const dateStr = String(q.date).trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return { error: 'date는 YYYY-MM-DD 형식이어야 합니다.' };
-    }
-    const start = new Date(`${dateStr}T00:00:00+09:00`);
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-    if (Number.isNaN(start.getTime())) return { error: '유효한 date를 입력해주세요.' };
-    return { start, end };
+  if (q.date != null && String(q.date).trim() !== '') {
+    return {
+      error: 'usage-10min은 date 파라미터를 지원하지 않습니다. start와 end를 지정하세요.',
+    };
+  }
+  if (q.period != null && String(q.period).trim() !== '') {
+    return {
+      error: 'usage-10min은 period 파라미터를 지원하지 않습니다. start와 end를 지정하세요.',
+    };
   }
 
-  if (q.start != null && q.end != null) {
-    const startStr = String(q.start).trim();
-    const endStr = String(q.end).trim();
-    const hasTz = (s: string) => s.endsWith('Z') || s.includes('+') || /-\d{2}:?\d{2}$/.test(s);
-    const start = hasTz(startStr) ? new Date(startStr) : new Date(startStr + '+09:00');
-    const end = hasTz(endStr) ? new Date(endStr) : new Date(endStr + '+09:00');
+  const startStr = q.start != null ? String(q.start).trim() : '';
+  const endStr = q.end != null ? String(q.end).trim() : '';
+  if (!startStr || !endStr) {
+    return { error: 'start와 end 쿼리 파라미터가 필요합니다.' };
+  }
+
+  try {
+    const start = parseApiDateTimeToUtc(startStr);
+    const end = parseApiDateTimeToUtc(endStr);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return { error: '유효한 start, end (ISO 8601 또는 KST 기준)를 입력해주세요.' };
+      return { error: '유효한 start, end 값을 입력해주세요.' };
     }
     if (start >= end) return { error: 'start는 end보다 이전이어야 합니다.' };
     return { start, end };
+  } catch {
+    return { error: '유효한 start, end 값을 입력해주세요.' };
   }
-
-  if (q.period === 'day') {
-    const kstDate = getKstDateString(new Date());
-    const start = new Date(`${kstDate}T00:00:00+09:00`);
-    const end = new Date();
-    return { start, end };
-  }
-
-  if (q.period === 'last_24h') {
-    const end = new Date();
-    const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
-    return { start, end };
-  }
-
-  return { error: 'date, start+end, period=day, period=last_24h 중 하나를 지정해주세요.' };
 }
 
 /** 구간 [start, end)를 10분 버킷으로 나누고, 문서별 inDelta를 버킷에 합산 */
@@ -124,10 +111,22 @@ function bucket10Min(start: Date, end: Date, docs: { timestamp: Date; inDelta?: 
   }
 
   return buckets.map((b) => ({
-    start: b.start.toISOString(),
-    end: b.end.toISOString(),
+    start: formatKstLocal(b.start),
+    end: formatKstLocal(b.end),
     inCount: b.inCount,
   }));
+}
+
+function toTimestampField(v: unknown): string {
+  if (v instanceof Date) return formatKstLocal(v);
+  if (typeof v === 'string') {
+    try {
+      return formatKstLocal(parseApiDateTimeToUtc(v));
+    } catch {
+      return v;
+    }
+  }
+  return formatKstLocal(new Date());
 }
 
 async function peopleCounterExternalRoutes(app: FastifyInstance) {
@@ -150,8 +149,15 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         let start: Date;
         let end: Date;
         if (q.startDate && q.endDate) {
-          start = new Date(q.startDate);
-          end = new Date(q.endDate);
+          try {
+            start = parseApiDateTimeToUtc(q.startDate);
+            end = parseApiDateTimeToUtc(q.endDate);
+          } catch {
+            return reply.code(400).send({
+              success: false,
+              message: '유효한 startDate, endDate가 필요합니다.',
+            });
+          }
         } else {
           const range = getDateRange(period);
           start = range.start;
@@ -183,7 +189,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         const rawData =
           docs.length <= 200
             ? docs.map((d) => ({
-                timestamp: d.timestamp,
+                timestamp: toTimestampField(d.timestamp),
                 inCumulative: d.inCumulative,
                 inDelta: d.inDelta,
                 inRef: d.inRef,
@@ -195,8 +201,8 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         return reply.send(
           createSuccessResponse('피플카운터 통계 조회 성공', {
             period,
-            startDate: start.toISOString(),
-            endDate: end.toISOString(),
+            startDate: formatKstLocal(start),
+            endDate: formatKstLocal(end),
             stats: {
               inCount,
               outCount: outMax - outMin,
@@ -236,16 +242,17 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           });
         }
 
-        // YYYY-MM-DD 형식을 기준으로 로컬 타임존의 0시를 계산
-        const baseDate = new Date(`${q.date}T00:00:00`);
-        if (Number.isNaN(baseDate.getTime())) {
+        let baseDate: Date;
+        try {
+          baseDate = startOfKstDayFromYmd(q.date.trim());
+        } catch {
           return reply.code(400).send({
             success: false,
             message: '유효한 date(YYYY-MM-DD) 값을 입력해주세요.',
           });
         }
 
-        const params: { date: Date; clientId?: string } = { date: baseDate };
+        const params: { date: Date; dateString: string; clientId?: string } = { date: baseDate, dateString: q.date };
         if (q.clientId) {
           params.clientId = q.clientId;
         }
@@ -281,14 +288,24 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         }
 
         const q = request.query as { startDate?: string; endDate?: string; limit?: string };
-        const startDate = q.startDate ? new Date(q.startDate) : null;
-        const endDate = q.endDate ? new Date(q.endDate) : null;
-        const limit = Math.min(parseInt(q.limit || '1000', 10) || 1000, 10000);
-
-        if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        let startDate: Date;
+        let endDate: Date;
+        try {
+          if (!q.startDate || !q.endDate) throw new Error('missing');
+          startDate = parseApiDateTimeToUtc(q.startDate);
+          endDate = parseApiDateTimeToUtc(q.endDate);
+        } catch {
           return reply.code(400).send({
             success: false,
-            message: 'startDate, endDate (ISO 8601)가 필요합니다.',
+            message: 'startDate, endDate (KST YYYY-MM-DDTHH:mm:ss 또는 호환 ISO)가 필요합니다.',
+          });
+        }
+        const limit = Math.min(parseInt(q.limit || '1000', 10) || 1000, 10000);
+
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+          return reply.code(400).send({
+            success: false,
+            message: '유효한 startDate, endDate가 필요합니다.',
           });
         }
 
@@ -304,7 +321,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           .lean();
 
         const items = docs.map((d) => ({
-          timestamp: d.timestamp,
+          timestamp: toTimestampField(d.timestamp),
           inCumulative: d.inCumulative,
           inDelta: d.inDelta,
           inRef: d.inRef,
@@ -320,8 +337,8 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
 
         return reply.send(
           createSuccessResponse('피플카운터 로우데이터 조회 성공', {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            startDate: formatKstLocal(startDate),
+            endDate: formatKstLocal(endDate),
             count: items.length,
             data: items,
           }),
@@ -372,8 +389,8 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         return reply.send(
           createSuccessResponse('피플카운터 10분 사용량 조회 성공', {
             range: {
-              start: start.toISOString(),
-              end: end.toISOString(),
+              start: formatKstLocal(start),
+              end: formatKstLocal(end),
             },
             bucketSizeMinutes: 10,
             buckets,

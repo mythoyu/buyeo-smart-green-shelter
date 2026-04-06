@@ -4,7 +4,6 @@ import {
   Clock,
   Cpu,
   Database,
-  Network,
   Package,
   RefreshCw,
   RotateCw,
@@ -18,9 +17,6 @@ import {
  * 시스템 설정 페이지 사이드바 네비게이션 항목
  */
 export const SETTINGS_NAV = [
-  { id: 'settings-softap', icon: Wifi, label: 'SoftAP' },
-  { id: 'settings-network', icon: Network, label: '유선' },
-  { id: 'settings-ntp', icon: Clock, label: 'NTP' },
   { id: 'settings-ddc-time', icon: Clock, label: 'DDC\n시간' },
   { id: 'settings-seasonal', icon: Sun, label: '절기' },
   { id: 'settings-polling', icon: Cpu, label: '폴링' },

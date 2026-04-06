@@ -1,4 +1,5 @@
 // User 및 API Key 관리 DTO
+import { toApiDateTimeString, toApiDateTimeStringOrNow } from '../shared/utils/kstDateTime';
 import { UnitValue } from '../types';
 
 export interface UserRequestDTO {
@@ -82,8 +83,8 @@ export function toUserResponseDTO(user: Record<string, unknown>): UserResponseDT
     username: user.username as string,
     role: user.role as 'superuser' | 'user' | 'engineer' | 'ex-user',
     companyId: user.companyId as string | undefined,
-    createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : (user.createdAt as string),
-    updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : (user.updatedAt as string),
+    createdAt: toApiDateTimeStringOrNow(user.createdAt),
+    updatedAt: toApiDateTimeStringOrNow(user.updatedAt),
   };
 }
 
@@ -96,8 +97,8 @@ export function toApiKeyResponseDTO(apiKey: Record<string, unknown>): ApiKeyResp
     permissions: (apiKey.permissions || []) as string[],
     companyId: apiKey.companyId as string | undefined,
     status: (apiKey.status || 'active') as 'active' | 'inactive',
-    createdAt: apiKey.createdAt instanceof Date ? apiKey.createdAt.toISOString() : (apiKey.createdAt as string),
-    expiresAt: apiKey.expiresAt instanceof Date ? apiKey.expiresAt.toISOString() : (apiKey.expiresAt as string),
+    createdAt: toApiDateTimeStringOrNow(apiKey.createdAt),
+    expiresAt: toApiDateTimeString(apiKey.expiresAt),
   };
 }
 
@@ -118,6 +119,6 @@ export function toSystemResponseDTO(settings: Record<string, unknown>): SystemRe
     ntp: (settings.ntp || {}) as Record<string, UnitValue>,
     softap: (settings.softap || {}) as Record<string, UnitValue>,
     client: (settings.client || {}) as Record<string, UnitValue>,
-    updatedAt: settings.updatedAt instanceof Date ? settings.updatedAt.toISOString() : (settings.updatedAt as string),
+    updatedAt: toApiDateTimeStringOrNow(settings.updatedAt),
   };
 }

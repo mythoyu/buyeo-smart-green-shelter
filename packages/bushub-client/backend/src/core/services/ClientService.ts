@@ -1,5 +1,6 @@
 import { Client } from '../../models/Client';
 import { ILogger } from '../../shared/interfaces/ILogger';
+import { toApiDateTimeStringOrNow } from '../../shared/utils/kstDateTime';
 import { HttpNotFoundError, HttpDatabaseError } from '../../shared/utils/responseHelper';
 import { IClientRepository, CreateClientDto, UpdateClientDto } from '../repositories/interfaces/IClientRepository';
 
@@ -27,7 +28,7 @@ export class ClientService implements IClientService {
       location: client.location,
       latitude: client.latitude,
       longitude: client.longitude,
-      updatedAt: client.updatedAt.toISOString(),
+      updatedAt: toApiDateTimeStringOrNow(client.updatedAt),
       devices: [], // 장비 정보는 별도 조회
     };
   }

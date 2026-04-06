@@ -16,6 +16,7 @@ import {
   createErrorResponse,
   ErrorCodes,
 } from '../../../shared/utils/responseHelper';
+import { toApiDateTimeStringOrNow } from '../../../shared/utils/kstDateTime';
 import { ErrorsResponseSchema, ERRORS_RESPONSE_EXAMPLE } from '../schemas/errors.schema';
 
 async function errorsRoutes(app: FastifyInstance) {
@@ -52,7 +53,7 @@ async function errorsRoutes(app: FastifyInstance) {
             id: u.unitId,
             errorId: u.errorId,
             errorDesc: u.errorDesc,
-            errorAt: u.errorAt,
+            errorAt: toApiDateTimeStringOrNow(u.errorAt),
           })),
         }));
 

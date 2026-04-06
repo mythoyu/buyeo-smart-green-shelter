@@ -3,6 +3,7 @@ import { Server } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 
 import { logInfo } from '../../logger';
+import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { UnitValue } from '../../types';
 import { IWebSocketRepository } from '../repositories/interfaces/IWebSocketRepository';
@@ -55,7 +56,7 @@ export class WebSocketService implements IWebSocketService {
 
     // 클라이언트 ID 생성
     const clientId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const clientInfo = `ws://localhost:3000/ws - ${new Date().toISOString()}`;
+    const clientInfo = `ws://localhost:3000/ws - ${nowKstFormatted()}`;
 
     this.logger?.info(`WebSocket 연결 시도 감지: ${clientInfo}`);
 
@@ -72,7 +73,7 @@ export class WebSocketService implements IWebSocketService {
       level: 'info',
       service: 'websocket',
       message: 'WebSocket 연결이 성공했습니다.',
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     });
 
     // heartbeat 메시지 처리
@@ -83,7 +84,7 @@ export class WebSocketService implements IWebSocketService {
         `[WebSocket] 메시지 수신: ${JSON.stringify({
           clientId,
           message,
-          timestamp: new Date().toISOString(),
+          timestamp: nowKstFormatted(),
         })}`,
       );
 
@@ -98,7 +99,7 @@ export class WebSocketService implements IWebSocketService {
           `[WebSocket] 기본 응답 전송: ${JSON.stringify({
             clientId,
             response: responseMessage,
-            timestamp: new Date().toISOString(),
+            timestamp: nowKstFormatted(),
           })}`,
         );
         ws.send(responseMessage);
@@ -180,7 +181,7 @@ export class WebSocketService implements IWebSocketService {
       level,
       service,
       message,
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
       data,
     };
 
@@ -200,7 +201,7 @@ export class WebSocketService implements IWebSocketService {
       level: 'info',
       service: 'device',
       message: `${deviceId} - ${unitId} ${action} 명령 ${status}`,
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
       deviceId,
       unitId,
       action,

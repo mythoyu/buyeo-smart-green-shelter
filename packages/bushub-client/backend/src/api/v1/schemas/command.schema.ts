@@ -33,7 +33,7 @@ export const COMMAND_RESPONSE_EXAMPLE = {
     unitId: 'u001',
     action: 'SET_START_TIME',
     value: '08:00',
-    requestedAt: '2025-06-29T10:15:00Z',
+    requestedAt: '2025-06-29T10:15:00',
     result: 'success',
   },
 };

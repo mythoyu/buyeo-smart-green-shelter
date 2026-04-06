@@ -1,3 +1,4 @@
+import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { CLIENT_PORT_MAPPINGS } from '../../data/clientPortMappings';
 import { getModbusAddressMapping, isModbusMockEnabled } from '../../utils/environment';
 import { ServiceContainer } from '../container/ServiceContainer';
@@ -1202,7 +1203,7 @@ export class UnifiedModbusPollerService {
       isPollingActive: this.isPollingActive(),
       mockMode: this.mockMode,
       defaultPollingInterval: this.defaultPollingInterval,
-      timestamp: new Date().toISOString(),
+      timestamp: nowKstFormatted(),
     };
   }
 
@@ -1325,7 +1326,7 @@ export class UnifiedModbusPollerService {
     let totalPollingTime = 0;
 
     try {
-      this.logger?.info(`[UnifiedModbusPollerService] 🚀 폴링 사이클 시작 - ${new Date().toISOString()}`);
+      this.logger?.info(`[UnifiedModbusPollerService] 🚀 폴링 사이클 시작 - ${nowKstFormatted()}`);
 
       if (this.stopRequested) {
         this.logger?.info('[UnifiedModbusPollerService] 폴링 중지 요청 감지 - 사이클 실행을 건너뜁니다.');

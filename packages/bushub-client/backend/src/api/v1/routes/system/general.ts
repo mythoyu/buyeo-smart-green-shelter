@@ -15,12 +15,14 @@ export const SYSTEM_GENERAL_ENDPOINTS = {
 
 import { ServiceContainer } from '../../../../core/container/ServiceContainer';
 import { logInfo } from '../../../../logger';
+import { triggerGracefulShutdown } from '../../../../shutdown/gracefulShutdownRegistry';
 import {
   createSuccessResponse,
   HttpValidationError,
   HttpSystemError,
   handleHttpError,
 } from '../../../../shared/utils/responseHelper';
+import { nowKstFormatted } from '../../../../shared/utils/kstDateTime';
 import {
   SystemSettingsResponseSchema,
   SystemSettingsUpdateRequestSchema,
@@ -41,8 +43,6 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
   const { logSchedulerService } = systemServices;
   const { webSocketService } = systemServices;
   const { unifiedLogService } = systemServices;
-  const rebootSchedulerService = ServiceContainer.getInstance().getRebootSchedulerService();
-
   // 시스템 전체 설정 조회
   app.get(SYSTEM_GENERAL_ENDPOINTS.SYSTEM, { preHandler: [app.requireAuth] }, async (request, reply) => {
     try {
@@ -62,15 +62,9 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
   // action 기반 시스템 명령 처리
   app.post(SYSTEM_GENERAL_ENDPOINTS.SYSTEM, { preHandler: [app.requireAuth] }, async (request, reply) => {
     try {
-      const { action, backupPath, rebootSchedule } = request.body as {
+      const { action, backupPath } = request.body as {
         action: string;
         backupPath?: string;
-        rebootSchedule?: {
-          enabled?: boolean;
-          mode?: string;
-          hour?: number;
-          daysOfWeek?: number[];
-        };
       };
 
       logInfo(`[POST /system] action: ${action} 요청`);
@@ -104,114 +98,26 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
             reply,
           );
 
-        case 'update-reboot-schedule': {
-          if (!rebootSchedule) {
-            return handleHttpError(
-              new HttpValidationError('rebootSchedule 객체가 필요합니다.'),
-              reply,
-            );
-          }
-
-          const { enabled, mode, hour, daysOfWeek } = rebootSchedule;
-
-          if (typeof enabled !== 'boolean') {
-            return handleHttpError(
-              new HttpValidationError('rebootSchedule.enabled는 boolean이어야 합니다.'),
-              reply,
-            );
-          }
-
-          if (mode !== 'daily' && mode !== 'weekly') {
-            return handleHttpError(
-              new HttpValidationError("rebootSchedule.mode는 'daily' 또는 'weekly' 여야 합니다."),
-              reply,
-            );
-          }
-
-          if (!Number.isInteger(hour ?? NaN) || hour! < 0 || hour! > 23) {
-            return handleHttpError(
-              new HttpValidationError('rebootSchedule.hour는 0~23 사이의 정수여야 합니다.'),
-              reply,
-            );
-          }
-
-          if (mode === 'weekly') {
-            if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
-              return handleHttpError(
-                new HttpValidationError(
-                  'rebootSchedule.mode가 weekly일 때 daysOfWeek는 0~6 값의 배열이어야 합니다.',
-                ),
-                reply,
-              );
-            }
-
-            const invalidDay = daysOfWeek.find(
-              (d) => !Number.isInteger(d) || d < 0 || d > 6,
-            );
-            if (invalidDay !== undefined) {
-              return handleHttpError(
-                new HttpValidationError('daysOfWeek 값은 0~6 사이의 정수여야 합니다.'),
-                reply,
-              );
-            }
-          }
-
-          const updated = await systemService.updateRebootSchedule({
-            enabled,
-            mode,
-            hour: hour as number,
-            daysOfWeek,
-          });
-
-          return reply.send(
-            createSuccessResponse('자동 재부팅 스케줄이 업데이트되었습니다.', {
-              rebootSchedule: updated?.runtime?.rebootSchedule,
-            }),
-          );
-        }
-
         case 'restart':
-          try {
-            await rebootSchedulerService.triggerHostReboot('manual');
-            return reply.send(
-              createSuccessResponse(
-                '호스트 PC 재기동 요청이 접수되었습니다. 컨테이너 환경에서는 호스트에서 직접 재부팅이 필요할 수 있습니다.',
-              ),
-            );
-          } catch (error) {
-            logInfo(`호스트 PC 재기동 요청 중 오류: ${error}`);
-            return handleHttpError(new HttpSystemError('호스트 PC 재기동 실행 중 오류가 발생했습니다.'), reply);
-          }
+          return handleHttpError(
+            new HttpValidationError('호스트 PC 재기동은 지원하지 않습니다. 백엔드 재기동만 사용하세요.'),
+            reply,
+          );
 
         case 'restart-backend':
-          // 백엔드 재기동 명령 실행
-          const execAsyncBackend = promisify(exec);
-
           try {
             // WebSocket으로 백엔드 재기동 알림 전송
             const webSocketService = serviceContainer.getWebSocketService();
             webSocketService?.broadcastLog('info', 'system', '백엔드 서비스를 재시작합니다.');
 
             // 비동기로 백엔드 재기동 실행 (응답 후 실행)
-            setTimeout(async () => {
+            setTimeout(() => {
               try {
-                logInfo('백엔드 재기동 요청됨 - 컨테이너 재시작을 시도합니다.');
-
-                // Docker 컨테이너 재시작 시도
-                try {
-                  // 현재 컨테이너 ID 가져오기
-                  const containerId = process.env.HOSTNAME || 'bushub-backend';
-                  await execAsyncBackend(`docker restart ${containerId}`);
-                  logInfo(`백엔드 컨테이너 재시작 성공: ${containerId}`);
-                } catch (dockerError) {
-                  logInfo(`Docker 재시작 시도 실패: ${dockerError}`);
-
-                  // Docker 명령이 실패하면 프로세스 종료로 폴백
-                  logInfo('프로세스 종료로 백엔드 재시작을 시도합니다.');
-                  process.exit(0);
-                }
+                // Windows 포함: self-SIGTERM은 핸들러가 안 탈 수 있어 레지스트리로 직접 호출
+                triggerGracefulShutdown('api:restart-backend');
               } catch (error) {
                 logInfo(`백엔드 재기동 실행 중 오류: ${error}`);
+                process.exit(0);
               }
             }, 1000);
 
@@ -464,7 +370,7 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
           available: !!unifiedLogService,
           status: 'active',
         },
-        timestamp: new Date().toISOString(),
+        timestamp: nowKstFormatted(),
       };
 
       reply.send(
@@ -586,7 +492,7 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
               packetsTransmitted: pingResult.packetsTransmitted,
               packetsReceived: pingResult.packetsReceived,
               rawOutput: stdout,
-              timestamp: new Date().toISOString(),
+              timestamp: nowKstFormatted(),
             }),
           );
         } catch (execError) {
@@ -607,7 +513,7 @@ export default async function systemGeneralRoutes(app: FastifyInstance) {
               packetsTransmitted: 1,
               packetsReceived: 0,
               rawOutput: execError instanceof Error ? execError.message : String(execError),
-              timestamp: new Date().toISOString(),
+              timestamp: nowKstFormatted(),
             },
           });
         }

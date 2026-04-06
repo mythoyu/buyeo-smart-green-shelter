@@ -18,10 +18,8 @@
 다음 Origin에서의 요청이 허용됩니다:
 
 - `http://localhost:3000`
-- `http://localhost:3001`
 - `http://localhost:4173`
 - `http://127.0.0.1:3000`
-- `http://127.0.0.1:3001`
 - `http://127.0.0.1:4173`
 - `https://smartcity.example.com`
 - 호스트 IP 주소들 (동적 감지)
