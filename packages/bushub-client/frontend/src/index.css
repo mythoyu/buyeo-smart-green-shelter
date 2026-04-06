@@ -158,6 +158,10 @@ body {
   background: linear-gradient(135deg, #14532d 0%, #22c55e 50%, #16a34a 100%);
 }
 
+html.dark .login-page {
+  background: linear-gradient(135deg, #052e16 0%, #166534 45%, #15803d 100%);
+}
+
 /* 왼쪽 배경 애니메이션 */
 .background-animation {
   position: relative;

@@ -398,13 +398,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       </div>
 
       {/* 오른쪽 로그인 폼 섹션 */}
-      <div className='w-full flex items-center justify-center px-4 sm:px-8 bg-white lg:flex-1'>
+      <div className='w-full flex items-center justify-center px-4 sm:px-8 bg-background lg:flex-1'>
         <div className='w-full max-w-md fade-in-up'>
           {/* 모바일용 헤더 */}
           <div className='lg:hidden text-center m-6'>
             <div className='flex items-center justify-center gap-2 shelter-icon-pulse'>
-              <Leaf className='w-8 h-8 text-green-600' />
-              <span className='text-2xl font-bold text-gray-900'>스마트 그린 쉼터</span>
+              <Leaf className='w-8 h-8 text-green-600 dark:text-green-400' />
+              <span className='text-2xl font-bold text-foreground'>스마트 그린 쉼터</span>
             </div>
           </div>
 
@@ -461,17 +461,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                         {password && passwordValidation && (
                           <TooltipContent
                             side='top'
-                            className='bg-white border border-gray-200 shadow-lg w-72 sm:w-80 p-4 max-w-[calc(100vw-2rem)]'
+                            className='border border-border bg-popover text-popover-foreground shadow-lg w-72 sm:w-80 p-4 max-w-[calc(100vw-2rem)] text-sm'
                             sideOffset={10}
                             align='center'
                             avoidCollisions={true}
                             collisionPadding={16}
                             onPointerDownOutside={() => setPasswordFocused(false)}
                           >
-                            <div className='space-y-3 text-gray-800'>
+                            <div className='space-y-3 text-popover-foreground'>
                               {/* 비밀번호 강도 표시 */}
                               <div className='flex items-center justify-between'>
-                                <span className='text-sm font-semibold text-gray-700'>비밀번호 강도:</span>
+                                <span className='text-sm font-semibold text-muted-foreground'>비밀번호 강도:</span>
                                 <Badge
                                   variant='secondary'
                                   className={getPasswordStrengthColor(passwordValidation.strength)}

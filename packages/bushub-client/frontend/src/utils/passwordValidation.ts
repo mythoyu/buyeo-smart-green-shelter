@@ -116,7 +116,7 @@ export function getPasswordStrengthText(strength: 'weak' | 'medium' | 'strong'):
 
 // 실시간 검증 상태를 위한 헬퍼 함수
 export function getValidationStatusColor(isValid: boolean): string {
-  return isValid ? 'text-green-600' : 'text-red-600';
+  return isValid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
 }
 
 export function getValidationIcon(isValid: boolean): string {
