@@ -87,7 +87,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 echo "🔍 헬스체크 (잠시 대기)..."
 sleep 5
-if curl -sSf "http://localhost:3000/api/v1/health" >/dev/null 2>&1; then
+if curl -sSf "http://localhost:3000/health" >/dev/null 2>&1; then
   echo "✅ Backend API"
 else
   echo "❌ Backend API"

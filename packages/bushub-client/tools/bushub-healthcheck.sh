@@ -15,7 +15,7 @@ check() {
 }
 
 sleep 2
-check "Backend API" curl -s http://localhost:3000/api/v1/health
+check "Backend API" curl -s http://localhost:3000/health
 check "Frontend" curl -s http://localhost:8080
 
 echo "\n완료: OK=$ok, FAIL=$fail"

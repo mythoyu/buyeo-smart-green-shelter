@@ -255,7 +255,7 @@ echo "🔍 헬스체크..."
 sleep 5
 
 # Backend 헬스체크
-if curl -s http://localhost:3000/api/v1/health > /dev/null; then
+if curl -s http://localhost:3000/health > /dev/null; then
     echo "✅ Backend API: 정상"
 else
     echo "❌ Backend API: 오류"

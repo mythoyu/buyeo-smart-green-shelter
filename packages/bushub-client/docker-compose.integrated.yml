@@ -45,6 +45,7 @@ services:
     user: "0:20" # root:dialout 그룹으로 실행
     environment:
       - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-youjobs-secret-key-2025}
       - MONGODB_URI=mongodb://db:27017/bushub_client
       - LOG_LEVEL=info
       - MODBUS_MOCK_ENABLED=false
@@ -105,7 +106,6 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/mime.types:/etc/nginx/mime.types:ro

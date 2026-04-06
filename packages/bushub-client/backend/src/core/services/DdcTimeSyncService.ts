@@ -63,13 +63,19 @@ export class DdcTimeSyncService implements IDdcTimeSyncService {
     try {
       this.logger.info('🕐 DDC 시간 동기화 스케줄링 시작');
 
-      // 즉시 첫 번째 동기화 실행
-      await this.syncDdcTime();
+      const runSync = async (): Promise<void> => {
+        try {
+          await this.syncDdcTime();
+        } catch (e) {
+          // 클라이언트 미등록·매핑 없음·Modbus 실패 등 — 다음 주기에 재시도
+          this.logger.warn(`DDC 시간 동기화 시도 실패 (재시도 예정): ${e}`);
+        }
+      };
+
+      await runSync();
 
       // 1시간마다 반복 실행 설정 (개발/테스트용으로 단축)
-      this.syncInterval = setInterval(async () => {
-        await this.syncDdcTime();
-      }, 60 * 60 * 1000); // 1시간 = 3,600,000ms
+      this.syncInterval = setInterval(runSync, 60 * 60 * 1000); // 1시간 = 3,600,000ms
       // }, 10 * 1000); // 10초 = 10,000ms (개발용)
       // }, 24 * 60 * 60 * 1000); // 24시간 = 86,400,000ms (운영용)
 

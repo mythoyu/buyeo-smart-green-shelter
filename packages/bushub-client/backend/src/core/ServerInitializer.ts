@@ -104,6 +104,26 @@ export class ServerInitializer {
     }
   }
 
+  /** DB에 system(s) 문서가 없으면 스키마 기본값으로 1건 생성 */
+  private async ensureSystemSettingsDocument(): Promise<void> {
+    try {
+      const systemService = this.serviceContainer.getSystemService();
+      if (!systemService) {
+        logWarn('⚠️ SystemService 없음 — 시스템 설정 시드 생략');
+        return;
+      }
+      const existing = await systemService.getSettings();
+      if (existing) {
+        return;
+      }
+      logInfo('📋 시스템 설정 문서 없음 — 기본값으로 초기 생성');
+      await systemService.resetToDefaults();
+      logInfo('✅ 시스템 설정 기본 문서 생성 완료');
+    } catch (error) {
+      logWarn(`⚠️ 시스템 설정 자동 생성 실패 (API로 이후 설정 가능): ${error}`);
+    }
+  }
+
   private async initializeBasicData(): Promise<void> {
     try {
       await seedUsers();
@@ -264,7 +284,9 @@ export class ServerInitializer {
       // 2단계: ServiceContainer 초기화
       await this.initializeServiceContainer();
 
-      // 3단계: 시스템 설정 확인 (초기화 제거)
+      // 3단계: systems 컬렉션에 문서가 없으면 기본값으로 1건 생성 (피플카운터 폴러 등이 findOne 스팸을 내지 않도록)
+      await this.ensureSystemSettingsDocument();
+
       this.updateInitStatus('systemSettings', true);
 
       // 4단계: 기본 데이터 등록
@@ -423,7 +445,9 @@ export class ServerInitializer {
       const poller = this.serviceContainer.getPeopleCounterPoller();
       if (poller) {
         await poller.start();
-        logInfo('✅ 피플카운터 폴러 시작 (설정 ON 시 ttyS1 폴링)');
+        logInfo(
+          '✅ 피플카운터 폴러 시작 (peopleCounterEnabled·pollingEnabled 모두 ON일 때만 PEOPLE_COUNTER_PORT 폴링)',
+        );
       }
     } catch (error) {
       logWarn(`⚠️ 피플카운터 폴러 시작 건너뜀: ${error}`);

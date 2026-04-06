@@ -47,8 +47,6 @@ ENV NODE_ENV=development \
     IS_LOCAL=false \
     USERS_CONFIG_PATH=./src/config/users.json \
     CORS_ORIGIN=true \
-    # 🔐 민감 정보 (최고 보안 등급)
-    JWT_SECRET=youjobs-secret-key-2025 \
     MONGODB_URI=mongodb://localhost:27017 \
     DB_NAME=bushub_client \
     # MongoDB 연결 설정 (개발환경 - 빠른 실패)
@@ -81,7 +79,7 @@ FROM base AS production
 # 필요한 시스템 패키지 설치
 RUN apk add --no-cache iproute2 dbus
 
-# 🔄 프로덕션 환경변수 설정
+# 🔄 프로덕션 환경변수 설정 (JWT_SECRET 등 민감 값은 compose / docker run -e 로만 주입)
 ENV NODE_ENV=production \
     APP_MODE=production \
     PORT=3000 \
@@ -99,8 +97,6 @@ ENV NODE_ENV=production \
     IS_LOCAL=false \
     USERS_CONFIG_PATH=./src/config/users.json \
     CORS_ORIGIN=true \
-    # 🔐 민감 정보 (최고 보안 등급)
-    JWT_SECRET=youjobs-secret-key-2025 \
     MONGODB_URI=mongodb://localhost:27017 \
     DB_NAME=bushub_client \
     # MongoDB 연결 설정 (운영환경 - 안정성 우선)

@@ -13,6 +13,8 @@ import type { IStatusService } from './interfaces/IStatusService';
 import type { IErrorService } from './interfaces/IErrorService';
 import { formatKstLocal, getKstCalendarParts, startOfKstMinute } from '../../shared/utils/kstDateTime';
 
+import type { ISystemService } from './interfaces/ISystemService';
+
 const POLL_INTERVAL_MS = Number(process.env.PEOPLE_COUNTER_POLL_INTERVAL) || 10000;
 const DEVICE_ID = 'd082';
 const UNIT_ID = 'u001';
@@ -41,6 +43,19 @@ export class PeopleCounterPollerService {
     this.queueService = serviceContainer.getPeopleCounterQueueService();
   }
 
+  /**
+   * PEOPLE_COUNTER_PORT(/dev/bushub-people-counter) 시리얼 폴링은
+   * 피플카운터 ON + DDC 폴링 ON 둘 다일 때만 수행한다.
+   */
+  private async isSerialPollingActive(systemService: ISystemService): Promise<boolean> {
+    const pc = await systemService.getPeopleCounterState(false);
+    if (!pc?.peopleCounterEnabled) {
+      return false;
+    }
+    const polling = await systemService.getPollingState(false);
+    return polling?.pollingEnabled === true;
+  }
+
   async start(): Promise<void> {
     if (this.timer) {
       this.logger?.warn('[PeopleCounterPoller] 이미 실행 중');
@@ -66,8 +81,7 @@ export class PeopleCounterPollerService {
       const systemService = sc.getSystemService();
       const clientService = sc.getClientService();
 
-      const state = await systemService.getPeopleCounterState(false);
-      if (!state?.peopleCounterEnabled) {
+      if (!(await this.isSerialPollingActive(systemService))) {
         return;
       }
 
@@ -167,8 +181,7 @@ export class PeopleCounterPollerService {
     const systemService = sc.getSystemService();
     const clientService = sc.getClientService();
 
-    const state = await systemService.getPeopleCounterState(false);
-    if (!state?.peopleCounterEnabled) {
+    if (!(await this.isSerialPollingActive(systemService))) {
       return;
     }
 

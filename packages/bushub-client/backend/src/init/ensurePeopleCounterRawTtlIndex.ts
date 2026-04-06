@@ -2,12 +2,30 @@
  * people_counter_raw: MongoDB TTL 인덱스 보장.
  * 비-TTL·기간 불일치·기본 이름(timestamp_1) 등은 기동 시 교체한다.
  */
+import mongoose from 'mongoose';
 import { logInfo, logWarn, logError } from '../logger';
 import {
   PeopleCounterRaw,
   PEOPLE_COUNTER_RAW_TIMESTAMP_TTL_INDEX_NAME,
   PEOPLE_COUNTER_RAW_TTL_SECONDS,
 } from '../models/schemas/PeopleCounterRawSchema';
+
+/** 컬렉션 네임스페이스가 없으면 listIndexes / createIndexes 가 code 26 으로 실패하므로 먼저 보장 */
+async function ensureCollectionNamespace(collectionName: string): Promise<void> {
+  const db = mongoose.connection.db;
+  if (!db) {
+    throw new Error('[people_counter_raw] mongoose.connection.db 가 없습니다 (연결 후 호출하세요)');
+  }
+  try {
+    await db.createCollection(collectionName);
+  } catch (e: unknown) {
+    const err = e as { code?: number; codeName?: string };
+    if (err.code === 48 || err.codeName === 'NamespaceExists') {
+      return;
+    }
+    throw e;
+  }
+}
 
 function isTimestampAscendingOnly(key: Record<string, unknown> | undefined): boolean {
   if (!key || typeof key !== 'object') return false;
@@ -20,6 +38,8 @@ function isTimestampAscendingOnly(key: Record<string, unknown> | undefined): boo
 export async function ensurePeopleCounterRawTtlIndex(): Promise<void> {
   try {
     const coll = PeopleCounterRaw.collection;
+    await ensureCollectionNamespace(coll.collectionName);
+
     const indexes = await coll.indexes();
 
     const tsOnly = indexes.filter((idx) => isTimestampAscendingOnly(idx.key as Record<string, unknown>));

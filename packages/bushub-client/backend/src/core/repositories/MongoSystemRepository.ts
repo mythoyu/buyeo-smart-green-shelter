@@ -1,4 +1,7 @@
 import { logDebug, logInfo } from '../../logger';
+
+/** findOne()에서 문서 없음 로그 스팸 방지 */
+let loggedMissingSystemDoc = false;
 import { System as SystemSchema, ISystem } from '../../models/schemas/SystemSchema';
 
 import { ISystemRepository, SystemSettings, SystemMode } from './interfaces/ISystemRepository';
@@ -8,10 +11,12 @@ export class MongoSystemRepository implements ISystemRepository {
     // logInfo('🔍 [MongoSystemRepository] findOne 호출됨');
     const result = await SystemSchema.findOne();
     if (result) {
+      loggedMissingSystemDoc = false;
       // logInfo(`🔍 [MongoSystemRepository] 기존 문서 발견 - ID: ${result._id}`);
       // logDebug(`🔍 [MongoSystemRepository] 기존 문서 내용: ${JSON.stringify(result.toObject(), null, 2)}`);
-    } else {
-      logInfo('🔍 [MongoSystemRepository] SystemSchema 기존 문서 없음 - 새로 생성 필요');
+    } else if (!loggedMissingSystemDoc) {
+      loggedMissingSystemDoc = true;
+      logDebug('🔍 [MongoSystemRepository] SystemSchema 기존 문서 없음 — 기본 시드 대기 또는 최초 설정 필요');
     }
     return result;
   }

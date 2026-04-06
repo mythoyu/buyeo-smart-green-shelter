@@ -35,15 +35,15 @@ if curl -sSf "http://localhost" >/dev/null 2>&1; then
 else
   echo "❌ http://localhost"
 fi
-if curl -sSf "http://localhost:3000/api/v1/health" >/dev/null 2>&1; then
+if curl -sSf "http://localhost:3000/health" >/dev/null 2>&1; then
   echo "✅ Backend health (직접 3000)"
 else
   echo "❌ Backend health (직접 3000)"
 fi
-if curl -sSf "http://localhost/api/v1/health" >/dev/null 2>&1; then
-  echo "✅ API via Nginx /api/v1/health"
+if curl -sSf "http://localhost/health" >/dev/null 2>&1; then
+  echo "✅ API via Nginx /health"
 else
-  echo "❌ API via Nginx /api/v1/health"
+  echo "❌ API via Nginx /health"
 fi
 
 echo "✅ 3단계 완료 — 로그: ./scripts/main-04-logs.sh"
