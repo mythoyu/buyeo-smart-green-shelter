@@ -5,6 +5,9 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VERIFY_SCRIPT="$SCRIPT_DIR/bushub-usb-serial-verify.sh"
+
 TMP_DIR="/tmp/bushub-udev-rules"
 CONTROLLER_FRAGMENT="$TMP_DIR/99-bushub-serial-controller.fragment"
 PEOPLE_COUNTER_FRAGMENT="$TMP_DIR/99-bushub-serial-people-counter.fragment"
@@ -65,22 +68,29 @@ udevadm trigger --subsystem-match=tty || true
 echo "⏱️ udev settle"
 udevadm settle || true
 
-echo "🔍 링크 확인"
-if [ -L /dev/bushub-controller ]; then
-  echo "✅ /dev/bushub-controller -> $(readlink -f /dev/bushub-controller)"
+echo ""
+echo "🔍 링크 확인 (bushub-usb-serial-verify.sh)"
+if [ ! -f "$VERIFY_SCRIPT" ]; then
+  echo "⚠️  $VERIFY_SCRIPT 없음 — 수동으로 링크를 확인하세요."
 else
-  echo "❌ /dev/bushub-controller 가 생성되지 않았습니다."
-  echo "   USB를 뽑았다가 다시 꽂고 ./bushub-usb-serial-verify.sh 를 실행해 보세요."
-  exit 1
+  # install 은 sudo 로 실행되므로 동일 환경에서 검사
+  bash "$VERIFY_SCRIPT"
 fi
 
-if [ -L /dev/bushub-people-counter ]; then
-  echo "✅ /dev/bushub-people-counter -> $(readlink -f /dev/bushub-people-counter)"
-else
-  echo "❌ /dev/bushub-people-counter 가 생성되지 않았습니다."
-  echo "   USB를 뽑았다가 다시 꽂고 ./bushub-usb-serial-verify.sh 를 실행해 보세요."
-  exit 1
+controller_ok=0
+people_ok=0
+[ -L /dev/bushub-controller ] && controller_ok=1
+[ -L /dev/bushub-people-counter ] && people_ok=1
+
+if [ "$controller_ok" -eq 1 ] && [ "$people_ok" -eq 1 ]; then
+  echo ""
+  echo "🎉 udev 설치 완료"
+  exit 0
 fi
 
-echo "🎉 udev 설치 완료"
+echo ""
+echo "⚠️  규칙은 설치되었으나, 위에서 일부 링크가 없습니다."
+echo "   udev trigger 직후에는 생성되지 않을 수 있습니다. USB를 뽑았다가 다시 꽂거나,"
+echo "   해당 장비를 연결한 뒤 ./bushub-usb-serial-verify.sh 로 다시 확인하세요."
+exit 0
 
