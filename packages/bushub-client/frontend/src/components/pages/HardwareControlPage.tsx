@@ -1,4 +1,4 @@
-import { AlertCircle, Cpu, Zap, Radio, Thermometer, Gauge, Settings } from 'lucide-react';
+import { AlertCircle, Cpu, Zap, Radio, Thermometer, Gauge, Settings, Users } from 'lucide-react';
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,6 +39,10 @@ const CONSTANTS = {
       { label: 'HVAC', desc: '냉난방기 및 전열교환기 제어 및 모니터링' },
       { label: '통합센서', desc: '통합센서 데이터 실시간 모니터링 (읽기 전용)' },
       { label: '시스템', desc: '절기 설정 및 DDC 시간 설정' },
+      {
+        label: '피플APC',
+        desc: '피플카운터 APC100 시리얼 수동 테스트(PEOPLE_COUNTER_PORT, 폴링 중지 시에만 사용)',
+      },
       { label: '주의사항', desc: '폴링이 활성화된 상태에서는 직접 제어가 불가능합니다.' },
       { label: '권한', desc: '관리자(superuser) 또는 엔지니어(engineer)만 사용할 수 있습니다.' },
     ],
@@ -133,6 +137,7 @@ const HW_TAB_OPTIONS = [
   { value: 'hvac', label: 'HVAC', icon: Thermometer },
   { value: 'sensors', label: '통합\n센서', icon: Gauge },
   { value: 'system', label: '시스템', icon: Settings },
+  { value: 'people-counter', label: '피플\nAPC', icon: Users },
 ] as const;
 
 const HardwareControlPage: React.FC = React.memo(() => {

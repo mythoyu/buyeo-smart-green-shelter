@@ -39,6 +39,17 @@ export interface PeopleCounterData {
   raw?: string;
 }
 
+/** APC 수동 테스트(직접 제어) 응답 — PEOPLE_COUNTER_PORT 전용 */
+export interface ManualApcSendResult {
+  sent: string;
+  received: string | null;
+  timedOut: boolean;
+  writeOnly: boolean;
+}
+
+const MANUAL_FRAME_MAX_LEN = 512;
+const MANUAL_WRITE_FLUSH_MS = 50;
+
 export class PeopleCounterService {
   private logger: ILogger | undefined;
   private port: SerialPort | null = null;
@@ -182,6 +193,92 @@ export class PeopleCounterService {
           cleanup();
           this.logger?.warn(`[PeopleCounterService] 전송 오류: ${err.message}`);
           resolve(null);
+        }
+      });
+    });
+  }
+
+  /**
+   * APC 수동 프레임 송신 (`people-counter-tester`와 동일 PEOPLE_COUNTER_PORT)
+   * Mock 모드에서는 호출하지 말 것(API에서 차단).
+   */
+  async sendManualApcFrame(
+    data: string,
+    timeoutMs: number,
+    waitForClosingBracket: boolean,
+  ): Promise<ManualApcSendResult> {
+    if (this.mockEnabled) {
+      throw new Error('피플카운터 Mock 모드에서는 APC 테스트를 사용할 수 없습니다.');
+    }
+    const frame = data.trim();
+    if (!frame) {
+      throw new Error('송신 데이터가 비었습니다.');
+    }
+    if (frame.length > MANUAL_FRAME_MAX_LEN) {
+      throw new Error(`송신 데이터는 ${MANUAL_FRAME_MAX_LEN}자 이하여야 합니다.`);
+    }
+
+    if (!this.port?.isOpen) {
+      const ok = await this.open();
+      if (!ok) {
+        throw new Error('피플카운터 시리얼 포트를 열 수 없습니다.');
+      }
+    }
+
+    if (!waitForClosingBracket) {
+      await new Promise<void>((resolve, reject) => {
+        this.port!.write(frame, 'ascii', (err) => (err ? reject(err) : resolve()));
+      });
+      await new Promise((r) => setTimeout(r, MANUAL_WRITE_FLUSH_MS));
+      return { sent: frame, received: null, timedOut: false, writeOnly: true };
+    }
+
+    return new Promise((resolve, reject) => {
+      let buf = '';
+      const to = setTimeout(() => {
+        cleanup();
+        resolve({
+          sent: frame,
+          received: buf.trim() === '' ? null : buf.trim(),
+          timedOut: true,
+          writeOnly: false,
+        });
+      }, timeoutMs);
+
+      const onData = (chunk: Buffer) => {
+        buf += chunk.toString('ascii');
+        if (buf.includes(']')) {
+          clearTimeout(to);
+          cleanup();
+          resolve({
+            sent: frame,
+            received: buf.trim(),
+            timedOut: false,
+            writeOnly: false,
+          });
+        }
+      };
+
+      const onError = (err: Error) => {
+        clearTimeout(to);
+        cleanup();
+        this.logger?.warn(`[PeopleCounterService] manual APC 수신 오류: ${err.message}`);
+        reject(err);
+      };
+
+      const cleanup = () => {
+        this.port?.removeListener('data', onData);
+        this.port?.removeListener('error', onError);
+      };
+
+      this.port!.on('data', onData);
+      this.port!.once('error', onError);
+
+      this.port!.write(frame, 'ascii', (err) => {
+        if (err) {
+          clearTimeout(to);
+          cleanup();
+          reject(err);
         }
       });
     });

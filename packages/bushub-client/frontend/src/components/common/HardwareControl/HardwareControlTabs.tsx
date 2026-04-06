@@ -7,6 +7,7 @@ const DIPortTab = React.lazy(() => import('./tabs/DIPortTab'));
 const HVACControlTab = React.lazy(() => import('./tabs/HVACControlTab'));
 const SensorMonitoringTab = React.lazy(() => import('./tabs/SensorMonitoringTab'));
 const SystemSettingsTab = React.lazy(() => import('./tabs/SystemSettingsTab'));
+const PeopleCounterApcTestTab = React.lazy(() => import('./tabs/PeopleCounterApcTestTab'));
 
 import type { HardwareControlError } from '../../../types/hardware';
 
@@ -37,6 +38,7 @@ const TAB_CONFIGS = [
   { value: 'hvac', label: 'HVAC' },
   { value: 'sensors', label: '통합센서' },
   { value: 'system', label: '시스템' },
+  { value: 'people-counter', label: '피플APC' },
 ] as const;
 
 // 탭 컴포넌트 매핑
@@ -46,6 +48,7 @@ const TAB_COMPONENTS = {
   hvac: HVACControlTab,
   sensors: SensorMonitoringTab,
   system: SystemSettingsTab,
+  'people-counter': PeopleCounterApcTestTab,
 } as const;
 
 /**
@@ -83,7 +86,7 @@ export const HardwareControlTabs: React.FC<HardwareControlTabsProps> = React.mem
 
     const tabsList = useMemo(
       () => (
-        <TabsList className='grid w-full grid-cols-5'>
+        <TabsList className='grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6'>
           {TAB_CONFIGS.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -119,6 +122,7 @@ export const HardwareControlTabs: React.FC<HardwareControlTabsProps> = React.mem
         {renderTabContent('hvac')}
         {renderTabContent('sensors')}
         {renderTabContent('system')}
+        {renderTabContent('people-counter')}
       </Tabs>
     );
   }

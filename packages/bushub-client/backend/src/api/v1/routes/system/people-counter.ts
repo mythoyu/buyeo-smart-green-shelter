@@ -9,6 +9,7 @@ import { ILogger } from '../../../../core/interfaces/ILogger';
 import { getPeopleCounterHourlyStats } from '../../../../core/services/PeopleCounterAggregationService';
 import { Data } from '../../../../models/schemas/DataSchema';
 import { PeopleCounterRaw } from '../../../../models/schemas/PeopleCounterRawSchema';
+import { isPeopleCounterMockEnabled } from '../../../../config/mock.config';
 import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
 import { startOfKstDayFromYmd } from '../../../../shared/utils/kstDateTime';
 
@@ -457,6 +458,91 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
         return (reply as any).code(500).send({
           success: false,
           message: '내부 서버 오류',
+          error: String(error),
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /system/people-counter/apc-test
+   * PEOPLE_COUNTER_PORT 전용 APC 수동 송수신 (폴링과 큐로 직렬화). Modbus와 무관.
+   * — Mock 모드 비허용, DDC 폴링 활성 시 비허용(직접 제어 페이지 정책과 동일).
+   */
+  fastify.post(
+    '/system/people-counter/apc-test',
+    {
+      preHandler: [fastify.requireAuth],
+      schema: {
+        body: {
+          type: 'object',
+          required: ['data'],
+          properties: {
+            data: { type: 'string' },
+            timeoutMs: { type: 'number' },
+            waitForClosingBracket: { type: 'boolean' },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        if (isPeopleCounterMockEnabled()) {
+          return (reply as any).code(503).send({
+            success: false,
+            message: '피플카운터 Mock 모드에서는 APC 테스트를 사용할 수 없습니다.',
+          });
+        }
+
+        const pollingState = await systemService.getPollingState(false);
+        if (pollingState?.pollingEnabled === true) {
+          return (reply as any).code(409).send({
+            success: false,
+            message: 'DDC 폴링이 켜져 있으면 APC 테스트를 사용할 수 없습니다. 시스템 설정에서 폴링을 먼저 중지하세요.',
+          });
+        }
+
+        const body = request.body as {
+          data?: string;
+          timeoutMs?: number;
+          waitForClosingBracket?: boolean;
+        };
+        const data = typeof body.data === 'string' ? body.data.trim() : '';
+        if (!data) {
+          return (reply as any).code(400).send({
+            success: false,
+            message: 'data(송신 문자열)가 필요합니다.',
+          });
+        }
+
+        let timeoutMs = typeof body.timeoutMs === 'number' && Number.isFinite(body.timeoutMs) ? body.timeoutMs : 1000;
+        timeoutMs = Math.min(30000, Math.max(100, timeoutMs));
+        const waitForClosingBracket = body.waitForClosingBracket !== false;
+
+        const apiKey = (request as any).apiKey;
+        const keyLabel = apiKey?.name ?? apiKey?.id ?? 'unknown';
+        logger.info(
+          `[People Counter APC-TEST] apiKey=${keyLabel} wait=${waitForClosingBracket} timeoutMs=${timeoutMs} dataLen=${data.length}`,
+        );
+
+        const queueService = serviceContainer.getPeopleCounterQueueService();
+        if (!queueService) {
+          return (reply as any).code(500).send({
+            success: false,
+            message: '피플카운터 큐 서비스를 찾을 수 없습니다.',
+          });
+        }
+
+        const result = await queueService.enqueueManualApc(data, timeoutMs, waitForClosingBracket);
+        return reply.send({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        logger.error(`[People Counter API] apc-test 오류: ${error}`);
+        return (reply as any).code(500).send({
+          success: false,
+          message: error instanceof Error ? error.message : 'APC 테스트 실패',
           error: String(error),
         });
       }

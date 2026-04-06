@@ -5,14 +5,20 @@
  */
 
 import { ILogger } from '../interfaces/ILogger';
-import type { PeopleCounterData } from './PeopleCounterService';
+import type { ManualApcSendResult, PeopleCounterData } from './PeopleCounterService';
 import { PeopleCounterService } from './PeopleCounterService';
 
 export type ResetType = 'current' | 'in' | 'out' | 'all';
 
 type Job =
   | { type: 'query'; resolve: (v: PeopleCounterData | null) => void; reject: (e: unknown) => void }
-  | { type: 'reset'; payload: { type: ResetType }; resolve: () => void; reject: (e: unknown) => void };
+  | { type: 'reset'; payload: { type: ResetType }; resolve: () => void; reject: (e: unknown) => void }
+  | {
+      type: 'manualApc';
+      payload: { data: string; timeoutMs: number; waitForClosingBracket: boolean };
+      resolve: (v: ManualApcSendResult) => void;
+      reject: (e: unknown) => void;
+    };
 
 export class PeopleCounterQueueService {
   private queue: Job[] = [];
@@ -47,6 +53,25 @@ export class PeopleCounterQueueService {
   }
 
   /**
+   * APC 수동 테스트 프레임 — 폴링(query)과 동일 포트 직렬화
+   */
+  async enqueueManualApc(
+    data: string,
+    timeoutMs: number,
+    waitForClosingBracket: boolean,
+  ): Promise<ManualApcSendResult> {
+    return new Promise<ManualApcSendResult>((resolve, reject) => {
+      this.queue.push({
+        type: 'manualApc',
+        payload: { data, timeoutMs, waitForClosingBracket },
+        resolve,
+        reject,
+      });
+      this.drain();
+    });
+  }
+
+  /**
    * Worker: 큐에서 작업을 순차 처리
    */
   private drain(): void {
@@ -68,7 +93,7 @@ export class PeopleCounterQueueService {
       try {
         if (job.type === 'query') {
           job.resolve(value ?? null);
-        } else {
+        } else if (job.type === 'reset') {
           job.resolve();
         }
         settled = true;
@@ -92,12 +117,26 @@ export class PeopleCounterQueueService {
         if (job.type === 'query') {
           const data = await this.peopleCounter.query();
           safeResolve(data);
-        } else {
+        } else if (job.type === 'reset') {
           const ok = await this.peopleCounter.reset(job.payload.type);
           if (ok) {
             safeResolve();
           } else {
             safeReject(new Error('reset failed'));
+          }
+        } else if (job.type === 'manualApc') {
+          const result = await this.peopleCounter.sendManualApcFrame(
+            job.payload.data,
+            job.payload.timeoutMs,
+            job.payload.waitForClosingBracket,
+          );
+          if (!settled) {
+            try {
+              job.resolve(result);
+              settled = true;
+            } catch (e) {
+              this.logger?.error(`[PeopleCounterQueueService] manualApc resolve 오류: ${e}`);
+            }
           }
         }
       } catch (e) {

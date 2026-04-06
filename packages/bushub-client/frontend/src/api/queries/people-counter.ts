@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 
 import { externalApi, internalApi } from '../axiosInstance';
 
@@ -204,6 +205,46 @@ export const useResetPeopleCounter = () => {
     onSuccess: () => {
       // 즉시 refetch로 UX 개선
       queryClient.invalidateQueries({ queryKey: ['clientData'] });
+    },
+  });
+};
+
+/** PEOPLE_COUNTER_PORT APC 수동 송수신 (`POST /system/people-counter/apc-test`) */
+export interface PeopleCounterApcTestPayload {
+  data: string;
+  timeoutMs?: number;
+  waitForClosingBracket?: boolean;
+}
+
+export interface PeopleCounterApcTestResult {
+  sent: string;
+  received: string | null;
+  timedOut: boolean;
+  writeOnly: boolean;
+}
+
+export const usePeopleCounterApcTest = () => {
+  return useMutation({
+    mutationFn: async (payload: PeopleCounterApcTestPayload): Promise<PeopleCounterApcTestResult> => {
+      try {
+        const response = await internalApi.post<{ success: boolean; data: PeopleCounterApcTestResult }>(
+          '/system/people-counter/apc-test',
+          payload,
+        );
+        if (!response.data?.success || !response.data.data) {
+          throw new Error('APC 테스트 응답이 올바르지 않습니다.');
+        }
+        return response.data.data;
+      } catch (e) {
+        if (axios.isAxiosError(e)) {
+          const msg =
+            (e.response?.data as { message?: string })?.message ||
+            e.message ||
+            'APC 테스트 요청에 실패했습니다.';
+          throw new Error(msg);
+        }
+        throw e;
+      }
     },
   });
 };
