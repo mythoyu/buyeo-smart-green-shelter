@@ -1,7 +1,8 @@
 # PC B: USB-시리얼을 udev 규칙으로 고정합니다.
 # Modbus(DDC/Modbus)는 /dev/bushub-controller
 # PeopleCounter(APC)는 /dev/bushub-people-counter
-# udev 규칙 설치 후에 아래 compose를 up 하세요.
+# udev: 저장소 루트 ./scripts/install-field.sh 또는 scripts/lib/udev/…
+# 규칙 설치 후 rebuild-and-up-usb485.sh 등으로 이 compose 를 up 하세요.
 services:
   # MongoDB 데이터베이스
   db:
