@@ -128,13 +128,13 @@ services:
         max-size: "10m"
         max-file: "3"
 
-# 네트워크 정의
+# 네트워크 정의 (172.17~20 등과 겹침 시 Pool overlaps 방지용 대역)
 networks:
   bushub-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.28.0.0/16
 
 # 볼륨 정의
 volumes:

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # dist 정리 → 이미지 무캐시 재빌드 → docker-compose.usb485.yml up
 set -euo pipefail
 

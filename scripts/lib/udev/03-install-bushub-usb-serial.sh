@@ -1,9 +1,32 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # udev 규칙을 설치하고 /dev/bushub-controller, /dev/bushub-people-counter 를 생성합니다.
 #
 # 이 스크립트는 반드시 백업을 수행합니다.
 #
+# 옵션:
+#   --strict  두 심볼릭 링크가 모두 없거나 하나만 있으면 exit 1 (마법사·CI용)
+#
 set -euo pipefail
+
+STRICT=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --strict)
+      STRICT=1
+      shift
+      ;;
+    -h|--help)
+      echo "사용법: $0 [--strict]"
+      echo "  --strict  두 링크가 모두 생기지 않으면 비정상 종료"
+      exit 0
+      ;;
+    *)
+      echo "알 수 없는 인자: $1" >&2
+      echo "도움말: $0 --help" >&2
+      exit 1
+      ;;
+  esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VERIFY_SCRIPT="$SCRIPT_DIR/04-verify-bushub-usb-serial.sh"
@@ -67,6 +90,8 @@ udevadm trigger --subsystem-match=tty || true
 
 echo "⏱️ udev settle"
 udevadm settle || true
+# 심볼릭 링크 생성이 settle 직후에 끝나지 않는 경우가 있어 짧게 대기
+sleep 1
 
 echo ""
 echo "🔍 링크 확인 (04-verify-bushub-usb-serial.sh)"
@@ -90,6 +115,18 @@ fi
 
 echo ""
 echo "⚠️  규칙은 설치되었으나, 위에서 일부 링크가 없습니다."
-echo "   udev trigger 직후에는 생성되지 않을 수 있습니다. USB를 뽑았다가 다시 꽂거나,"
-echo "   해당 장비를 연결한 뒤 ./04-verify-bushub-usb-serial.sh 로 다시 확인하세요."
+echo "   udev trigger 직후에는 생성되지 않을 수 있습니다. 아래를 순서대로 확인하세요."
+echo ""
+echo "   • 두 규칙은 01·02 프로브 당시의 USB 포트(KERNELS)에 맞춰집니다."
+echo "     다른 포트·허브에 꽂았다면 01 → 02 → (이 스크립트) 를 다시 실행하세요."
+echo "   • DDC용·PeopleCounter용 USB 시리얼을 동시에 연결한 뒤 검증하세요."
+echo "     (프로브를 번갈아만 할 때와 포트가 같아야 규칙이 둘 다 맞습니다.)"
+echo "   • USB를 뽑았다가 다시 꽂은 뒤:"
+echo "       sudo udevadm trigger --subsystem-match=tty && sudo udevadm settle"
+echo "   • 재확인: bash $(dirname "$0")/04-verify-bushub-usb-serial.sh"
+if [ "$STRICT" -eq 1 ]; then
+  echo ""
+  echo "❌ --strict: 두 심볼릭 링크가 모두 생성되지 않아 비정상 종료합니다."
+  exit 1
+fi
 exit 0

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Docker Compose 공통 기동 (직접 호출 금지)
 # start-docker-compose-integrated.sh 또는 start-docker-compose-usb485.sh 가 설정한
 # BUSHUB_COMPOSE_MODE 만 사용합니다.
@@ -23,6 +23,8 @@ else
 fi
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
+# COMPOSE_PROJECT_NAME 은 레포 루트 .env 또는 셸에서 지정 가능. 미설정 시 디렉터리명 기준(예: project_*).
+# 재기 동일 PC에서 볼륨·네트워크 접두사를 맞추려면 .env 에 COMPOSE_PROJECT_NAME=myname 등으로 고정 권장.
 
 case "$MODE" in
   integrated)
@@ -50,9 +52,11 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 # 이미지 태그: GITHUB_REF_NAME 또는 docker-images/bushub-backend.*.tar 에서 추론
+# tar 가 여러 개면 수정 시각이 가장 최근인 파일 기준
 if [ -z "${GITHUB_REF_NAME:-}" ]; then
   if ls docker-images/bushub-backend.*.tar >/dev/null 2>&1; then
-    TAG_FROM_FILE=$(ls docker-images/bushub-backend.*.tar | sed -n 's/.*bushub-backend\.\(.*\)\.tar/\1/p' | head -n1)
+    LATEST_TAR="$(ls -t docker-images/bushub-backend.*.tar 2>/dev/null | head -n1)"
+    TAG_FROM_FILE="$(printf '%s\n' "$LATEST_TAR" | sed -n 's/.*bushub-backend\.\(.*\)\.tar/\1/p')"
     if [ -n "$TAG_FROM_FILE" ]; then
       export GITHUB_REF_NAME="$TAG_FROM_FILE"
       echo "🔖 이미지 태그 자동 설정: $GITHUB_REF_NAME"
@@ -78,8 +82,8 @@ else
   echo "ℹ️  docker-images/ 없음 — 레지스트리 pull 또는 사전에 이미지가 있어야 합니다."
 fi
 
-echo "🚀 docker compose -f $COMPOSE_FILE up -d"
-docker compose -f "$COMPOSE_FILE" down || true
+echo "🚀 docker compose -f $COMPOSE_FILE down --remove-orphans → up -d"
+docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
 docker compose -f "$COMPOSE_FILE" up -d
 
 echo ""
@@ -107,4 +111,4 @@ fi
 
 echo ""
 echo "🎉 기동 완료: $COMPOSE_FILE"
-echo "   중지: cd $REPO_ROOT && docker compose -f $COMPOSE_FILE down"
+echo "   중지: cd $REPO_ROOT && docker compose -f $COMPOSE_FILE down --remove-orphans"

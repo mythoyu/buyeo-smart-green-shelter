@@ -1,10 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 현장용 원샷: 호스트 설정 → USB udev(01·02·03, 내부 04 verify) → 스택 재빌드·기동(택1)
 # 데스크톱(DISP/WAYLAND)이면 zenity로 단계 안내, tty 선택은 yad → zenity → 터미널 순 폴백
 #
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_PATH="$0"
+if [ -L "$SCRIPT_PATH" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$SCRIPT_PATH")")" && pwd)"
+else
+  SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+fi
 # udev: scripts/lib/udev , 호스트·rebuild 래퍼: scripts/lib
 SCRIPTS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SETUP_HOST="$SCRIPTS_DIR/setup-host-ubuntu24.sh"
@@ -14,6 +19,7 @@ REBUILD_INT="$SCRIPTS_DIR/rebuild-and-up-integrated.sh"
 PROBE_DDC="$SCRIPT_DIR/01-probe-ddc-bushub-usb-serial.sh"
 PROBE_PC="$SCRIPT_DIR/02-probe-pc-bushub-usb-serial.sh"
 INSTALL="$SCRIPT_DIR/03-install-bushub-usb-serial.sh"
+VERIFY_UDEV="$SCRIPT_DIR/04-verify-bushub-usb-serial.sh"
 
 ui_available() {
   command -v zenity >/dev/null 2>&1 && { [[ -n "${DISPLAY:-}" ]] || [[ -n "${WAYLAND_DISPLAY:-}" ]]; }
@@ -144,21 +150,62 @@ else
 fi
 
 echo ""
-ui_info "udev [2/5]" "Modbus(DDC)용 USB 시리얼만 PC에 연결하세요.\n가능하면 tty 목록 창(yad/zenity)에서 선택하고, KERNELS 는 터미널에서 고릅니다."
-read -r -p "[2/5] 연결 후 Enter... " _
+ui_info "udev [2/5]" "[2/5] DDC(Modbus)용 USB–시리얼만 연결합니다.\n\n• 연결할 것: 승일 DDC와 Modbus 통신에 쓰는 USB–RS485(또는 USB–시리얼) 어댑터 1개만 PC USB에 꽂으세요.\n• 다른 USB 시리얼 장치는 가능하면 뽑아 두면 tty 구분이 쉽습니다.\n\n다음에 tty 목록 창(yad/zenity)이 뜨면 고르고, KERNELS 번호는 터미널에서 고릅니다."
+echo "[2/5] DDC(Modbus)용 USB–시리얼 어댑터(또는 케이블)만 PC에 연결하세요."
+echo "     (다른 USB 시리얼은 뽑아 두는 것을 권장합니다.)"
+read -r -p "[2/5] 위 장비만 연결했으면 Enter... " _
 
 run_probe_with_tty_ui "$PROBE_DDC" "udev [2/5] Modbus(DDC) tty"
 
 echo ""
-ui_info "udev [3/5]" "PeopleCounter(APC)용 USB 시리얼만 연결하세요.\n가능하면 tty 목록 창에서 선택합니다."
-read -r -p "[3/5] 연결 후 Enter... " _
+ui_info "udev [3/5]" "[3/5] PeopleCounter(APC)용 USB–시리얼만 연결합니다.\n\n• 먼저 방금 쓰던 DDC용 USB–시리얼은 뽑으세요.\n• 연결할 것: APC(PeopleCounter)용 USB–시리얼 어댑터 1개만 PC에 꽂으세요.\n\n다음에 tty 목록 창이 뜨면 선택합니다."
+echo "[3/5] DDC용 케이블은 USB에서 뽑고, PeopleCounter(APC100)용 USB–시리얼만 연결하세요."
+read -r -p "[3/5] APC용만 연결했으면 Enter... " _
 
 run_probe_with_tty_ui "$PROBE_PC" "udev [3/5] PeopleCounter tty"
 
 echo ""
 echo "[4/5] udev rules 설치(링크 자동 확인 포함)..."
-ui_info "sudo" "곧 관리자 권한(sudo)으로 udev 규칙을 설치합니다."
-sudo bash "$INSTALL"
+ui_info "sudo" "곧 관리자 권한(sudo)으로 udev 규칙을 설치합니다.\n03-install 은 이 단계에서 한 번만 실행되며, 내부에서 udev reload·trigger·settle 을 이미 수행합니다.\n실패 후 Enter 로 재시도할 때는 03 을 반복하지 않고 04-verify 와 심볼릭 링크 확인만 합니다."
+
+UDEV_INSTALL_MAX_RETRY="${UDEV_INSTALL_MAX_RETRY:-15}"
+
+if sudo bash "$INSTALL" --strict; then
+  echo ""
+  echo "✅ [4/5] udev 설치·검증 단계를 통과했습니다."
+else
+  echo ""
+  echo "❌ [4/5] 03-install 이 실패했습니다. [5/5] Docker 단계는 실행하지 않습니다."
+  echo "   USB 재연결·프로브(01·02) 결과 확인 후, 아래에서 04-verify 만 반복할 수 있습니다."
+  udev_install_attempt=0
+  while true; do
+    udev_install_attempt=$((udev_install_attempt + 1))
+    if [ "$udev_install_attempt" -gt "$UDEV_INSTALL_MAX_RETRY" ]; then
+      echo ""
+      echo "❌ [4/5] 최대 재시도(${UDEV_INSTALL_MAX_RETRY})에 도달했습니다. 수동:"
+      echo "   sudo bash $INSTALL --strict   또는   bash $VERIFY_UDEV"
+      exit 1
+    fi
+    echo ""
+    echo "🔄 [4/5] 04-verify (${udev_install_attempt}/${UDEV_INSTALL_MAX_RETRY}) — 03-install 은 생략"
+    bash "$VERIFY_UDEV"
+    if [ -L /dev/bushub-controller ] && [ -L /dev/bushub-people-counter ]; then
+      echo ""
+      echo "🎉 [4/5] 심볼릭 링크 확인됨 — [5/5] 로 진행합니다."
+      break
+    fi
+    echo ""
+    echo "❌ [4/5] 아직 /dev/bushub-controller · /dev/bushub-people-counter 링크가 없습니다."
+    echo "   • Enter — 다시 04-verify 만 실행"
+    echo "   • q 입력 후 Enter — 마법사 종료 (필요 시 수동으로 sudo bash $INSTALL --strict)"
+    read -r -p "[4/5] 재시도? (Enter/q): " _retry_choice
+    if [[ "${_retry_choice:-}" =~ ^[qQ]$ ]]; then
+      echo "마법사를 종료합니다."
+      echo "   sudo bash $INSTALL --strict   또는   bash $VERIFY_UDEV"
+      exit 1
+    fi
+  done
+fi
 
 echo ""
 echo "[5/5] Docker 스택 — 이미지 재빌드 후 기동"

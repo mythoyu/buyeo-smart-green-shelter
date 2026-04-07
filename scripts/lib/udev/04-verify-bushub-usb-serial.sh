@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # /dev/bushub-controller, /dev/bushub-people-counter 존재 확인
 set -euo pipefail
 

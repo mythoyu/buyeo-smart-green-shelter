@@ -5,7 +5,17 @@
 # 예시
 # ./scripts/release.sh 1.0.0
 #
+# 스크립트 위치 기준으로 모노레포 루트로 이동하므로, 어느 디렉터리에서 호출해도 동일합니다.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT"
+
+if [[ ! -f "bushub-client/frontend/package.json" ]] || [[ ! -f "bushub-client/backend/package.json" ]]; then
+  echo "❌ bushub-client 패키지를 찾을 수 없습니다. 이 저장소의 모노레포 루트가 맞는지 확인하세요: $ROOT" >&2
+  exit 1
+fi
 
 if [[ -z "${1-}" ]]; then
   echo "사용법: $0 <version>  (예: 1.0.1)" >&2

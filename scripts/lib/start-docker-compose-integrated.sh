@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 내장 RS-485 — docker-compose.integrated.yml
 set -euo pipefail
 SCRIPT_PATH="$0"

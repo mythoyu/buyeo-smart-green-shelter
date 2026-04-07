@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # USB-RS485 — docker-compose.usb485.yml
 set -euo pipefail
 SCRIPT_PATH="$0"

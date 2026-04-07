@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 호스트 dist 제거 + 백엔드·프론트 프로덕션 이미지를 --no-cache 로 재빌드
 # 직접 실행하지 말고 rebuild-and-up-usb485.sh / rebuild-and-up-integrated.sh 사용
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 현장(on-site) 설치 진입점. 이름의 field = 영어 field(현장·말단 배포 PC), 개발용 워크스테이션과 구분.
 # 모노레포 루트에서: ./scripts/install-field.sh
 # 배포 태그 사용 시: git fetch origin --tags && git checkout vX.Y.Z 후 위와 동일

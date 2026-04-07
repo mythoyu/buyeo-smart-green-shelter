@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Modbus(DDC)용 USB-시리얼 포트를 udev KERNELS 조건으로 식별해
 # /dev/bushub-controller 심볼릭 링크 생성 규칙 1줄을 생성합니다.
 #
@@ -134,6 +134,7 @@ for i in "${!KERNELS_CANDIDATES[@]}"; do
   echo "  $n) ${KERNELS_CANDIDATES[$i]}"
 done
 
+# 기본값: 후보 목록의 마지막(대개 USB 허브 체인 끝). 보드·허브 구성에 따라 다르므로 틀리면 번호를 바꿉니다.
 DEFAULT_SEL="${#KERNELS_CANDIDATES[@]}"
 read -r -p "KERNELS를 고르세요(기본값=${DEFAULT_SEL}): " sel
 sel="${sel:-$DEFAULT_SEL}"

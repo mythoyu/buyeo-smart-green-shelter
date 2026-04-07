@@ -1,6 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Ubuntu 24.04 호스트 — 스택 실행 전 필수 도구(Docker, zenity 등) 설치
 # 현장 설치: Git 소스 + 모노레포 루트 ./scripts/install-field.sh (테더링 등으로 인터넷 권장)
+#
+# 주의: 기존 apt Docker(docker.io 등)·관련 패키지를 제거하고 Docker 공식 저장소로 재설치할 수 있습니다.
+#       개발용 워크스테이션이 아닌 전용 현장 PC에서 실행하는 것을 권장합니다.
 set -euo pipefail
 
 echo "🔧 Bushub 호스트 환경 설정 (Ubuntu 24.04 대상)"
@@ -35,6 +38,94 @@ require_sudo() {
 
 require_sudo
 
+# Docker 공식 저장소가 docker.gpg / docker.asc·docker.list / docker.sources 등으로 이중 정의되면
+# apt 전체가 "Conflicting values set for option Signed-By" 로 실패합니다. 선제 정리.
+# 공식 문서(Engine install Ubuntu): ASCII 키 docker.asc + deb822 의 docker.sources 사용.
+repair_docker_apt_signed_by_conflict() {
+  echo "🔧 Docker APT Signed-By 충돌 정리 중..."
+  sudo rm -f /etc/apt/sources.list.d/docker.list /etc/apt/sources.list.d/docker.sources
+  local f
+  shopt -s nullglob
+  for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+    [ -f "$f" ] || continue
+    if grep -q 'download\.docker\.com' "$f" 2>/dev/null; then
+      echo "   제거: $f"
+      sudo rm -f "$f"
+    fi
+  done
+  shopt -u nullglob
+  sudo rm -f /etc/apt/keyrings/docker.asc /etc/apt/keyrings/docker.gpg
+}
+
+write_docker_official_apt_repo() {
+  if ! command -v curl >/dev/null 2>&1; then
+    sudo apt install -y ca-certificates curl
+  fi
+  sudo install -m 0755 -d /etc/apt/keyrings
+  sudo rm -f /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+  sudo rm -f /etc/apt/sources.list.d/docker.list /etc/apt/sources.list.d/docker.sources
+  # shellcheck source=/dev/null
+  sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+}
+
+restore_docker_official_apt_source() {
+  if ! command -v curl >/dev/null 2>&1; then
+    sudo apt install -y ca-certificates curl gnupg
+  fi
+  write_docker_official_apt_repo
+}
+
+ensure_apt_update_works() {
+  local err
+  err="$(mktemp)"
+  if sudo apt update 2>"$err"; then
+    if grep -q 'NO_PUBKEY' "$err" && grep -q 'download\.docker\.com' "$err"; then
+      echo "🔧 Docker 저장소 서명 검증 실패(NO_PUBKEY) → 공식 키·소스(docker.asc + docker.sources)를 다시 설치합니다."
+      rm -f "$err"
+      if ! command -v curl >/dev/null 2>&1; then
+        sudo apt install -y ca-certificates curl gnupg
+      fi
+      write_docker_official_apt_repo
+      if ! sudo apt update; then
+        echo "❌ apt update 가 키·소스 재설치 후에도 실패했습니다." >&2
+        exit 1
+      fi
+      return 0
+    fi
+    rm -f "$err"
+    return 0
+  fi
+  if grep -q 'Conflicting values set for option Signed-By' "$err" && grep -q 'docker' "$err"; then
+    echo "⚠️  apt: Docker 저장소 Signed-By 충돌이 감지되었습니다. 단일 소스로 정리합니다."
+    rm -f "$err"
+    repair_docker_apt_signed_by_conflict
+    if ! command -v curl >/dev/null 2>&1; then
+      sudo apt install -y ca-certificates curl gnupg
+    fi
+    write_docker_official_apt_repo
+    if ! sudo apt update; then
+      echo "❌ apt update 가 충돌 제거 후에도 실패했습니다." >&2
+      exit 1
+    fi
+    return 0
+  fi
+  cat "$err" >&2
+  rm -f "$err"
+  echo "❌ apt update 실패. 네트워크 및 /etc/apt 를 확인하세요." >&2
+  exit 1
+}
+
+ensure_apt_update_works
+
 # 현장 설치 마법사 등 GUI 안내용 (대화상자)
 if ! command -v zenity >/dev/null 2>&1; then
   echo "🪟 zenity 설치 중..."
@@ -59,13 +150,12 @@ if ! command -v docker >/dev/null 2>&1; then
   for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
     sudo apt remove -y "$pkg" 2>/dev/null || true
   done
-  sudo rm -rf /var/lib/docker ~/.docker /etc/docker /etc/apt/keyrings/docker.gpg /etc/apt/sources.list.d/docker.list 2>/dev/null || true
+  sudo rm -rf /var/lib/docker ~/.docker /etc/docker \
+    /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc \
+    /etc/apt/sources.list.d/docker.list /etc/apt/sources.list.d/docker.sources 2>/dev/null || true
   sudo apt update
   sudo apt install -y ca-certificates curl gnupg
-  sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" |
-    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  write_docker_official_apt_repo
   sudo apt update
   sudo apt remove -y docker-compose 2>/dev/null || true
   sudo apt purge -y docker-compose 2>/dev/null || true
