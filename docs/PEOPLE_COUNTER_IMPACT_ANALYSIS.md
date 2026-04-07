@@ -10,7 +10,7 @@
 
 ### 1.1 MongoSystemRepository.updateSettings (핵심)
 
-**파일**: `packages/bushub-client/backend/src/core/repositories/MongoSystemRepository.ts`
+**파일**: `bushub-client/backend/src/core/repositories/MongoSystemRepository.ts`
 
 **현재**: `settingsData.runtime`이 있으면 **아래 3개만** `$set`으로 고정 저장합니다.
 
@@ -38,7 +38,7 @@ $set: {
 
 ### 1.2 SystemService.getPollingState (초기화 시)
 
-**파일**: `packages/bushub-client/backend/src/core/services/SystemService.ts`
+**파일**: `bushub-client/backend/src/core/services/SystemService.ts`
 
 **현재**: `runtime`이 없을 때 `initializeIfMissing`으로 기본값을 넣을 때 다음만 사용합니다.
 
@@ -61,7 +61,7 @@ const defaultRuntime = {
 
 ### 1.3 SystemService.updatePollingInterval (fallback)
 
-**파일**: `packages/bushub-client/backend/src/core/services/SystemService.ts`
+**파일**: `bushub-client/backend/src/core/services/SystemService.ts`
 
 **현재**: `currentRuntime` fallback이 다음과 같습니다.
 

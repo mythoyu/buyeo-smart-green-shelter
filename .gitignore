@@ -112,8 +112,8 @@ packages/*/db/
 packages/*/data/
 
 # frontend 샘플 데이터는 예외로 포함
-!packages/bushub-client/frontend/src/data/
-!packages/bushub-client/backend/src/data/ 
+!bushub-client/frontend/src/data/
+!bushub-client/backend/src/data/ 
 
 # Chrome debug profiles
 .vscode/chrome-debug-profile*

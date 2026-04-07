@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,
-    "types": ["node", "jest"],
+    "types": ["node"],
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
@@ -21,6 +21,6 @@
     "removeComments": false,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "src/**/*.ts", "src/tests/**/*.ts", "src/config/**/*"],
+  "include": ["src/**/*", "src/**/*.ts", "src/config/**/*"],
   "exclude": ["node_modules", "dist", "coverage"]
 }

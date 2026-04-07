@@ -230,6 +230,7 @@ CRC-16: [계산 필요]
 
 ## 참고 자료
 
+- [삼성_냉난방기_모드버스_프로토콜.pdf](./references/삼성_냉난방기_모드버스_프로토콜.pdf) — 제조사 원본 PDF(`docs/references/`)
 - [SNGIL_DDC_MODBUS_PACKETS.md](./SNGIL_DDC_MODBUS_PACKETS.md) - SNGIL DDC Modbus 패킷 테스트 가이드
 - [SNGIL_DDC_COMMANDS.md](./SNGIL_DDC_COMMANDS.md) - SNGIL DDC 명령어 명세
 - [DEVICE_UNIT_SPEC.md](./DEVICE_UNIT_SPEC.md) - 장비 및 유닛 사양서

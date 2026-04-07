@@ -14,14 +14,14 @@ COPY package.json ./
 COPY pnpm-lock.yaml ./
 
 # Copy only backend package files
-COPY packages/bushub-client/backend/package.json ./packages/bushub-client/backend/
-COPY packages/bushub-client/backend/pnpm-lock.yaml ./packages/bushub-client/backend/
+COPY bushub-client/backend/package.json ./bushub-client/backend/
+COPY bushub-client/backend/pnpm-lock.yaml ./bushub-client/backend/
 
 # Install only backend dependencies (workspace root에서 실행)
 RUN pnpm install --frozen-lockfile --filter @bushub-client/backend
 
 # Copy backend source code
-COPY packages/bushub-client/backend ./packages/bushub-client/backend
+COPY bushub-client/backend ./bushub-client/backend
 
 # Development stage
 FROM base AS development
@@ -66,7 +66,7 @@ ENV NODE_ENV=development \
 RUN mkdir -p /app/logs && chown -R node:node /app/logs
 
 # Move to backend directory
-WORKDIR /app/packages/bushub-client/backend
+WORKDIR /app/bushub-client/backend
 
 EXPOSE 3000
 
@@ -116,7 +116,7 @@ ENV NODE_ENV=production \
 RUN mkdir -p /app/logs && chown -R node:node /app/logs
 
 # Move to backend directory
-WORKDIR /app/packages/bushub-client/backend
+WORKDIR /app/bushub-client/backend
 
 # Build the application for production
 RUN pnpm run build:production

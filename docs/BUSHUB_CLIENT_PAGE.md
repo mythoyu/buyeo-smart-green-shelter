@@ -380,12 +380,11 @@
 - **MongoDB 6.0.15**: 데이터베이스
 - **Nginx 1.28.0**: 리버스 프록시
 
-### CI/CD 파이프라인
+### 릴리즈(소스 기준)
 
-- **GitHub Actions**: 자동 빌드 및 배포
-- **GHCR**: GitHub Container Registry 이미지 저장
-- **태그 기반 배포**: `v*.*.*` 패턴으로 자동 배포
-- **배포 패키지**: `deployment-{version}.zip` 자동 생성
+- `scripts/release.sh` 실행 → `v*.*.*` **태그 푸시**
+- 태그 푸시 시 GitHub Actions가 **GitHub Release(아티팩트 없음)** 를 자동 생성
+- 현장 PC는 Release에서 태그를 확인한 뒤 `git checkout vX.Y.Z` 하고, 모노레포 루트에서 `./scripts/install-field.sh`로 설치 진행
 
 ### 모니터링
 

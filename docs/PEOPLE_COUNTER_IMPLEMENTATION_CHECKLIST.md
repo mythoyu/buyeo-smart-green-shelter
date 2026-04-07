@@ -35,7 +35,7 @@
 
 #### 2.1 데이터베이스 스키마
 
-**파일**: `packages/bushub-client/backend/src/models/schemas/SystemSchema.ts`
+**파일**: `bushub-client/backend/src/models/schemas/SystemSchema.ts`
 
 - [x] `ISystem` 인터페이스의 `runtime` 타입에 `peopleCounterEnabled?: boolean` 추가
 - [x] `SystemSchema`의 `runtime` 스키마에 `peopleCounterEnabled: { type: Boolean }` 추가
@@ -55,7 +55,7 @@ runtime: {
 
 #### 2.2 Repository 인터페이스
 
-**파일**: `packages/bushub-client/backend/src/core/repositories/interfaces/ISystemRepository.ts`
+**파일**: `bushub-client/backend/src/core/repositories/interfaces/ISystemRepository.ts`
 
 - [x] `SystemUpdateParams` 인터페이스의 `runtime` 타입에 `peopleCounterEnabled?: boolean` 추가
 
@@ -73,7 +73,7 @@ runtime?: {
 
 #### 2.3 SystemService
 
-**파일**: `packages/bushub-client/backend/src/core/services/SystemService.ts`
+**파일**: `bushub-client/backend/src/core/services/SystemService.ts`
 
 - [x] `getPeopleCounterState(initializeIfMissing = false)` 메서드 추가
   - `getSettings()` 호출
@@ -101,7 +101,7 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 #### 2.4 SystemService 인터페이스
 
-**파일**: `packages/bushub-client/backend/src/core/services/interfaces/ISystemService.ts`
+**파일**: `bushub-client/backend/src/core/services/interfaces/ISystemService.ts`
 
 - [x] `getPeopleCounterState(initializeIfMissing?: boolean)` 메서드 시그니처 추가
 - [x] `updatePeopleCounterState(enabled: boolean)` 메서드 시그니처 추가
@@ -110,7 +110,7 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 #### 2.5 API 라우트
 
-**파일**: `packages/bushub-client/backend/src/api/v1/routes/system/people-counter.ts` (신규 생성)
+**파일**: `bushub-client/backend/src/api/v1/routes/system/people-counter.ts` (신규 생성)
 
 - [x] `GET /system/people-counter/state` 엔드포인트 추가
   - `systemService.getPeopleCounterState(true)` 호출
@@ -121,13 +121,13 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
   - `systemService.updatePeopleCounterState(peopleCounterEnabled)` 호출
   - 성공 시 `PeopleCounterPollerService` 재시작/중지 로직 호출 (선택사항)
 
-**참고**: `packages/bushub-client/backend/src/api/v1/routes/system/polling.ts`를 참고하여 동일한 패턴으로 구현
+**참고**: `bushub-client/backend/src/api/v1/routes/system/polling.ts`를 참고하여 동일한 패턴으로 구현
 
 ---
 
 #### 2.6 API 라우트 등록
 
-**파일**: `packages/bushub-client/backend/src/api/v1/routes/system/index.ts` (또는 해당 라우트 등록 파일)
+**파일**: `bushub-client/backend/src/api/v1/routes/system/index.ts` (또는 해당 라우트 등록 파일)
 
 - [x] `people-counter` 라우트 등록
   ```typescript
@@ -139,7 +139,7 @@ async updatePeopleCounterState(enabled: boolean): Promise<SystemSettings | null>
 
 #### 2.7 PeopleCounterPollerService
 
-**파일**: `packages/bushub-client/backend/src/core/services/PeopleCounterPollerService.ts` (신규 생성 예정)
+**파일**: `bushub-client/backend/src/core/services/PeopleCounterPollerService.ts` (신규 생성 예정)
 
 - [x] 서비스 초기화 시 `getPeopleCounterState()` 확인  
       (`initializeDataDocument()` 및 `tick()` 내부에서 상태 확인)
@@ -163,7 +163,7 @@ async startPolling() {
 
 #### 2.8 ServerInitializer
 
-**파일**: `packages/bushub-client/backend/src/core/ServerInitializer.ts`
+**파일**: `bushub-client/backend/src/core/ServerInitializer.ts`
 
 - [x] `PeopleCounterPollerService`를 서버 초기화 시점에 시작 (`startPeopleCounterPoller()`)  
       (폴러 내부에서 `peopleCounterEnabled` 상태를 확인하여 실질 동작 여부를 결정)
@@ -175,7 +175,7 @@ async startPolling() {
 
 #### 3.1 API 훅 생성
 
-**파일**: `packages/bushub-client/frontend/src/api/queries/people-counter.ts` (신규 생성)
+**파일**: `bushub-client/frontend/src/api/queries/people-counter.ts` (신규 생성)
 
 - [x] `useGetPeopleCounterState()` 훅 추가
   - `GET /system/people-counter/state` 호출
@@ -185,13 +185,13 @@ async startPolling() {
   - `POST /system/people-counter` 호출
   - 성공 시 `['people-counter', 'state']` 쿼리 무효화
 
-**참고**: `packages/bushub-client/frontend/src/api/queries/polling.ts`를 참고하여 동일한 패턴으로 구현
+**참고**: `bushub-client/frontend/src/api/queries/polling.ts`를 참고하여 동일한 패턴으로 구현
 
 ---
 
 #### 3.2 타입 정의
 
-**파일**: `packages/bushub-client/frontend/src/api/queries/people-counter.ts`
+**파일**: `bushub-client/frontend/src/api/queries/people-counter.ts`
 
 - [x] `PeopleCounterState` 인터페이스 정의
   ```typescript
@@ -204,7 +204,7 @@ async startPolling() {
 
 #### 3.3 SystemSettingsPage 컴포넌트
 
-**파일**: `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
+**파일**: `bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
 
 - [x] `useGetPeopleCounterState`, `useUpdatePeopleCounterState` 훅 import
 - [x] 피플카운터 상태 조회 및 업데이트 로직 추가
@@ -253,7 +253,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 #### 3.4 아이콘 import
 
-**파일**: `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
+**파일**: `bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
 
 - [x] `lucide-react`에서 적절한 아이콘 import (예: `Users`, `UserCheck`, `UsersRound`)
 
@@ -263,7 +263,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 #### 4.1 API 응답 처리
 
-**파일**: `packages/bushub-client/backend/src/api/v1/routes/data.ts`
+**파일**: `bushub-client/backend/src/api/v1/routes/data.ts`
 
 - [x] `GET /data` 엔드포인트에서 피플카운터 데이터 조회 시
   - `getPeopleCounterState()` 확인
@@ -271,7 +271,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 ---
 
-**파일**: `packages/bushub-client/backend/src/api/v1/routes/people-counter-external.ts` (통계/로우데이터 엔드포인트)
+**파일**: `bushub-client/backend/src/api/v1/routes/people-counter-external.ts` (통계/로우데이터 엔드포인트)
 
 - [x] `GET /people-counter/stats` 엔드포인트
   - `getPeopleCounterState()` 확인
@@ -285,7 +285,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 #### 4.2 에러 처리
 
-**파일**: `packages/bushub-client/backend/src/core/services/PeopleCounterService.ts` (신규 생성 예정)
+**파일**: `bushub-client/backend/src/core/services/PeopleCounterService.ts` (신규 생성 예정)
 
 - [x] 시리얼 포트 연결 실패 시
   - 로그만 기록하고 시스템 중단 없이 계속 진행
@@ -295,7 +295,7 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 #### 4.3 Docker 설정 (선택사항)
 
-**파일**: `packages/bushub-client/docker-compose.integrated.yml`
+**파일**: `docker-compose.integrated.yml`(모노레포 루트)
 
 - [x] `ttyS1` 마운트는 선택사항으로 명시
 - [x] 피플카운터 없을 때는 마운트 없어도 정상 동작
@@ -363,10 +363,10 @@ const handlePeopleCounterToggle = async (enabled: boolean) => {
 
 ### 기존 패턴 참고
 
-- **폴링 ON/OFF**: `packages/bushub-client/backend/src/api/v1/routes/system/polling.ts`
-- **SystemService**: `packages/bushub-client/backend/src/core/services/SystemService.ts` (updatePollingState, getPollingState)
-- **프론트엔드 훅**: `packages/bushub-client/frontend/src/api/queries/polling.ts`
-- **UI 컴포넌트**: `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx` (SoftAP 토글 참고)
+- **폴링 ON/OFF**: `bushub-client/backend/src/api/v1/routes/system/polling.ts`
+- **SystemService**: `bushub-client/backend/src/core/services/SystemService.ts` (updatePollingState, getPollingState)
+- **프론트엔드 훅**: `bushub-client/frontend/src/api/queries/polling.ts`
+- **UI 컴포넌트**: `bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx` (SoftAP 토글 참고)
 
 ### 주의사항
 

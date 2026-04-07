@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start:dev": "next dev -H 127.0.0.1 -p 3100"
+    "start:dev": "next dev -H 127.0.0.1 -p 3100",
+    "build": "next build",
+    "build:production": "next build"
   },
   "dependencies": {
     "@serialport/bindings-cpp": "^13.0.1",

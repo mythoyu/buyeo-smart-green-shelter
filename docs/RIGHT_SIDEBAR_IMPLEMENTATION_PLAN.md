@@ -12,7 +12,7 @@
 ## 1. FAB를 헤더로 이동
 
 ### 1.1 수정 파일
-- `packages/bushub-client/frontend/src/components/layout/MainLayout.tsx`
+- `bushub-client/frontend/src/components/layout/MainLayout.tsx`
 
 ### 1.2 수정 내용
 - **현재**: FAB가 오른쪽 하단 고정 (`fixed right-4 bottom-4`)
@@ -37,9 +37,9 @@
 ## 2. 오른쪽 사이드바 추가
 
 ### 2.1 수정 파일
-- `packages/bushub-client/frontend/src/components/layout/MainLayout.tsx`
-- `packages/bushub-client/frontend/src/components/layout/RightSidebar.tsx` (신규)
-- `packages/bushub-client/frontend/src/contexts/RightSidebarContext.tsx` (신규)
+- `bushub-client/frontend/src/components/layout/MainLayout.tsx`
+- `bushub-client/frontend/src/components/layout/RightSidebar.tsx` (신규)
+- `bushub-client/frontend/src/contexts/RightSidebarContext.tsx` (신규)
 
 ### 2.2 사이드바 기본 구조
 - 위치: `fixed top-16 bottom-0 right-0 z-50`
@@ -54,7 +54,7 @@
 - `ModeControlCard` (모드 제어)
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/DashboardPage.tsx`
+- `bushub-client/frontend/src/components/pages/DashboardPage.tsx`
 
 **변경 사항:**
 - 메인 콘텐츠에서 `DashboardFilterBar`, `ModeControlCard` 제거
@@ -67,7 +67,7 @@
 - 비워둠 (빈 사이드바)
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/DeviceRegistrationPage.tsx`
+- `bushub-client/frontend/src/components/pages/DeviceRegistrationPage.tsx`
 
 **변경 사항:**
 - 오른쪽 사이드바 비워둠
@@ -80,7 +80,7 @@
 - 필터 (역할별 필터링)
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/UserManagementPage.tsx`
+- `bushub-client/frontend/src/components/pages/UserManagementPage.tsx`
 
 **변경 사항:**
 - 상단의 사용자 등록 버튼을 사이드바로 이동
@@ -100,7 +100,7 @@
   - 새로고침 버튼
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/LogAnalysisPage.tsx`
+- `bushub-client/frontend/src/components/pages/LogAnalysisPage.tsx`
 
 **변경 사항:**
 - 메인 콘텐츠의 컨트롤 패널 (351-450줄)을 사이드바로 이동
@@ -125,7 +125,7 @@
     - 시스템 재기동
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
+- `bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
 
 **변경 사항:**
 - 사이드바에 그룹화된 카테고리 목록 표시
@@ -154,7 +154,7 @@
     - 시간 동기화
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/SystemMonitoringPage.tsx`
+- `bushub-client/frontend/src/components/pages/SystemMonitoringPage.tsx`
 
 **변경 사항:**
 - 사이드바에 그룹화된 항목 목록 표시
@@ -173,8 +173,8 @@
   - 시스템 설정 (체크박스)
 
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/pages/HardwareControlPage.tsx`
-- `packages/bushub-client/frontend/src/components/common/HardwareControl/HardwareControlTabs.tsx`
+- `bushub-client/frontend/src/components/pages/HardwareControlPage.tsx`
+- `bushub-client/frontend/src/components/common/HardwareControl/HardwareControlTabs.tsx`
 
 **변경 사항:**
 - 기존 탭 구조를 사이드바 선택 방식으로 변경
@@ -187,7 +187,7 @@
 
 ### 3.1 사용자 정보 Popover
 **수정 파일:**
-- `packages/bushub-client/frontend/src/components/layout/MainLayout.tsx`
+- `bushub-client/frontend/src/components/layout/MainLayout.tsx`
 
 **수정 내용:**
 - 모바일에서 사용자 정보를 Popover로 표시
@@ -213,8 +213,8 @@
 ## 4. 파비콘 변경
 
 ### 4.1 수정 파일
-- `packages/bushub-client/frontend/public/favicon.svg` (수정)
-- `packages/bushub-client/frontend/index.html` (수정)
+- `bushub-client/frontend/public/favicon.svg` (수정)
+- `bushub-client/frontend/index.html` (수정)
 
 ### 4.2 수정 내용
 - Train 아이콘 SVG 경로 추출
@@ -231,7 +231,7 @@
 ## 5. Context API 구조
 
 ### 5.1 RightSidebarContext 생성
-**파일:** `packages/bushub-client/frontend/src/contexts/RightSidebarContext.tsx`
+**파일:** `bushub-client/frontend/src/contexts/RightSidebarContext.tsx`
 
 **기능:**
 - 오른쪽 사이드바 컨텐츠 주입
@@ -253,7 +253,7 @@ interface RightSidebarContextValue {
 ## 6. RightSidebar 컴포넌트
 
 ### 6.1 컴포넌트 생성
-**파일:** `packages/bushub-client/frontend/src/components/layout/RightSidebar.tsx`
+**파일:** `bushub-client/frontend/src/components/layout/RightSidebar.tsx`
 
 **기능:**
 - 오른쪽 사이드바 렌더링
@@ -311,21 +311,21 @@ interface RightSidebarContextValue {
 ## 9. 파일 목록
 
 ### 신규 생성 파일
-- `packages/bushub-client/frontend/src/contexts/RightSidebarContext.tsx`
-- `packages/bushub-client/frontend/src/components/layout/RightSidebar.tsx`
+- `bushub-client/frontend/src/contexts/RightSidebarContext.tsx`
+- `bushub-client/frontend/src/components/layout/RightSidebar.tsx`
 
 ### 수정 파일
-- `packages/bushub-client/frontend/src/components/layout/MainLayout.tsx`
-- `packages/bushub-client/frontend/src/components/pages/DashboardPage.tsx`
-- `packages/bushub-client/frontend/src/components/pages/DeviceRegistrationPage.tsx`
-- `packages/bushub-client/frontend/src/components/pages/UserManagementPage.tsx`
-- `packages/bushub-client/frontend/src/components/pages/LogAnalysisPage.tsx`
-- `packages/bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
-- `packages/bushub-client/frontend/src/components/pages/SystemMonitoringPage.tsx`
-- `packages/bushub-client/frontend/src/components/pages/HardwareControlPage.tsx`
-- `packages/bushub-client/frontend/src/components/common/HardwareControl/HardwareControlTabs.tsx`
-- `packages/bushub-client/frontend/public/favicon.svg`
-- `packages/bushub-client/frontend/index.html`
+- `bushub-client/frontend/src/components/layout/MainLayout.tsx`
+- `bushub-client/frontend/src/components/pages/DashboardPage.tsx`
+- `bushub-client/frontend/src/components/pages/DeviceRegistrationPage.tsx`
+- `bushub-client/frontend/src/components/pages/UserManagementPage.tsx`
+- `bushub-client/frontend/src/components/pages/LogAnalysisPage.tsx`
+- `bushub-client/frontend/src/components/pages/SystemSettingsPage.tsx`
+- `bushub-client/frontend/src/components/pages/SystemMonitoringPage.tsx`
+- `bushub-client/frontend/src/components/pages/HardwareControlPage.tsx`
+- `bushub-client/frontend/src/components/common/HardwareControl/HardwareControlTabs.tsx`
+- `bushub-client/frontend/public/favicon.svg`
+- `bushub-client/frontend/index.html`
 
 ---
 

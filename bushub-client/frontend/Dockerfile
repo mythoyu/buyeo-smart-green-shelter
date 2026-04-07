@@ -12,17 +12,17 @@ COPY package.json ./
 COPY pnpm-lock.yaml ./
 
 # Copy only frontend package files
-COPY packages/bushub-client/frontend/package.json ./packages/bushub-client/frontend/
-COPY packages/bushub-client/frontend/pnpm-lock.yaml ./packages/bushub-client/frontend/
+COPY bushub-client/frontend/package.json ./bushub-client/frontend/
+COPY bushub-client/frontend/pnpm-lock.yaml ./bushub-client/frontend/
 
 # Install only frontend dependencies (workspace root에서 실행)
 RUN pnpm install --frozen-lockfile --filter @bushub-client/frontend
 
 # Copy frontend source code
-COPY packages/bushub-client/frontend ./packages/bushub-client/frontend
+COPY bushub-client/frontend ./bushub-client/frontend
 
 # Move to frontend directory
-WORKDIR /app/packages/bushub-client/frontend
+WORKDIR /app/bushub-client/frontend
 
 # Development stage
 FROM base AS development
@@ -59,4 +59,4 @@ RUN apk add --no-cache nginx && \
 EXPOSE 8080
 
 # 프로덕션 모드 실행 (nginx로 정적 파일 서빙)
-CMD ["sh", "-c", "cp -r dist/* /usr/share/nginx/html/ && nginx -c /app/packages/bushub-client/frontend/nginx.conf -g 'daemon off;'"]
+CMD ["sh", "-c", "cp -r dist/* /usr/share/nginx/html/ && nginx -c /app/bushub-client/frontend/nginx.conf -g 'daemon off;'"]

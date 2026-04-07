@@ -1,4 +1,4 @@
 packages:
-  - "packages/bushub-client/backend"
-  - "packages/bushub-client/frontend"
-  - "packages/dev-tools/people-counter-tester"
+  - "bushub-client/backend"
+  - "bushub-client/frontend"
+  - "people-counter-tester"

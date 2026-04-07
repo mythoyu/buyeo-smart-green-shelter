@@ -9,23 +9,22 @@
 ### 개발환경 실행
 
 ```bash
-# 개발환경 시작
-cd packages/bushub-client
-./start-dev.sh
-
-# 또는 직접 실행
-docker compose -f docker-compose.dev.yml up --build -d
+# 개발환경 시작 (모노레포 루트)
+pnpm install
+pnpm dev:backend   # 한 터미널
+pnpm dev:frontend  # 다른 터미널
 ```
 
-### 프로덕션환경 실행
+MongoDB 등은 로컬 설치 또는 별도 컨테이너로 맞춥니다.
+
+### 프로덕션(현장) 스택
 
 ```bash
-# 프로덕션환경 시작
-cd packages/bushub-client
-./start-prod.sh
-
-# 또는 직접 실행
-docker compose -f docker-compose.prod.yml up --build -d
+# 현장 설치(루트): ./scripts/install-field.sh
+# 이미 준비된 호스트에서 스택만:
+# 모노레포 루트에서
+./scripts/lib/start-docker-compose-integrated.sh
+# 또는 USB-RS485: ./scripts/lib/start-docker-compose-usb485.sh
 ```
 
 ### Docker 관리
@@ -393,9 +392,9 @@ git reset --hard origin/main
 ### 2. **스크립트 파일 생성**
 
 ```bash
-# 자주 사용하는 명령어를 스크립트로 저장
+# 자주 사용하는 명령어를 스크립트로 저장 (예: 루트에서 백엔드만)
 echo '#!/bin/bash' > quick-commands.sh
-echo 'docker compose -f docker-compose.dev.yml up --build -d' >> quick-commands.sh
+echo 'pnpm dev:backend' >> quick-commands.sh
 chmod +x quick-commands.sh
 ./quick-commands.sh
 ```
@@ -404,9 +403,9 @@ chmod +x quick-commands.sh
 
 ```bash
 # .bashrc 또는 .bash_profile에 추가
-alias dev='cd packages/bushub-client && ./start-dev.sh'
-alias prod='cd packages/bushub-client && ./start-prod.sh'
-alias logs='docker compose -f docker-compose.dev.yml logs -f'
+alias devfe='pnpm dev:frontend'
+alias devbe='pnpm dev:backend'
+# Docker 스택 로그 예(모노레포 루트): docker compose -f docker-compose.integrated.yml logs -f
 ```
 
 ### 4. **VS Code 터미널 통합**

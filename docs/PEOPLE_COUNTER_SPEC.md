@@ -478,7 +478,7 @@ PEOPLE_COUNTER_RAW_DATA_RETENTION_DAYS=35
 
 ### 7.2 Docker 설정
 
-`docker-compose.integrated.yml`에 다음 설정을 참고합니다:
+모노레포 루트의 `docker-compose.integrated.yml`에 다음 설정을 참고합니다:
 
 ```yaml
 services:

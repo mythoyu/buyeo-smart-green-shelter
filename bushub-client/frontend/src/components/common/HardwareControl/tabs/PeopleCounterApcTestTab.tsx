@@ -1,6 +1,6 @@
 /**
  * 피플카운터 APC100 시리얼 수동 테스트 (PEOPLE_COUNTER_PORT 전용, 백엔드 큐 직렬화)
- * @see packages/dev-tools/people-counter-tester
+ * @see people-counter-tester
  */
 import { AlertCircle } from 'lucide-react';
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';

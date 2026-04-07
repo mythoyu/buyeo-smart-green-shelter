@@ -6,11 +6,11 @@
       "request": "launch",
       "name": "Debug Frontend (Local)",
       "url": "http://localhost:4173",
-      "webRoot": "${workspaceFolder}/packages/bushub-client/frontend/src",
+      "webRoot": "${workspaceFolder}/bushub-client/frontend/src",
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "/@fs/*": "${workspaceFolder}/*",
-        "/src/*": "${workspaceFolder}/packages/bushub-client/frontend/src/*"
+        "/src/*": "${workspaceFolder}/bushub-client/frontend/src/*"
       }
     },
     {
@@ -18,11 +18,11 @@
       "request": "launch",
       "name": "Debug Frontend (Docker)",
       "url": "http://localhost:8080",
-      "webRoot": "${workspaceFolder}/packages/bushub-client/frontend/src",
+      "webRoot": "${workspaceFolder}/bushub-client/frontend/src",
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "/@fs/*": "${workspaceFolder}/*",
-        "/src/*": "${workspaceFolder}/packages/bushub-client/frontend/src/*"
+        "/src/*": "${workspaceFolder}/bushub-client/frontend/src/*"
       },
       "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
     },
@@ -31,11 +31,11 @@
       "request": "launch",
       "name": "Debug Frontend (Docker Compose)",
       "url": "http://localhost",
-      "webRoot": "${workspaceFolder}/packages/bushub-client/frontend/src",
+      "webRoot": "${workspaceFolder}/bushub-client/frontend/src",
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "/@fs/*": "${workspaceFolder}/*",
-        "/src/*": "${workspaceFolder}/packages/bushub-client/frontend/src/*"
+        "/src/*": "${workspaceFolder}/bushub-client/frontend/src/*"
       },
       "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile-compose"
     }

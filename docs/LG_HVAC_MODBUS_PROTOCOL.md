@@ -492,13 +492,13 @@ PDF 문서에는 에러 코드 레지스터 주소(30001)는 확인되었으나,
 - [SNGIL_DDC_MODBUS_PACKETS.md](./SNGIL_DDC_MODBUS_PACKETS.md) - SNGIL DDC Modbus 패킷 테스트 가이드
 - [SNGIL_DDC_COMMANDS.md](./SNGIL_DDC_COMMANDS.md) - SNGIL DDC 명령어 명세
 - [DEVICE_UNIT_SPEC.md](./DEVICE_UNIT_SPEC.md) - 장비 및 유닛 사양서
-- LG 시스템에어컨 Modbus RTU 종합가이드\_v1.6.pdf - LG 공식 프로토콜 명세서
+- [LG 시스템에어컨 Modbus RTU 종합가이드_v1.6.pdf](./references/LG 시스템에어컨 Modbus RTU 종합가이드_v1.6.pdf) — LG 공식 프로토콜 명세서(원본 PDF, `docs/references/`)
 
 ---
 
 > 💡 **주의사항**:
 >
-> 1. 이 문서는 LG 시스템에어컨 Modbus RTU 종합가이드\_v1.6.pdf의 **40페이지 레지스터 맵**을 기반으로 작성되었습니다.
+> 1. 이 문서는 `docs/references/`의 LG 시스템에어컨 Modbus RTU 종합가이드_v1.6.pdf **40페이지 레지스터 맵**을 기반으로 작성되었습니다.
 >
 > 2. **✅ 핵심 기능 구현에 필요한 정보는 모두 확인되었습니다:**
 >

@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "pnpm dev",
       "options": {
-        "cwd": "packages/bushub-client/frontend"
+        "cwd": "bushub-client/frontend"
       },
       "group": "build",
       "presentation": {
@@ -18,7 +18,7 @@
       "type": "shell",
       "command": "pnpm build",
       "options": {
-        "cwd": "packages/bushub-client/frontend"
+        "cwd": "bushub-client/frontend"
       },
       "group": "build",
       "presentation": {
@@ -30,7 +30,7 @@
       "type": "shell",
       "command": "pnpm preview",
       "options": {
-        "cwd": "packages/bushub-client/frontend"
+        "cwd": "bushub-client/frontend"
       },
       "group": "build",
       "presentation": {
@@ -42,7 +42,7 @@
       "type": "shell",
       "command": "pnpm dev",
       "options": {
-        "cwd": "packages/bushub-client/backend"
+        "cwd": "bushub-client/backend"
       },
       "group": "build",
       "presentation": {
@@ -54,7 +54,7 @@
       "type": "shell",
       "command": "pnpm build",
       "options": {
-        "cwd": "packages/bushub-client/backend"
+        "cwd": "bushub-client/backend"
       },
       "group": "build",
       "presentation": {
@@ -66,7 +66,7 @@
       "type": "shell",
       "command": "pnpm start",
       "options": {
-        "cwd": "packages/bushub-client/backend"
+        "cwd": "bushub-client/backend"
       },
       "group": "build",
       "presentation": {

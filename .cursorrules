@@ -449,7 +449,5 @@ pnpm code-quality  # lint + format + type-check
 - **Polling**: 주기적 데이터 갱신
 - **하이브리드**: WebSocket + Polling 조합
 
-## 수정 금지 파일
-- `.github/workflows/deploy-ghcr.yml`
-- `.github/workflows/mirror-images.yml`
-- **이유**: CI/CD 파이프라인 자동화 파일 
+## CI/CD
+- 이 레포는 **앱 이미지를 레지스트리(GHCR 등)에 배포하지 않고**, 현장 PC에서 소스 기준으로 `./scripts/install-field.sh`로 빌드·기동합니다.

@@ -2,7 +2,6 @@
   "name": "smartcity",
   "version": "1.0.10",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "dev": "pnpm -r run dev",
     "dev:frontend": "pnpm --filter @bushub-client/frontend run dev",
@@ -13,7 +12,6 @@
     "build:backend": "pnpm --filter @bushub-client/backend run build",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
-    "test": "pnpm -r run test",
     "format": "pnpm -r run format",
     "format:fix": "pnpm -r run format:fix",
     "release": "./scripts/release.sh"
@@ -24,9 +22,9 @@
   "packageManager": "pnpm@10.13.1",
   "private": true,
   "workspaces": [
-    "packages/bushub-client/backend",
-    "packages/bushub-client/frontend",
-    "packages/dev-tools/people-counter-tester"
+    "bushub-client/backend",
+    "bushub-client/frontend",
+    "people-counter-tester"
   ],
   "dependencies": {},
   "devDependencies": {}
