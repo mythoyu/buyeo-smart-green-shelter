@@ -8,7 +8,7 @@ import { PeopleCounterRaw } from '../../models/schemas/PeopleCounterRawSchema';
 import type { PeopleCounterData } from './PeopleCounterService';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
-import type { PeopleCounterQueueService } from './PeopleCounterQueueService';
+import { PeopleCounterQueueService } from './PeopleCounterQueueService';
 import type { IStatusService } from './interfaces/IStatusService';
 import type { IErrorService } from './interfaces/IErrorService';
 import { formatKstLocal, getKstCalendarParts, startOfKstMinute } from '../../shared/utils/kstDateTime';
@@ -17,21 +17,22 @@ import type { ISystemService } from './interfaces/ISystemService';
 
 const POLL_INTERVAL_MS = Number(process.env.PEOPLE_COUNTER_POLL_INTERVAL) || 10000;
 const DEVICE_ID = 'd082';
-const UNIT_ID = 'u001';
 const DEVICE_TYPE = 'people_counter';
+
+type UnitRuntime = {
+  unitId: string;
+  queue: PeopleCounterQueueService;
+  lastInCumulative: number | null;
+  lastSavedMinuteKey: string | null;
+  refAtStartOfCurrentMinute: number;
+  lastMinuteInRef: number;
+};
 
 export class PeopleCounterPollerService {
   private logger: ILogger | undefined;
   private serviceContainer: ServiceContainer | null = null;
-  private queueService: PeopleCounterQueueService | null = null;
   private timer: NodeJS.Timeout | null = null;
-  private lastInCumulative: number | null = null;
-  /** 직전에 1분 문서를 저장한 분의 키 (YYYY-M-D-H-m) */
-  private lastSavedMinuteKey: string | null = null;
-  /** 현재 분 시작 시점의 inCumulative (직전 분의 inDelta = lastMinuteInRef - refAtStartOfCurrentMinute) */
-  private refAtStartOfCurrentMinute: number = 0;
-  /** 직전 분 끝 시점의 inCumulative (저장 시 inRef로 사용) */
-  private lastMinuteInRef: number = 0;
+  private units: UnitRuntime[] = [];
 
   constructor(logger?: ILogger) {
     this.logger = logger;
@@ -39,8 +40,29 @@ export class PeopleCounterPollerService {
 
   initialize(serviceContainer: ServiceContainer): void {
     this.serviceContainer = serviceContainer;
-    // Container에서 QueueService 획득
-    this.queueService = serviceContainer.getPeopleCounterQueueService();
+    // Container에서 QueueService들 획득 (unitId별)
+    const map = serviceContainer.getPeopleCounterQueueServices?.();
+    const entries = map && typeof map.entries === 'function' ? Array.from(map.entries()) : [];
+    this.units =
+      entries.length > 0
+        ? entries.map(([unitId, queue]) => ({
+            unitId,
+            queue,
+            lastInCumulative: null,
+            lastSavedMinuteKey: null,
+            refAtStartOfCurrentMinute: 0,
+            lastMinuteInRef: 0,
+          }))
+        : [
+            {
+              unitId: 'u001',
+              queue: serviceContainer.getPeopleCounterQueueService('u001'),
+              lastInCumulative: null,
+              lastSavedMinuteKey: null,
+              refAtStartOfCurrentMinute: 0,
+              lastMinuteInRef: 0,
+            },
+          ];
   }
 
   /**
@@ -107,10 +129,10 @@ export class PeopleCounterPollerService {
         timestamp: formatKstLocal(new Date()),
       };
 
-      const unitData = {
-        unitId: UNIT_ID,
-        data: initialData,
-      };
+      const units: Record<string, any> = {};
+      for (const u of this.units) {
+        units[u.unitId] = { unitId: u.unitId, data: initialData };
+      }
 
       await Data.updateOne(
         { deviceId: DEVICE_ID },
@@ -118,7 +140,7 @@ export class PeopleCounterPollerService {
           $set: {
             clientId,
             type: DEVICE_TYPE,
-            units: [unitData],
+            units,
             updatedAt: new Date(),
           },
         },
@@ -136,40 +158,42 @@ export class PeopleCounterPollerService {
       clearInterval(this.timer);
       this.timer = null;
     }
-    this.lastInCumulative = null;
-    this.lastSavedMinuteKey = null;
-    this.refAtStartOfCurrentMinute = 0;
-    this.lastMinuteInRef = 0;
+    this.units.forEach((u) => {
+      u.lastInCumulative = null;
+      u.lastSavedMinuteKey = null;
+      u.refAtStartOfCurrentMinute = 0;
+      u.lastMinuteInRef = 0;
+    });
     this.logger?.info('[PeopleCounterPoller] 중지');
   }
 
   /**
-   * 통신 실패 시 Status·Error 갱신 (d082/u001)
+   * 통신 실패 시 Status·Error 갱신 (d082/unitId)
    */
-  private async setCommunicationErrorState(): Promise<void> {
+  private async setCommunicationErrorState(unitId: string): Promise<void> {
     const sc = this.serviceContainer;
     if (!sc) return;
     try {
       const statusService = sc.getService<IStatusService>('statusService');
       const errorService = sc.getService<IErrorService>('errorService');
-      await statusService.setCommunicationErrorForDevice(DEVICE_ID, UNIT_ID);
-      await errorService.createCommunicationErrorForDevice(DEVICE_ID, UNIT_ID);
+      await statusService.setCommunicationErrorForDevice(DEVICE_ID, unitId);
+      await errorService.createCommunicationErrorForDevice(DEVICE_ID, unitId);
     } catch (e) {
       this.logger?.error(`[PeopleCounterPoller] Status/Error 갱신 실패: ${e}`);
     }
   }
 
   /**
-   * 통신 성공 시 Status·Error clear (d082/u001)
+   * 통신 성공 시 Status·Error clear (d082/unitId)
    */
-  private async clearCommunicationErrorState(): Promise<void> {
+  private async clearCommunicationErrorState(unitId: string): Promise<void> {
     const sc = this.serviceContainer;
     if (!sc) return;
     try {
       const statusService = sc.getService<IStatusService>('statusService');
       const errorService = sc.getService<IErrorService>('errorService');
-      await statusService.clearCommunicationErrorForDevice(DEVICE_ID, UNIT_ID);
-      await errorService.clearCommunicationErrorForDevice(DEVICE_ID, UNIT_ID);
+      await statusService.clearCommunicationErrorForDevice(DEVICE_ID, unitId);
+      await errorService.clearCommunicationErrorForDevice(DEVICE_ID, unitId);
     } catch (e) {
       this.logger?.error(`[PeopleCounterPoller] Status/Error clear 실패: ${e}`);
     }
@@ -177,33 +201,13 @@ export class PeopleCounterPollerService {
 
   private async tick(): Promise<void> {
     const sc = this.serviceContainer;
-    if (!sc || !this.queueService) return;
+    if (!sc || this.units.length === 0) return;
     const systemService = sc.getSystemService();
     const clientService = sc.getClientService();
 
     if (!(await this.isSerialPollingActive(systemService))) {
       return;
     }
-
-    let data: PeopleCounterData | null = null;
-    try {
-      data = await this.queueService.enqueueQuery();
-    } catch (e) {
-      this.logger?.warn(`[PeopleCounterPoller] query 실패: ${e}`);
-      await this.setCommunicationErrorState();
-      return;
-    }
-
-    if (!data) {
-      this.logger?.warn('[PeopleCounterPoller] poll: 장비 응답 없음(null)');
-      await this.setCommunicationErrorState();
-      return;
-    }
-
-    await this.clearCommunicationErrorState();
-    this.logger?.info(
-      `[PeopleCounterPoller] poll ok in=${data.inCumulative} out=${data.outCumulative} room=${data.currentCount}`,
-    );
 
     let clientId = 'c0101';
     try {
@@ -213,27 +217,54 @@ export class PeopleCounterPollerService {
       this.logger?.warn(`[PeopleCounterPoller] 클라이언트 조회 실패: ${e}`);
     }
 
-    // Data 컬렉션: IN 누적 변경 시에만 업데이트
-    const prevIn = this.lastInCumulative;
-    if (prevIn === null || data.inCumulative !== prevIn) {
-      this.lastInCumulative = data.inCumulative;
-      await this.upsertData(clientId, data);
-    }
-
     // 1분 경계 감지 (KST 달력·시각 기준)
     const now = new Date();
     const kst = getKstCalendarParts(now);
     const currentMinuteKey = `${kst.year}-${kst.month}-${kst.day}-${kst.hour}-${kst.minute}`;
 
-    if (this.lastSavedMinuteKey !== null && currentMinuteKey !== this.lastSavedMinuteKey) {
-      await this.saveOneMinuteRaw(clientId, data, this.lastSavedMinuteKey);
-    }
+    const results = await Promise.allSettled(
+      this.units.map(async (u) => {
+        let data: PeopleCounterData | null = null;
+        try {
+          data = await u.queue.enqueueQuery();
+        } catch (e) {
+          this.logger?.warn(`[PeopleCounterPoller] unit=${u.unitId} query 실패: ${e}`);
+          await this.setCommunicationErrorState(u.unitId);
+          return;
+        }
 
-    if (this.lastSavedMinuteKey === null || this.lastSavedMinuteKey !== currentMinuteKey) {
-      this.refAtStartOfCurrentMinute = this.lastMinuteInRef;
-    }
-    this.lastSavedMinuteKey = currentMinuteKey;
-    this.lastMinuteInRef = data.inCumulative;
+        if (!data) {
+          this.logger?.warn(`[PeopleCounterPoller] unit=${u.unitId} poll: 장비 응답 없음(null)`);
+          await this.setCommunicationErrorState(u.unitId);
+          return;
+        }
+
+        await this.clearCommunicationErrorState(u.unitId);
+        this.logger?.info(
+          `[PeopleCounterPoller] unit=${u.unitId} poll ok in=${data.inCumulative} out=${data.outCumulative} room=${data.currentCount}`,
+        );
+
+        // Data 컬렉션: IN 누적 변경 시에만 업데이트 (유닛별)
+        const prevIn = u.lastInCumulative;
+        if (prevIn === null || data.inCumulative !== prevIn) {
+          u.lastInCumulative = data.inCumulative;
+          await this.upsertData(clientId, u.unitId, data);
+        }
+
+        if (u.lastSavedMinuteKey !== null && currentMinuteKey !== u.lastSavedMinuteKey) {
+          await this.saveOneMinuteRaw(clientId, u.unitId, data, u.lastSavedMinuteKey, u.refAtStartOfCurrentMinute, u.lastMinuteInRef);
+        }
+
+        if (u.lastSavedMinuteKey === null || u.lastSavedMinuteKey !== currentMinuteKey) {
+          u.refAtStartOfCurrentMinute = u.lastMinuteInRef;
+        }
+        u.lastSavedMinuteKey = currentMinuteKey;
+        u.lastMinuteInRef = data.inCumulative;
+      }),
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    results.forEach((_r) => {});
   }
 
   /**
@@ -242,15 +273,18 @@ export class PeopleCounterPollerService {
    */
   private async saveOneMinuteRaw(
     clientId: string,
+    unitId: string,
     endOfMinuteData: PeopleCounterData,
     minuteKey: string,
+    refAtStartOfCurrentMinute: number,
+    lastMinuteInRef: number,
   ): Promise<void> {
     try {
       const [y, mon, d, h, min] = minuteKey.split('-').map(Number);
       const minuteStart = startOfKstMinute(y, mon, d, h, min);
 
-      const startRef = this.refAtStartOfCurrentMinute;
-      const endRef = this.lastMinuteInRef;
+      const startRef = refAtStartOfCurrentMinute;
+      const endRef = lastMinuteInRef;
       let inDelta: number;
       let inRef: number;
       if (endRef < startRef) {
@@ -264,7 +298,7 @@ export class PeopleCounterPollerService {
       await PeopleCounterRaw.create({
         clientId,
         deviceId: DEVICE_ID,
-        unitId: UNIT_ID,
+        unitId,
         timestamp: minuteStart,
         inCumulative: inRef,
         inDelta,
@@ -283,10 +317,10 @@ export class PeopleCounterPollerService {
     }
   }
 
-  private async upsertData(clientId: string, d: PeopleCounterData): Promise<void> {
+  private async upsertData(clientId: string, unitId: string, d: PeopleCounterData): Promise<void> {
     try {
       const unitData = {
-        unitId: UNIT_ID,
+        unitId,
         data: {
           currentCount: d.currentCount,
           inCumulative: d.inCumulative,
@@ -306,7 +340,7 @@ export class PeopleCounterPollerService {
           $set: {
             clientId,
             type: DEVICE_TYPE,
-            units: [unitData],
+            [`units.${unitId}`]: unitData,
             updatedAt: d.timestamp,
           },
         },

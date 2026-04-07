@@ -35,12 +35,14 @@ display_available() {
 run_probe_with_tty_ui() {
   local probe_script="$1"
   local step_title="$2"
+  shift 2
+  local -a extra_args=("$@")
   if ! display_available || ! command -v python3 >/dev/null 2>&1; then
-    bash "$probe_script"
+    bash "$probe_script" "${extra_args[@]}"
     return $?
   fi
   local json
-  if ! json="$(bash "$probe_script" --list-json 2>/dev/null)"; then
+  if ! json="$(bash "$probe_script" "${extra_args[@]}" --list-json 2>/dev/null)"; then
     echo "❌ tty 후보를 가져오지 못했습니다. USB 시리얼이 연결되어 있는지 확인하세요." >&2
     return 1
   fi
@@ -65,10 +67,10 @@ run_probe_with_tty_ui() {
   fi
   if [ -n "$picked" ]; then
     picked="${picked%%|*}"
-    bash "$probe_script" --device "$picked"
+    bash "$probe_script" "${extra_args[@]}" --device "$picked"
     return $?
   fi
-  bash "$probe_script"
+  bash "$probe_script" "${extra_args[@]}"
 }
 
 ui_info() {
@@ -105,6 +107,22 @@ ui_pick_stack() {
       "1" "USB–RS485 어댑터형 (udev 심볼릭 · usb485 스택)" \
       "2" "내장 RS-485 포트형 (ttyS* · integrated 스택)" 2>/dev/null)" || true
     # 두 컬럼일 때 "1|USB..." 형태로 올 수 있음
+    printf '%s\n' "$sel" | head -n1 | cut -d'|' -f1 | tr -d '[:space:]'
+    return
+  fi
+  echo ""
+}
+
+ui_pick_people_counter_count() {
+  if ui_available; then
+    local sel
+    sel="$(zenity --list --title="PeopleCounter 개수" \
+      --text="피플카운터(APC100) 개수를 선택하세요.\n0대를 선택하면 피플카운터 udev/마운트는 생략됩니다." \
+      --column="개수" --column="설명" \
+      "0" "미설치/미사용" \
+      "1" "1대 (u001 / -1)" \
+      "2" "2대 (u001..u002 / -1..-2)" \
+      "3" "3대 (u001..u003 / -1..-3)" 2>/dev/null)" || true
     printf '%s\n' "$sel" | head -n1 | cut -d'|' -f1 | tr -d '[:space:]'
     return
   fi
@@ -198,11 +216,48 @@ else
   run_probe_with_tty_ui "$PROBE_DDC" "udev [3/5] Modbus(DDC) tty"
 
   echo ""
-  ui_info "udev [4/5]" "[4/5] PeopleCounter(APC)용 USB–시리얼만 연결합니다.\n\n• 먼저 방금 쓰던 DDC용 USB–시리얼은 뽑으세요.\n• 연결할 것: APC(PeopleCounter)용 USB–시리얼 어댑터 1개만 PC에 꽂으세요.\n\n다음에 tty 목록 창이 뜨면 선택합니다."
-  echo "[4/5] DDC용 케이블은 USB에서 뽑고, PeopleCounter(APC100)용 USB–시리얼만 연결하세요."
-  read -r -p "[4/5] APC용만 연결했으면 Enter... " _
+  echo "[4/5] PeopleCounter 개수 선택"
+  pc_count=""
+  if ui_available; then
+    pc_count="$(ui_pick_people_counter_count)"
+  fi
+  while true; do
+    if [ -z "$pc_count" ]; then
+      echo "  0) 미설치/미사용"
+      echo "  1) 1대"
+      echo "  2) 2대"
+      echo "  3) 3대"
+      read -r -p "[4/5] PeopleCounter 개수 선택 (0~3): " pc_count
+    fi
+    if [[ "$pc_count" =~ ^[0-3]$ ]]; then
+      break
+    fi
+    if ui_available; then
+      zenity --error --text="0~3 중 하나를 선택하세요." 2>/dev/null || true
+    fi
+    echo "   0~3 중 하나를 입력하세요."
+    pc_count=""
+  done
 
-  run_probe_with_tty_ui "$PROBE_PC" "udev [4/5] PeopleCounter tty"
+  export PEOPLE_COUNTER_COUNT="$pc_count"
+
+  if [ "$pc_count" -ge 1 ]; then
+    for i in $(seq 1 "$pc_count"); do
+      echo ""
+      ui_info "udev [4/5]" "[4/5] PeopleCounter #$i (APC)용 USB–시리얼만 연결합니다.\n\n• 다른 USB 시리얼은 뽑으세요.\n• 지금은 PeopleCounter #$i 에 해당하는 케이블 1개만 연결하세요.\n\n다음 화면에서 tty를 선택합니다.\n완료되면 케이블을 뽑고 다음(#$((i+1)))으로 진행합니다."
+      echo "[4/5] PeopleCounter #$i 케이블만 연결하세요."
+      read -r -p "[4/5] PC#$i 만 연결했으면 Enter... " _
+
+      run_probe_with_tty_ui "$PROBE_PC" "udev [4/5] PeopleCounter #$i tty" --index "$i"
+
+      echo ""
+      echo "✅ PeopleCounter #$i 프로브 완료. 다음 장비를 위해 케이블을 뽑아주세요."
+      read -r -p "[4/5] 케이블을 뽑았으면 Enter... " _
+    done
+  else
+    echo ""
+    echo "ℹ️  PeopleCounter 0대 선택 — 프로브 단계 생략"
+  fi
 
   echo ""
   echo "[5/5] udev rules 설치(링크 자동 확인 포함)..."
@@ -210,7 +265,7 @@ else
 
   UDEV_INSTALL_MAX_RETRY="${UDEV_INSTALL_MAX_RETRY:-15}"
 
-  if sudo bash "$INSTALL" --strict; then
+  if sudo PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$INSTALL" --strict; then
     echo ""
     echo "✅ [5/5] udev 설치·검증 단계를 통과했습니다."
   else
@@ -228,14 +283,21 @@ else
       fi
       echo ""
       echo "🔄 [5/5] 04-verify (${udev_install_attempt}/${UDEV_INSTALL_MAX_RETRY}) — 03-install 은 생략"
-      bash "$VERIFY_UDEV"
-      if [ -L /dev/bushub-controller ] && [ -L /dev/bushub-people-counter ]; then
+      PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$VERIFY_UDEV"
+      ok_links=1
+      [ -L /dev/bushub-controller ] || ok_links=0
+      if [ "$PEOPLE_COUNTER_COUNT" -ge 1 ]; then
+        for i in $(seq 1 "$PEOPLE_COUNTER_COUNT"); do
+          [ -L "/dev/bushub-people-counter-$i" ] || ok_links=0
+        done
+      fi
+      if [ "$ok_links" -eq 1 ]; then
         echo ""
         echo "🎉 [5/5] 심볼릭 링크 확인됨 — Docker 기동으로 진행합니다."
         break
       fi
       echo ""
-      echo "❌ [5/5] 아직 /dev/bushub-controller · /dev/bushub-people-counter 링크가 없습니다."
+      echo "❌ [5/5] 아직 필요한 /dev 링크가 없습니다."
       echo "   • Enter — 다시 04-verify 만 실행"
       echo "   • q 입력 후 Enter — 마법사 종료 (필요 시 수동으로 sudo bash $INSTALL --strict)"
       read -r -p "[5/5] 재시도? (Enter/q): " _retry_choice

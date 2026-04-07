@@ -779,6 +779,8 @@ export class SystemService implements ISystemService {
       const result = await Data.updateMany(
         {
           deviceId: { $in: devicesWithAutoField },
+          // units가 맵(Mixed/Object)인 문서에서는 $[] 업데이트가 불가능하므로 배열 문서로 제한
+          units: { $type: 'array' },
         },
         {
           $set: {
@@ -814,6 +816,12 @@ export class SystemService implements ISystemService {
     try {
       // MongoDB aggregation으로 auto 필드가 실제로 존재하는 장비들 찾기
       const result = await Data.aggregate([
+        // units가 배열인 문서만 대상으로 한다(맵 구조는 'units.data.auto' 경로가 성립하지 않음)
+        {
+          $match: {
+            $expr: { $isArray: '$units' },
+          },
+        },
         {
           $match: {
             'units.data.auto': { $exists: true },

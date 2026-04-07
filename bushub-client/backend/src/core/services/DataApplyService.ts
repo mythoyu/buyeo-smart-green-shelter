@@ -15,6 +15,7 @@ import {
   createUnitFromDevice,
   FieldActionMapping,
 } from '../../meta/protocols/fieldUtils';
+import { toUnitsArray } from '../../shared/utils/dataUnits';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
 
@@ -196,13 +197,8 @@ export class DataApplyService {
     try {
       this.logger?.info(`[DataApplyService] 장비 설정 적용 시작: ${device.deviceId} (${device.type})`);
 
-      // Data 컬렉션 구조: device.units 배열
-      if (!device.units || !Array.isArray(device.units)) {
-        throw new Error(`Invalid device structure: missing units array for ${device.deviceId}`);
-      }
-
       // 각 유닛별로 설정 적용
-      for (const unitData of device.units) {
+      for (const unitData of toUnitsArray(device.units)) {
         await this.applyUnitSettings(device, unitData, unifiedModbusService);
       }
 
@@ -329,11 +325,7 @@ export class DataApplyService {
 
       // 각 장비별로 검증 수행
       for (const device of dataCollection) {
-        if (!device.units || !Array.isArray(device.units)) {
-          continue;
-        }
-
-        for (const unitData of device.units) {
+        for (const unitData of toUnitsArray(device.units)) {
           try {
             const unit = createUnitFromDevice(device, unitData) as any;
             const verificationMappings = getVerificationFieldMappings(unit, unitData.data, {

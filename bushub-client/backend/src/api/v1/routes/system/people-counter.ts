@@ -301,6 +301,16 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
     },
     async (_request, reply) => {
       try {
+        // 운영 환경에서 필요 시 전체 삭제를 ENV로 차단할 수 있게 한다. (기본값: 허용 → 기존 동작 보존)
+        const resetDisabled = String(process.env.PEOPLE_COUNTER_RESET_DATA_DISABLED || '').toLowerCase() === 'true';
+        if (resetDisabled) {
+          logger.warn('[People Counter API] reset-data가 ENV로 차단되었습니다 (PEOPLE_COUNTER_RESET_DATA_DISABLED=true)');
+          return (reply as any).code(403).send({
+            success: false,
+            message: '피플카운터 데이터 초기화가 차단되어 있습니다.',
+          });
+        }
+
         const rawResult = await PeopleCounterRaw.deleteMany({});
         const dataResult = await Data.deleteOne({ deviceId: 'd082' });
 

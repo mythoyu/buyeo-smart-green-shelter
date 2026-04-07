@@ -26,9 +26,9 @@ export class PeopleCounterQueueService {
   private peopleCounter: PeopleCounterService;
   private logger: ILogger | undefined;
 
-  constructor(logger?: ILogger) {
+  constructor(logger?: ILogger, portPath?: string) {
     this.logger = logger;
-    this.peopleCounter = new PeopleCounterService(logger);
+    this.peopleCounter = new PeopleCounterService(logger, portPath);
     this.logger?.info('[PeopleCounterQueueService] 큐 서비스 초기화 완료');
   }
 

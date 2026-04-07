@@ -52,6 +52,8 @@ const PeopleCounterRawSchema = new Schema<IPeopleCounterRaw>(
 );
 
 PeopleCounterRawSchema.index({ clientId: 1, timestamp: -1 });
+// 조회 패턴 최적화: external API는 clientId + deviceId + timestamp 범위 + timestamp 정렬을 사용
+PeopleCounterRawSchema.index({ clientId: 1, deviceId: 1, timestamp: 1 });
 PeopleCounterRawSchema.index(
   { timestamp: 1 },
   { expireAfterSeconds: TTL_SECONDS, name: PEOPLE_COUNTER_RAW_TIMESTAMP_TTL_INDEX_NAME },

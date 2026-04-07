@@ -37,7 +37,11 @@ export class StatusService implements IStatusService {
       }
 
       for (const unit of units) {
-        const unitData = dataDoc.units.find((u) => u.unitId === unit.unitId);
+        const unitsDoc = dataDoc.units as any;
+        const unitData =
+          Array.isArray(unitsDoc)
+            ? unitsDoc.find((u: any) => u.unitId === unit.unitId)
+            : unitsDoc?.[unit.unitId];
         if (!unitData || !unitData.data) {
           continue;
         }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# /dev/bushub-controller, /dev/bushub-people-counter 존재 확인
+# /dev/bushub-controller, /dev/bushub-people-counter-1..N 존재 확인
 set -euo pipefail
 
 echo "=== udev 링크 확인 ==="
@@ -43,7 +43,19 @@ check_link() {
 }
 
 check_link "bushub-controller"
-check_link "bushub-people-counter"
+PEOPLE_COUNTER_COUNT="${PEOPLE_COUNTER_COUNT:-1}"
+if ! [[ "$PEOPLE_COUNTER_COUNT" =~ ^[0-3]$ ]]; then
+  echo "❌ PEOPLE_COUNTER_COUNT는 0~3 정수여야 합니다. 현재: $PEOPLE_COUNTER_COUNT" >&2
+  exit 1
+fi
+
+if [ "$PEOPLE_COUNTER_COUNT" -ge 1 ]; then
+  for i in $(seq 1 "$PEOPLE_COUNTER_COUNT"); do
+    check_link "bushub-people-counter-$i"
+  done
+else
+  echo "ℹ️  PEOPLE_COUNTER_COUNT=0 (피플카운터 링크 검사 생략)"
+fi
 
 echo ""
 echo "tty 후보(디버깅용):"

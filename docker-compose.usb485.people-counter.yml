@@ -1,0 +1,15 @@
+# USB-RS485 PeopleCounter override (0대 환경에서 device mount 실패 방지용)
+# 사용: docker compose -f docker-compose.usb485.yml -f docker-compose.usb485.people-counter.yml up -d
+services:
+  backend:
+    volumes:
+      # PeopleCounter 1~3대 (존재하는 것만 마운트해야 하므로 count>=1일 때만 이 override를 사용)
+      - /dev/bushub-people-counter-1:/dev/bushub-people-counter-1:rw
+      - /dev/bushub-people-counter-2:/dev/bushub-people-counter-2:rw
+      - /dev/bushub-people-counter-3:/dev/bushub-people-counter-3:rw
+    environment:
+      # 멀티 유닛 포트 목록(프로브 순서=유닛 번호)
+      # 예: count=2 → "/dev/bushub-people-counter-1,/dev/bushub-people-counter-2"
+      - PEOPLE_COUNTER_PORTS=${PEOPLE_COUNTER_PORTS:-/dev/bushub-people-counter-1}
+      - PEOPLE_COUNTER_BAUD_RATE=9600
+

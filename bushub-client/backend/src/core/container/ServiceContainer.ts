@@ -288,9 +288,29 @@ export class ServiceContainer {
     const pollingAutoRecoveryService = new PollingAutoRecoveryService(this.services.get('logger'));
     this.services.set('pollingAutoRecoveryService', pollingAutoRecoveryService);
 
-    // 피플카운터 큐 서비스 (ttyS1 직렬화)
-    const peopleCounterQueueService = new PeopleCounterQueueService(logger);
-    this.services.set('peopleCounterQueueService', peopleCounterQueueService);
+    // 피플카운터 큐 서비스 (포트별 직렬화)
+    // - PEOPLE_COUNTER_PORTS: "/dev/xxx-1,/dev/xxx-2,..." (권장)
+    // - PEOPLE_COUNTER_PORT: 레거시 단일 포트
+    const portsEnv = (process.env.PEOPLE_COUNTER_PORTS || '').trim();
+    const ports =
+      portsEnv !== ''
+        ? portsEnv
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s !== '')
+        : [(process.env.PEOPLE_COUNTER_PORT || '/dev/ttyS1').trim()].filter((s) => s !== '');
+
+    const unitIdOfIndex = (idx: number) => `u${String(idx + 1).padStart(3, '0')}`;
+    const peopleCounterQueueServices = new Map<string, PeopleCounterQueueService>();
+    ports.forEach((port, idx) => {
+      const unitId = unitIdOfIndex(idx);
+      peopleCounterQueueServices.set(unitId, new PeopleCounterQueueService(logger, port));
+    });
+
+    // 기본 서비스 키: 기존 코드 호환을 위해 u001을 peopleCounterQueueService로 노출
+    const defaultQueue = peopleCounterQueueServices.get('u001') ?? new PeopleCounterQueueService(logger, ports[0]);
+    this.services.set('peopleCounterQueueService', defaultQueue);
+    this.services.set('peopleCounterQueueServices', peopleCounterQueueServices);
 
     // 피플카운터 폴러 (ttyS1, APC100)
     const peopleCounterPoller = new PeopleCounterPollerService(logger);
@@ -338,8 +358,14 @@ export class ServiceContainer {
     return this.services.get('dataApplyService');
   }
 
-  public getPeopleCounterQueueService(): PeopleCounterQueueService {
+  public getPeopleCounterQueueService(unitId: string = 'u001'): PeopleCounterQueueService {
+    const map = this.services.get('peopleCounterQueueServices') as Map<string, PeopleCounterQueueService> | undefined;
+    if (map?.has(unitId)) return map.get(unitId)!;
     return this.services.get('peopleCounterQueueService');
+  }
+
+  public getPeopleCounterQueueServices(): Map<string, PeopleCounterQueueService> {
+    return this.services.get('peopleCounterQueueServices');
   }
 
   public getPeopleCounterPoller(): PeopleCounterPollerService {

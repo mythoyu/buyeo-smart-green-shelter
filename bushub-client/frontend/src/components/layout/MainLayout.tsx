@@ -32,6 +32,7 @@ import { useLogContext } from '../../contexts/LogContext';
 import { useRightSidebar } from '../../contexts/RightSidebarContext';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useLayoutData } from '../../hooks/useLayoutData';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { canAccessPage, getRoleDisplayName } from '../../lib/permissions';
 import { getCurrentUTCTime } from '../../utils/format';
@@ -119,10 +120,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   // ✅ 에러 관련 상태 및 훅
   const [errorPanelOpen, setErrorPanelOpen] = useState(false);
+  const { isPageVisible } = usePageVisibility();
+
+  // 에러는 "패널이 열려있을 때" 더 자주, 아닐 때는 완화
+  // 탭 비가시성일 때는 불필요한 폴링을 중지
+  const clientErrorsRefetchInterval = !isPageVisible ? false : errorPanelOpen ? 5000 : 30_000;
   const { data: clientErrorsData } = useGetClientErrors({
     staleTime: 0, // ✅ 항상 최신 데이터
-    refetchInterval: 5000, // ✅ 5초마다 새로고침
+    refetchInterval: clientErrorsRefetchInterval,
     refetchOnWindowFocus: true, // ✅ 포커스 시 새로고침
+    refetchIntervalInBackground: false,
   });
 
   // ✅ 에러 개수 계산

@@ -357,7 +357,9 @@ every 10s:
 #### 6.1.1 PeopleCounterService
 
 - **역할**: APC100 장비와의 통신 담당
-- **포트**: `/dev/ttyS1`
+- **포트**:
+  - 단일 포트(레거시): `PEOPLE_COUNTER_PORT` (미설정 시 기본값 `/dev/ttyS1`)
+  - 멀티 유닛: `PEOPLE_COUNTER_PORTS` (쉼표로 구분된 포트 목록, 예: `/dev/bushub-people-counter-1,/dev/bushub-people-counter-2`)
 - **통신 주기**: 1초
 - **기능**:
   - 상태 조회 (9바이트 ASCII `[xxxxBTR]`, 예: `[0000BTR]`)
@@ -369,9 +371,10 @@ every 10s:
 - **역할**: 주기적 폴링 및 데이터 저장
 - **폴링 주기**: 10초 (기본값)
 - **기능**:
-  - `PeopleCounterQueueService`를 통해 APC100 조회
-  - IN누적 변경 시 `Data` 컬렉션 업데이트
-  - 분 경계 감지 시 1분당 1건 `people_counter_raw` 저장 (`inDelta`, `inRef` 포함)
+  - `PeopleCounterQueueService`를 통해 APC100 조회 (포트별 직렬화)
+  - **0~3대 멀티 유닛** 지원: `PEOPLE_COUNTER_PORTS`에 지정된 포트 목록을 `u001..u003`에 매핑하여 유닛별로 폴링
+  - IN누적 변경 시 `Data` 컬렉션 업데이트 (`units.<unitId>` 부분 갱신)
+  - 분 경계 감지 시 1분당 1건 `people_counter_raw` 저장 (`inDelta`, `inRef` 포함, `unitId`로 분리)
 
 #### 6.1.3 PeopleCounterDataService
 
@@ -458,8 +461,14 @@ PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 3024000 });
 ### 7.1 환경 변수
 
 ```bash
-# 피플카운터 포트 설정
+# 피플카운터 개수(USB-RS485 스택에서 compose override 적용 여부에 사용)
+PEOPLE_COUNTER_COUNT=0  # 0~3
+
+# 피플카운터 포트 설정(택1)
+# - 단일 포트(레거시)
 PEOPLE_COUNTER_PORT=/dev/ttyS1
+# - 멀티 포트(권장): 쉼표 구분, 순서가 유닛 번호(u001..u003)
+PEOPLE_COUNTER_PORTS=/dev/bushub-people-counter-1,/dev/bushub-people-counter-2
 PEOPLE_COUNTER_BAUD_RATE=9600
 PEOPLE_COUNTER_POLL_INTERVAL=10000  # 10초 (밀리초)
 PEOPLE_COUNTER_DEVICE_ID=0000      # 기본 ID
@@ -492,6 +501,13 @@ services:
 피플카운터 장비가 실제로 연결되어 있지 않은 환경에서는 `/dev/ttyS1` 마운트를 생략해도 됩니다.  
 이 경우 피플카운터 서비스는 포트 오픈 실패를 로그로만 남기고, `peopleCounterEnabled`가 기본값 `false` 상태인 한
 시스템의 다른 기능(DDC, 센서, 조명 등)에는 영향을 주지 않습니다.
+
+#### 7.2.1 USB-RS485 스택(0~3대) — compose override 분리
+
+- 기본 compose: `docker-compose.usb485.yml` (0대에서도 안전)
+- 피플카운터 override: `docker-compose.usb485.people-counter.yml` (count>=1일 때만 적용)
+
+수동 절차/현장 예시는 `docs/PEOPLE_COUNTER_FIELD_RUNBOOK.md`를 참고하세요.
 
 ---
 

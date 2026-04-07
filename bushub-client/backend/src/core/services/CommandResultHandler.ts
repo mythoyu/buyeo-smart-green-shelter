@@ -7,6 +7,7 @@ import { IControlRepository } from '../repositories/interfaces/IControlRepositor
 
 import { IWebSocketService } from './interfaces/IWebSocketService';
 import { IErrorService } from './interfaces/IErrorService';
+import { getUnit } from '../../shared/utils/dataUnits';
 
 export class CommandResultHandler {
   private logger: ILogger = new Logger();
@@ -173,16 +174,27 @@ export class CommandResultHandler {
       return;
     }
 
-    const queryCondition = { deviceId, 'units.unitId': unitId };
-    const updateContent: any = {
-      [`units.$.data.${field}`]: value,
-      updatedAt: new Date(),
-    };
+    const now = new Date();
 
-    // 🎯 시간 필드 연동 처리
-    await this.handleTimeFieldSync(deviceId, unitId, field, value, updateContent);
+    // 1) 맵 구조(units.<unitId>) 우선 업데이트 (피플카운터 등)
+    const mapUpdateResult = await this.dataModel.updateOne(
+      { deviceId, [`units.${unitId}`]: { $exists: true } },
+      { $set: { [`units.${unitId}.data.${field}`]: value, updatedAt: now } },
+    );
 
-    await this.dataModel.findOneAndUpdate(queryCondition, { $set: updateContent }, { new: true });
+    // 2) 배열 구조(units: [{unitId,...}]) fallback 업데이트 (레거시)
+    if ((mapUpdateResult?.matchedCount ?? 0) === 0) {
+      const queryCondition = { deviceId, 'units.unitId': unitId };
+      const updateContent: any = {
+        [`units.$.data.${field}`]: value,
+        updatedAt: now,
+      };
+
+      // 🎯 시간 필드 연동 처리 (배열 구조에서만 units.$ 사용)
+      await this.handleTimeFieldSync(deviceId, unitId, field, value, updateContent);
+
+      await this.dataModel.findOneAndUpdate(queryCondition, { $set: updateContent }, { new: true });
+    }
   }
 
   /**
@@ -253,7 +265,7 @@ export class CommandResultHandler {
         return;
       }
 
-      const unit = currentData.units.find((u: any) => u.unitId === unitId);
+      const unit = getUnit(currentData.units, unitId);
       if (!unit || !unit.data) {
         this.logger.warn(`[CommandResultHandler] 유닛 데이터를 찾을 수 없음: ${deviceId}/${unitId}`);
         return;

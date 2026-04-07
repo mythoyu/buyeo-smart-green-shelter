@@ -52,7 +52,10 @@ async function dataRoutes(app: FastifyInstance) {
         let devices = datas.map((data) => ({
           id: data.deviceId,
           type: data.type,
-          units: data.units.map((u: any) => ({
+          units: (Array.isArray((data as any).units)
+            ? (data as any).units
+            : Object.values(((data as any).units || {}) as Record<string, any>)
+          ).map((u: any) => ({
             id: u.unitId,
             data: formatDatesInShallowRecord(u.data) as Record<string, unknown>,
           })),

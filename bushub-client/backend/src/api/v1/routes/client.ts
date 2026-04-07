@@ -11,7 +11,7 @@ import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import { getKstNowParts } from '../../../utils/time';
 import { clients, clientUnits } from '../../../data/clients';
 import { deviceMappingHelpers } from '../../../data/mappings/deviceMapping';
-import { logInfo, logError, logDebug } from '../../../logger';
+import { logInfo, logError, logDebug, logWarn } from '../../../logger';
 import { Client as ClientSchema } from '../../../models/schemas/ClientSchema';
 import { Data as DataSchema } from '../../../models/schemas/DataSchema';
 import { Device as DeviceSchema } from '../../../models/schemas/DeviceSchema';
@@ -105,10 +105,15 @@ async function ensurePeopleCounterIfNeeded(clientId: string): Promise<void> {
     clientId,
     deviceId: 'd082',
     type: 'people_counter',
-    units: units.map((u) => ({
-      unitId: u.id,
-      data: generateRealOperationData(clientId, 'people_counter', u.id),
-    })),
+    units: Object.fromEntries(
+      units.map((u) => [
+        u.id,
+        {
+          unitId: u.id,
+          data: generateRealOperationData(clientId, 'people_counter', u.id),
+        },
+      ]),
+    ),
     updatedAt: new Date(),
   });
   await ErrorSchema.create({
@@ -610,6 +615,22 @@ async function clientRoutes(app: FastifyInstance) {
         // 3. 기존 클라이언트 처리
         if (existingClient && !initialize) {
           return await handleExistingClient(existingClient, reply);
+        }
+
+        // ⚠️ 외부(external) 경로에서의 DB 전체 재설정은 매우 위험할 수 있으므로,
+        // 운영 환경에서 필요 시 ENV로 차단할 수 있게 한다. (기본값: 허용 → 기존 동작 보존)
+        const requestPath = (request as any).url as string;
+        const isExternalPath = typeof requestPath === 'string' && requestPath.startsWith('/api/v1/external/');
+        const externalResetDisabled = String(process.env.EXTERNAL_CLIENT_RESET_DISABLED || '').toLowerCase() === 'true';
+        if (isExternalPath && externalResetDisabled) {
+          logWarn(`[client] 외부 경로에서 DB 재설정이 차단되었습니다 (ENV=EXTERNAL_CLIENT_RESET_DISABLED=true)`);
+          return reply.code(403).send({
+            success: false,
+            message: '외부 경로에서는 클라이언트 재설정을 허용하지 않습니다.',
+          });
+        }
+        if (isExternalPath) {
+          logWarn(`[client] 외부 경로에서 클라이언트 재설정이 호출되었습니다 (initialize=${initialize})`);
         }
 
         // 4. 데이터베이스 재설정

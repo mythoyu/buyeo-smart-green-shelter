@@ -1,6 +1,7 @@
 import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { CLIENT_PORT_MAPPINGS } from '../../data/clientPortMappings';
 import { getModbusAddressMapping, isModbusMockEnabled } from '../../utils/environment';
+import { toUnitsArray } from '../../shared/utils/dataUnits';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
 import { IUnifiedModbusCommunication } from '../interfaces/IModbusCommunication';
@@ -255,14 +256,12 @@ export class UnifiedModbusPollerService {
       // 🎯 장비 목록 구성
       const deviceList = [];
       for (const device of devices) {
-        if (device.units && Array.isArray(device.units)) {
-          for (const unit of device.units) {
-            deviceList.push({
-              deviceId: device.deviceId,
-              unitId: unit.unitId,
-              deviceType: device.type || 'unknown',
-            });
-          }
+        for (const unit of toUnitsArray(device.units)) {
+          deviceList.push({
+            deviceId: device.deviceId,
+            unitId: unit.unitId,
+            deviceType: device.type || 'unknown',
+          });
         }
       }
 

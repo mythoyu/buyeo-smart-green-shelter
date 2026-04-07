@@ -60,9 +60,12 @@ export class PeopleCounterService {
   private mockOutCumulative: number = 0;
   private mockCurrentCount: number = 0;
 
-  constructor(logger?: ILogger) {
+  constructor(logger?: ILogger, portPath?: string) {
     this.logger = logger;
     this.mockEnabled = isPeopleCounterMockEnabled();
+    if (portPath && String(portPath).trim() !== '') {
+      this.path = String(portPath).trim();
+    }
     if (this.mockEnabled) {
       this.logger?.info('[PeopleCounterService] Mock 모드 활성화');
       // Mock 초기값 설정

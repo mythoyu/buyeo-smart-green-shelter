@@ -8,12 +8,13 @@
 set -euo pipefail
 
 TMP_DIR="/tmp/bushub-udev-rules"
-FRAGMENT_FILE="$TMP_DIR/99-bushub-serial-people-counter.fragment"
-
-SYMLINK_NAME="bushub-people-counter"
+INDEX="1"
+SYMLINK_NAME=""
+FRAGMENT_FILE=""
 
 usage() {
-  echo "사용법: $0 [--device /dev/ttyUSB0] [--list-json]"
+  echo "사용법: $0 [--index 1|2|3] [--device /dev/ttyUSB0] [--list-json]"
+  echo "  --index      유닛 인덱스(기본 1). /dev/bushub-people-counter-N 링크를 생성합니다."
   echo "  --device      디바이스 선택을 건너뜁니다."
   echo "  --list-json   tty 후보 목록만 JSON 으로 출력하고 종료합니다."
   exit 1
@@ -32,6 +33,10 @@ DEVICE=""
 LIST_JSON=0
 while [ $# -gt 0 ]; do
   case "$1" in
+    --index)
+      INDEX="${2:-}"
+      shift 2
+      ;;
     --device)
       DEVICE="${2:-}"
       shift 2
@@ -49,6 +54,13 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
+
+if ! [[ "$INDEX" =~ ^[1-3]$ ]]; then
+  echo "❌ --index 는 1~3 정수여야 합니다: $INDEX" >&2
+  exit 1
+fi
+SYMLINK_NAME="bushub-people-counter-$INDEX"
+FRAGMENT_FILE="$TMP_DIR/99-bushub-serial-people-counter-$INDEX.fragment"
 
 shopt -s nullglob
 TTY_CANDIDATES=(/dev/ttyUSB* /dev/ttyACM*)

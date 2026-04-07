@@ -46,6 +46,30 @@ if [ ! -f "$COMPOSE_FILE" ]; then
   exit 1
 fi
 
+# usb485 모드에서 PeopleCounter(0~3대) 대응:
+# - PEOPLE_COUNTER_COUNT=0 이면 people-counter override를 사용하지 않는다(없는 /dev 마운트로 인한 실패 방지)
+# - PEOPLE_COUNTER_COUNT>=1 이면 override compose를 추가한다.
+COMPOSE_FILES=("$COMPOSE_FILE")
+if [ "$MODE" = "usb485" ]; then
+  PC_COUNT="${PEOPLE_COUNTER_COUNT:-}"
+  if [ -z "$PC_COUNT" ]; then
+    # 설정이 없으면 기존과 동일한 동작을 위해 기본값 1로 간주(현장에 1대 연결된 기존 설치 호환)
+    PC_COUNT=1
+  fi
+  if ! [[ "$PC_COUNT" =~ ^[0-3]$ ]]; then
+    echo "❌ PEOPLE_COUNTER_COUNT는 0~3 정수여야 합니다. 현재: $PC_COUNT"
+    exit 1
+  fi
+  if [ "$PC_COUNT" -ge 1 ]; then
+    PC_OVERRIDE="docker-compose.usb485.people-counter.yml"
+    if [ ! -f "$PC_OVERRIDE" ]; then
+      echo "❌ $REPO_ROOT/$PC_OVERRIDE 없음 (PEOPLE_COUNTER_COUNT=$PC_COUNT)"
+      exit 1
+    fi
+    COMPOSE_FILES+=("$PC_OVERRIDE")
+  fi
+fi
+
 if ! docker compose version >/dev/null 2>&1; then
   echo "❌ docker compose 를 사용할 수 없습니다. ./scripts/lib/setup-host-ubuntu24.sh 실행 여부를 확인하세요."
   exit 1
@@ -82,9 +106,19 @@ else
   echo "ℹ️  docker-images/ 없음 — 레지스트리 pull 또는 사전에 이미지가 있어야 합니다."
 fi
 
-echo "🚀 docker compose -f $COMPOSE_FILE down --remove-orphans → up -d"
-docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
-docker compose -f "$COMPOSE_FILE" up -d
+compose_args=()
+for f in "${COMPOSE_FILES[@]}"; do
+  compose_args+=("-f" "$f")
+done
+
+echo "📎 compose 파일:"
+for f in "${COMPOSE_FILES[@]}"; do
+  echo "   - $f"
+done
+
+echo "🚀 docker compose ${compose_args[*]} down --remove-orphans → up -d"
+docker compose "${compose_args[@]}" down --remove-orphans || true
+docker compose "${compose_args[@]}" up -d
 
 echo ""
 echo "🐳 컨테이너:"
@@ -110,5 +144,5 @@ else
 fi
 
 echo ""
-echo "🎉 기동 완료: $COMPOSE_FILE"
-echo "   중지: cd $REPO_ROOT && docker compose -f $COMPOSE_FILE down --remove-orphans"
+echo "🎉 기동 완료"
+echo "   중지: cd $REPO_ROOT && docker compose ${compose_args[*]} down --remove-orphans"

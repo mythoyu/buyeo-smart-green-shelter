@@ -1,6 +1,6 @@
 # PC B: USB-시리얼을 udev 규칙으로 고정합니다.
 # Modbus(DDC/Modbus)는 /dev/bushub-controller
-# PeopleCounter(APC)는 /dev/bushub-people-counter
+# PeopleCounter(APC)는 별도 override compose에서 마운트합니다.
 # udev: 저장소 루트 ./scripts/install-field.sh 또는 scripts/lib/udev/…
 # 규칙 설치 후 rebuild-and-up-usb485.sh 등으로 이 compose 를 up 하세요.
 services:
@@ -41,7 +41,6 @@ services:
     volumes:
       - backend_logs:/app/logs
       - /dev/bushub-controller:/dev/bushub-controller:rw
-      - /dev/bushub-people-counter:/dev/bushub-people-counter:rw
       # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
     privileged: true
@@ -55,8 +54,6 @@ services:
       - MODBUS_PORT=/dev/bushub-controller
       - MODBUS_BAUD_RATE=9600
       - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
-      - PEOPLE_COUNTER_PORT=/dev/bushub-people-counter
-      - PEOPLE_COUNTER_BAUD_RATE=9600
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:
       - db

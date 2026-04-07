@@ -169,6 +169,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
 
         const docs = await PeopleCounterRaw.find({
           clientId,
+          deviceId: 'd082',
           timestamp: { $gte: start, $lte: end },
         })
           .sort({ timestamp: 1 })
@@ -314,6 +315,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
 
         const docs = await PeopleCounterRaw.find({
           clientId,
+          deviceId: 'd082',
           timestamp: { $gte: startDate, $lte: endDate },
         })
           .sort({ timestamp: 1 })
@@ -379,6 +381,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
 
         const docs = await PeopleCounterRaw.find({
           clientId,
+          deviceId: 'd082',
           timestamp: { $gte: start, $lt: end },
         })
           .sort({ timestamp: 1 })

@@ -14,6 +14,7 @@ import { DeviceModel } from '../../models/Device';
 import { Data } from '../../models/schemas/DataSchema';
 import { IDevice } from '../../models/schemas/DeviceSchema';
 import { IUnit } from '../../models/schemas/UnitSchema';
+import { toUnitsArray } from '../../shared/utils/dataUnits';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
 
@@ -800,11 +801,15 @@ export class DataSyncService {
       // 일괄 업데이트 작업 구성
       const bulkOps = dataCollection.map((item) => ({
         updateOne: {
-          filter: { deviceId: item.deviceId, type: item.deviceType, 'units.unitId': item.unitId },
+          filter:
+            item.deviceType === 'people_counter'
+              ? { deviceId: item.deviceId, type: item.deviceType }
+              : { deviceId: item.deviceId, type: item.deviceType, 'units.unitId': item.unitId },
           update: {
             $set: {
-              'units.$.data': item.data,
-              'units.$.updatedAt': item.timestamp,
+              ...(item.deviceType === 'people_counter'
+                ? { [`units.${item.unitId}.data`]: item.data }
+                : { 'units.$.data': item.data, 'units.$.updatedAt': item.timestamp }),
               updatedAt: item.timestamp,
             },
           },
@@ -960,7 +965,9 @@ export class DataSyncService {
         throw new Error('Data 컬렉션에서 데이터를 찾을 수 없습니다');
       }
 
-      const unitData = dataDoc.units.find((unit) => unit.unitId === unitId);
+      const units = dataDoc.units as any;
+      const unitData =
+        Array.isArray(units) ? units.find((unit: any) => unit.unitId === unitId) : units?.[unitId];
       if (!unitData) {
         throw new Error(`Unit ${unitId} 데이터를 찾을 수 없습니다`);
       }
@@ -1029,11 +1036,7 @@ export class DataSyncService {
 
       // 각 장비별로 검증 수행
       for (const device of dataCollection) {
-        if (!device.units || !Array.isArray(device.units)) {
-          continue;
-        }
-
-        for (const unitData of device.units) {
+        for (const unitData of toUnitsArray(device.units)) {
           try {
             const isVerified = await this.verifyFieldValue(
               device.deviceId,
@@ -1188,7 +1191,9 @@ export class DataSyncService {
         };
       }
 
-      const unitData = dataDoc.units.find((unit) => unit.unitId === unitId);
+      const units = dataDoc.units as any;
+      const unitData =
+        Array.isArray(units) ? units.find((unit: any) => unit.unitId === unitId) : units?.[unitId];
       if (!unitData) {
         return {
           lastSync: null,
