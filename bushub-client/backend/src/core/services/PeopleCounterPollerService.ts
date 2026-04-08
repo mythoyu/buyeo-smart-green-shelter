@@ -1,6 +1,7 @@
 /**
  * People Counter Poller Service
- * 10초 폴링, Data는 IN누적 변경 시 갱신, people_counter_raw는 1분당 1건만 저장 (inDelta, inRef)
+ * 10초 폴링, Data는 in/out/currentCount 중 하나라도 변경 시 갱신,
+ * people_counter_raw는 폴링 성공 시마다 1건 저장 (inDelta=직전 폴링 대비 증분)
  */
 
 import { Data } from '../../models/schemas/DataSchema';
@@ -11,7 +12,7 @@ import { ILogger } from '../interfaces/ILogger';
 import { PeopleCounterQueueService } from './PeopleCounterQueueService';
 import type { IStatusService } from './interfaces/IStatusService';
 import type { IErrorService } from './interfaces/IErrorService';
-import { formatKstLocal, getKstCalendarParts, startOfKstMinute } from '../../shared/utils/kstDateTime';
+import { formatKstLocal } from '../../shared/utils/kstDateTime';
 
 import type { ISystemService } from './interfaces/ISystemService';
 
@@ -19,13 +20,25 @@ const POLL_INTERVAL_MS = Number(process.env.PEOPLE_COUNTER_POLL_INTERVAL) || 100
 const DEVICE_ID = 'd082';
 const DEVICE_TYPE = 'people_counter';
 
+/** 직전 폴링 in 대비 증분(Raw·WS 공통, 카운터 리셋 시 endRef만큼 증분으로 간주) */
+function computePollInDelta(prevIn: number | null, endRef: number): { inDelta: number; inRef: number } {
+  if (prevIn === null) {
+    return { inDelta: 0, inRef: endRef };
+  }
+  if (endRef < prevIn) {
+    return { inDelta: endRef, inRef: endRef };
+  }
+  return { inDelta: endRef - prevIn, inRef: endRef };
+}
+
 type UnitRuntime = {
   unitId: string;
   queue: PeopleCounterQueueService;
   lastInCumulative: number | null;
-  lastSavedMinuteKey: string | null;
-  refAtStartOfCurrentMinute: number;
-  lastMinuteInRef: number;
+  lastOutCumulative: number | null;
+  lastCurrentCount: number | null;
+  /** Raw inDelta 계산용: 직전 폴링 성공 시 inCumulative */
+  lastRawPollInCumulative: number | null;
 };
 
 export class PeopleCounterPollerService {
@@ -49,31 +62,26 @@ export class PeopleCounterPollerService {
             unitId,
             queue,
             lastInCumulative: null,
-            lastSavedMinuteKey: null,
-            refAtStartOfCurrentMinute: 0,
-            lastMinuteInRef: 0,
+            lastOutCumulative: null,
+            lastCurrentCount: null,
+            lastRawPollInCumulative: null,
           }))
         : [
             {
               unitId: 'u001',
               queue: serviceContainer.getPeopleCounterQueueService('u001'),
               lastInCumulative: null,
-              lastSavedMinuteKey: null,
-              refAtStartOfCurrentMinute: 0,
-              lastMinuteInRef: 0,
+              lastOutCumulative: null,
+              lastCurrentCount: null,
+              lastRawPollInCumulative: null,
             },
           ];
   }
 
   /**
-   * PEOPLE_COUNTER_PORT(/dev/bushub-people-counter) 시리얼 폴링은
-   * 피플카운터 ON + DDC 폴링 ON 둘 다일 때만 수행한다.
+   * PEOPLE_COUNTER_PORT 시리얼 폴링은 DDC 폴링 설정(pollingEnabled)이 ON일 때 수행한다.
    */
   private async isSerialPollingActive(systemService: ISystemService): Promise<boolean> {
-    const pc = await systemService.getPeopleCounterState(false);
-    if (!pc?.peopleCounterEnabled) {
-      return false;
-    }
     const polling = await systemService.getPollingState(false);
     return polling?.pollingEnabled === true;
   }
@@ -160,9 +168,9 @@ export class PeopleCounterPollerService {
     }
     this.units.forEach((u) => {
       u.lastInCumulative = null;
-      u.lastSavedMinuteKey = null;
-      u.refAtStartOfCurrentMinute = 0;
-      u.lastMinuteInRef = 0;
+      u.lastOutCumulative = null;
+      u.lastCurrentCount = null;
+      u.lastRawPollInCumulative = null;
     });
     this.logger?.info('[PeopleCounterPoller] 중지');
   }
@@ -199,6 +207,66 @@ export class PeopleCounterPollerService {
     }
   }
 
+  /**
+   * 폴링 1회 성공 시 people_counter_raw 1건 (inDelta = 직전 폴링 대비 입실 증분)
+   */
+  private async savePollRaw(clientId: string, unitId: string, d: PeopleCounterData, prevIn: number | null): Promise<void> {
+    const endRef = d.inCumulative;
+    const { inDelta, inRef } = computePollInDelta(prevIn, endRef);
+
+    try {
+      await PeopleCounterRaw.create({
+        clientId,
+        deviceId: DEVICE_ID,
+        unitId,
+        timestamp: d.timestamp,
+        inCumulative: endRef,
+        inDelta,
+        inRef,
+        outCumulative: d.outCumulative,
+        currentCount: d.currentCount,
+        output1: d.output1,
+        output2: d.output2,
+        countEnabled: d.countEnabled,
+        buttonStatus: d.buttonStatus,
+        sensorStatus: d.sensorStatus,
+        limitExceeded: d.limitExceeded,
+      });
+    } catch (e) {
+      this.logger?.error(`[PeopleCounterPoller] Raw 저장 실패 unit=${unitId}: ${e}`);
+    }
+  }
+
+  /** 실시간 로그 패널: 폴링 성공 시 WS broadcast */
+  private broadcastPollSuccessWs(
+    clientId: string,
+    unitId: string,
+    d: PeopleCounterData,
+    pollInDelta: number,
+  ): void {
+    const sc = this.serviceContainer;
+    if (!sc) return;
+    try {
+      const ws = sc.getWebSocketService();
+      ws?.broadcastLog(
+        'info',
+        'PeopleCounterPoller',
+        `[${DEVICE_ID}/${unitId}] poll ok in=${d.inCumulative} out=${d.outCumulative} room=${d.currentCount} Δin=${pollInDelta}`,
+        {
+          clientId,
+          deviceId: DEVICE_ID,
+          unitId,
+          inCumulative: d.inCumulative,
+          outCumulative: d.outCumulative,
+          currentCount: d.currentCount,
+          inDelta: pollInDelta,
+        },
+      );
+    } catch (e) {
+      this.logger?.warn(`[PeopleCounterPoller] WebSocket 로그 전송 실패: ${e}`);
+    }
+  }
+
   private async tick(): Promise<void> {
     const sc = this.serviceContainer;
     if (!sc || this.units.length === 0) return;
@@ -216,11 +284,6 @@ export class PeopleCounterPollerService {
     } catch (e) {
       this.logger?.warn(`[PeopleCounterPoller] 클라이언트 조회 실패: ${e}`);
     }
-
-    // 1분 경계 감지 (KST 달력·시각 기준)
-    const now = new Date();
-    const kst = getKstCalendarParts(now);
-    const currentMinuteKey = `${kst.year}-${kst.month}-${kst.day}-${kst.hour}-${kst.minute}`;
 
     const results = await Promise.allSettled(
       this.units.map(async (u) => {
@@ -244,77 +307,41 @@ export class PeopleCounterPollerService {
           `[PeopleCounterPoller] unit=${u.unitId} poll ok in=${data.inCumulative} out=${data.outCumulative} room=${data.currentCount}`,
         );
 
-        // Data 컬렉션: IN 누적 변경 시에만 업데이트 (유닛별)
+        const prevForRaw = u.lastRawPollInCumulative;
+        const { inDelta: pollInDelta } = computePollInDelta(prevForRaw, data.inCumulative);
+        await this.savePollRaw(clientId, u.unitId, data, prevForRaw);
+        u.lastRawPollInCumulative = data.inCumulative;
+        this.broadcastPollSuccessWs(clientId, u.unitId, data, pollInDelta);
+
+        // Data 컬렉션: in / out / currentCount 중 하나라도 바뀌면 업데이트 (유닛별)
         const prevIn = u.lastInCumulative;
-        if (prevIn === null || data.inCumulative !== prevIn) {
+        const prevOut = u.lastOutCumulative;
+        const prevRoom = u.lastCurrentCount;
+        const firstPoll = prevIn === null;
+        const changed =
+          firstPoll ||
+          data.inCumulative !== prevIn ||
+          (prevOut !== null && data.outCumulative !== prevOut) ||
+          (prevRoom !== null && data.currentCount !== prevRoom);
+
+        if (changed) {
+          this.logger?.info(
+            `[PeopleCounterPoller] data 테이블 갱신 진입 unit=${u.unitId} clientId=${clientId} in ${
+              firstPoll ? 'null' : prevIn
+            }→${data.inCumulative} out ${firstPoll ? 'null' : prevOut}→${data.outCumulative} room ${
+              firstPoll ? 'null' : prevRoom
+            }→${data.currentCount}`,
+          );
           u.lastInCumulative = data.inCumulative;
+          u.lastOutCumulative = data.outCumulative;
+          u.lastCurrentCount = data.currentCount;
           await this.upsertData(clientId, u.unitId, data);
         }
-
-        if (u.lastSavedMinuteKey !== null && currentMinuteKey !== u.lastSavedMinuteKey) {
-          await this.saveOneMinuteRaw(clientId, u.unitId, data, u.lastSavedMinuteKey, u.refAtStartOfCurrentMinute, u.lastMinuteInRef);
-        }
-
-        if (u.lastSavedMinuteKey === null || u.lastSavedMinuteKey !== currentMinuteKey) {
-          u.refAtStartOfCurrentMinute = u.lastMinuteInRef;
-        }
-        u.lastSavedMinuteKey = currentMinuteKey;
-        u.lastMinuteInRef = data.inCumulative;
       }),
     );
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     results.forEach((_r) => {});
-  }
-
-  /**
-   * 직전 분 1건을 people_counter_raw에 저장 (inDelta, inRef 포함)
-   * lastSavedMinuteKey 형식: "YYYY-M-D-H-m" (M/D/H/m은 KST 연·월·일·시·분)
-   */
-  private async saveOneMinuteRaw(
-    clientId: string,
-    unitId: string,
-    endOfMinuteData: PeopleCounterData,
-    minuteKey: string,
-    refAtStartOfCurrentMinute: number,
-    lastMinuteInRef: number,
-  ): Promise<void> {
-    try {
-      const [y, mon, d, h, min] = minuteKey.split('-').map(Number);
-      const minuteStart = startOfKstMinute(y, mon, d, h, min);
-
-      const startRef = refAtStartOfCurrentMinute;
-      const endRef = lastMinuteInRef;
-      let inDelta: number;
-      let inRef: number;
-      if (endRef < startRef) {
-        inDelta = endRef;
-        inRef = endRef;
-      } else {
-        inDelta = endRef - startRef;
-        inRef = endRef;
-      }
-
-      await PeopleCounterRaw.create({
-        clientId,
-        deviceId: DEVICE_ID,
-        unitId,
-        timestamp: minuteStart,
-        inCumulative: inRef,
-        inDelta,
-        inRef,
-        outCumulative: endOfMinuteData.outCumulative,
-        currentCount: endOfMinuteData.currentCount,
-        output1: endOfMinuteData.output1,
-        output2: endOfMinuteData.output2,
-        countEnabled: endOfMinuteData.countEnabled,
-        buttonStatus: endOfMinuteData.buttonStatus,
-        sensorStatus: endOfMinuteData.sensorStatus,
-        limitExceeded: endOfMinuteData.limitExceeded,
-      });
-    } catch (e) {
-      this.logger?.error(`[PeopleCounterPoller] 1분 Raw 저장 실패: ${e}`);
-    }
   }
 
   private async upsertData(clientId: string, unitId: string, d: PeopleCounterData): Promise<void> {
@@ -334,7 +361,7 @@ export class PeopleCounterPollerService {
           timestamp: formatKstLocal(d.timestamp),
         },
       };
-      await Data.updateOne(
+      const result = await Data.updateOne(
         { deviceId: DEVICE_ID },
         {
           $set: {
@@ -346,8 +373,13 @@ export class PeopleCounterPollerService {
         },
         { upsert: true },
       );
+      this.logger?.info(
+        `[PeopleCounterPoller] data 컬렉션 반영 완료 deviceId=${DEVICE_ID} unitId=${unitId} clientId=${clientId} inCumulative=${d.inCumulative} outCumulative=${d.outCumulative} currentCount=${d.currentCount} matched=${result.matchedCount} modified=${result.modifiedCount} upserted=${result.upsertedCount ?? 0}`,
+      );
     } catch (e) {
-      this.logger?.error(`[PeopleCounterPoller] Data upsert 실패: ${e}`);
+      this.logger?.error(
+        `[PeopleCounterPoller] Data upsert 실패 deviceId=${DEVICE_ID} unitId=${unitId} clientId=${clientId} inCumulative=${d.inCumulative}: ${e}`,
+      );
     }
   }
 }

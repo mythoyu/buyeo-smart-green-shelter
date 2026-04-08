@@ -8,7 +8,6 @@ const DATA_ENDPOINTS = {
   META_SCHEMA: '/meta/schema',
 } as const;
 
-import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import logger from '../../../logger';
 import { Client as ClientSchema } from '../../../models/schemas/ClientSchema';
 import { Data as DataSchema } from '../../../models/schemas/DataSchema';
@@ -60,12 +59,6 @@ async function dataRoutes(app: FastifyInstance) {
             data: formatDatesInShallowRecord(u.data) as Record<string, unknown>,
           })),
         }));
-
-        const systemService = ServiceContainer.getInstance().getSystemService();
-        const pcState = await systemService.getPeopleCounterState(false);
-        if (!pcState?.peopleCounterEnabled) {
-          devices = devices.filter((d) => d.id !== 'd082');
-        }
 
         const result = {
           id: currentClientId,

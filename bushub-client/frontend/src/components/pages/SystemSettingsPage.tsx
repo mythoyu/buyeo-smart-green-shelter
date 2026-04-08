@@ -2,7 +2,7 @@ import { Clock, Sun, Cpu, RefreshCcw, Users, Activity, Settings } from 'lucide-r
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { useGetPeopleCounterState, useUpdatePeopleCounterState, useResetPeopleCounterData } from '../../api/queries/people-counter';
+import { useResetPeopleCounterData } from '../../api/queries/people-counter';
 import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import {
   useSaveSeasonal,
@@ -18,7 +18,6 @@ import {
 } from '../../api/queries/system';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { cn } from '../../lib/utils';
-import OnOffToggleButton from '../common/OnOffToggleButton';
 import SelectWithLabel from '../common/SelectWithLabel';
 import SettingsCard from '../common/SettingsCard';
 import { TopLogPanel } from '../common/TopLogPanel';
@@ -149,8 +148,6 @@ const SystemSettingsPage: React.FC = () => {
   const saveSeasonalMutation = useSaveSeasonal();
   const syncDdcTimeMutation = useSyncDdcTime();
   const setPollingIntervalMutation = useSetPollingInterval();
-  const { data: peopleCounterData } = useGetPeopleCounterState();
-  const updatePeopleCounterMutation = useUpdatePeopleCounterState();
   const resetPeopleCounterDataMutation = useResetPeopleCounterData();
   const [openResetDialog, setOpenResetDialog] = useState(false);
 
@@ -232,18 +229,6 @@ const SystemSettingsPage: React.FC = () => {
     if (interval < 1000) return `${interval}ms`;
     if (interval < 60000) return `${interval / 1000}초`;
     return `${interval / 60000}분`;
-  };
-
-  const handlePeopleCounterToggle = async (enabled: boolean) => {
-    try {
-      await updatePeopleCounterMutation.mutateAsync(enabled);
-      toast.success(enabled ? '피플카운터가 활성화되었습니다' : '피플카운터가 비활성화되었습니다', {
-        id: 'people-counter-toggle',
-      });
-    } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.response?.data?.error || '피플카운터 설정 변경에 실패했습니다';
-      toast.error(msg, { id: 'people-counter-toggle-error' });
-    }
   };
 
   // 현재 시간을 1초마다 업데이트하는 useEffect
@@ -629,7 +614,7 @@ const SystemSettingsPage: React.FC = () => {
         </div>
         )}
 
-        {/* 피플카운터 Enable/Disable */}
+        {/* 피플카운터 데이터 초기화 */}
         {visibleCardIds.includes('settings-people-counter') && (
         <div
           id='settings-people-counter'
@@ -641,32 +626,9 @@ const SystemSettingsPage: React.FC = () => {
           <SettingsCard
             icon={Users}
             title='피플카운터'
-            description='입장 인원 계수 기능 사용 여부 (APC100 등)'
+            description='통계·히스토리용 raw 및 d082 실시간 데이터 초기화 (APC100 등)'
           >
-            <div className='flex items-center justify-between p-3 bg-muted rounded-lg'>
-              <div>
-                <span className='text-sm font-medium'>피플카운터</span>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  {updatePeopleCounterMutation.isPending
-                    ? '적용 중...'
-                    : peopleCounterData?.peopleCounterEnabled
-                      ? '활성화'
-                      : '비활성화'}
-                </p>
-              </div>
-              <span className={cn(updatePeopleCounterMutation.isPending && 'opacity-50 pointer-events-none')}>
-                <OnOffToggleButton
-                  checked={!!peopleCounterData?.peopleCounterEnabled}
-                  onChange={handlePeopleCounterToggle}
-                  labelOn='ON'
-                  labelOff='OFF'
-                />
-              </span>
-            </div>
-            <p className='text-xs text-muted-foreground'>
-              피플카운터 장비가 연결된 경우에만 활성화하세요. 비활성화 시 해당 기능이 동작하지 않습니다.
-            </p>
-            <div className='mt-4 border-t pt-3 space-y-2'>
+            <div className='space-y-2'>
               <p className='text-xs font-medium text-foreground'>데이터 관리</p>
               <p className='text-[11px] text-muted-foreground'>
                 people_counter_raw 및 d082 실시간 데이터를 삭제하여 피플카운터 통계/히스토리를 초기화합니다. 장비 제어에는 영향을 주지 않습니다.

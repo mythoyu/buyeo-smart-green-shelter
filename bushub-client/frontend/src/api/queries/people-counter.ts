@@ -3,10 +3,6 @@ import axios from 'axios';
 
 import { externalApi, internalApi } from '../axiosInstance';
 
-export interface PeopleCounterState {
-  peopleCounterEnabled: boolean;
-}
-
 export type Period = 'hour' | 'day' | 'week' | 'month';
 export type ResetType = 'current' | 'in' | 'out' | 'all';
 
@@ -58,33 +54,6 @@ export interface PeopleCounterHourlyStats {
   timezone: string;
   buckets: PeopleCounterHourlyBucket[];
 }
-
-export const useGetPeopleCounterState = (options?: { enabled?: boolean }) => {
-  return useQuery<PeopleCounterState>({
-    queryKey: ['people-counter', 'state'],
-    queryFn: async () => {
-      const response = await internalApi.get('/system/people-counter/state');
-      return response.data.data;
-    },
-    staleTime: 5000,
-    enabled: options?.enabled ?? true,
-  });
-};
-
-export const useUpdatePeopleCounterState = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (peopleCounterEnabled: boolean) => {
-      const response = await internalApi.post('/system/people-counter', {
-        peopleCounterEnabled,
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['people-counter', 'state'] });
-    },
-  });
-};
 
 export const useGetPeopleCounterStats = (options?: {
   period?: Period;
@@ -174,12 +143,19 @@ export interface PeopleCounterUsage10Min {
   buckets: PeopleCounterUsage10MinBucket[];
 }
 
+const DEFAULT_USAGE_10MIN_REFETCH_MS = 60 * 1000;
+
 export const useGetPeopleCounterUsage10Min = (options: {
   start: string;
   end: string;
   unitId?: string;
   enabled?: boolean;
+  /** 탭 비가시성 등에서 false로 폴링 중지. 기본 60초 */
+  refetchInterval?: number | false;
 }) => {
+  const interval =
+    options.refetchInterval === undefined ? DEFAULT_USAGE_10MIN_REFETCH_MS : options.refetchInterval;
+
   return useQuery<PeopleCounterUsage10Min>({
     queryKey: ['people-counter', 'usage-10min', options.start, options.end, options.unitId],
     queryFn: async () => {
@@ -192,6 +168,9 @@ export const useGetPeopleCounterUsage10Min = (options: {
     },
     staleTime: 10000,
     enabled: (options.enabled ?? true) && !!options.start && !!options.end,
+    refetchOnWindowFocus: true,
+    refetchInterval: interval === false ? false : interval,
+    refetchIntervalInBackground: false,
   });
 };
 
@@ -211,15 +190,14 @@ export const useResetPeopleCounterData = () => {
   });
 };
 
+/** APC 카운터 리셋 — `POST /devices/:deviceId/units/:unitId/commands` (`SET_RESET`) */
 export const useResetPeopleCounter = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: ResetType | { type: ResetType; unitId?: string }) => {
-      const body =
-        typeof payload === 'string'
-          ? { type: payload }
-          : { type: payload.type, ...(payload.unitId ? { unitId: payload.unitId } : {}) };
-      const response = await internalApi.post('/system/people-counter/reset', body);
+    mutationFn: async (payload: { deviceId: string; unitId: string; type: ResetType }) => {
+      const response = await internalApi.post(`/devices/${payload.deviceId}/units/${payload.unitId}/commands`, [
+        { action: 'SET_RESET', value: payload.type },
+      ]);
       return response.data;
     },
     onSuccess: () => {

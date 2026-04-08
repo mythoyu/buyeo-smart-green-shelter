@@ -344,7 +344,7 @@ export class ServerInitializer {
     // 🔄 12단계: 폴링 자동 복구 서비스 시작
     await this.startPollingRecovery();
 
-    // 13단계: 피플카운터 폴러 시작 (peopleCounterEnabled일 때만 실제 폴링)
+    // 13단계: 피플카운터 폴러 시작 (DDC pollingEnabled일 때 tick에서 시리얼 폴링)
     await this.startPeopleCounterPoller();
   }
 
@@ -459,9 +459,7 @@ export class ServerInitializer {
       const poller = this.serviceContainer.getPeopleCounterPoller();
       if (poller) {
         await poller.start();
-        logInfo(
-          '✅ 피플카운터 폴러 시작 (peopleCounterEnabled·pollingEnabled 모두 ON일 때만 PEOPLE_COUNTER_PORT 폴링)',
-        );
+        logInfo('✅ 피플카운터 폴러 시작 (pollingEnabled ON일 때 PEOPLE_COUNTER_PORT 폴링)');
       }
     } catch (error) {
       logWarn(`⚠️ 피플카운터 폴러 시작 건너뜀: ${error}`);

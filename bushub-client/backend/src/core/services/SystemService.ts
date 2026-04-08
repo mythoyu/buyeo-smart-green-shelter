@@ -193,12 +193,16 @@ export class SystemService implements ISystemService {
     }
   }
 
+  /**
+   * 시스템 설정 UI에서 피플 ON/OFF를 제거함. 조회값은 항상 활성(true).
+   * runtime 문서가 비어 있으면 initializeIfMissing일 때만 기본 runtime을 만든다.
+   */
   async getPeopleCounterState(initializeIfMissing = false): Promise<{ peopleCounterEnabled: boolean } | null> {
     try {
       const settings = await this.getSettings();
       if (!settings?.runtime) {
         if (initializeIfMissing) {
-          this.logger?.info('피플카운터 상태가 없어 기본값으로 초기화합니다');
+          this.logger?.info('런타임 설정이 없어 기본값으로 초기화합니다');
           const defaultRuntime = {
             pollingEnabled: false,
             pollingInterval: 30000,
@@ -207,11 +211,10 @@ export class SystemService implements ISystemService {
           };
           const updated = await this.systemRepository.updateSettings({ runtime: defaultRuntime });
           if (!updated?.runtime) return null;
-          return { peopleCounterEnabled: updated.runtime.peopleCounterEnabled ?? true };
         }
-        return null;
+        return { peopleCounterEnabled: true };
       }
-      return { peopleCounterEnabled: settings.runtime.peopleCounterEnabled ?? true };
+      return { peopleCounterEnabled: true };
     } catch (error) {
       this.logger?.error('피플카운터 상태 조회 중 오류 발생');
       throw error;

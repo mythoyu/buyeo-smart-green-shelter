@@ -1,7 +1,26 @@
 import { Users, Check } from 'lucide-react';
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Button, Label, Popover, PopoverContent, PopoverTrigger, Checkbox, ScrollArea } from '../../ui';
+import { useResetPeopleCounter, type ResetType } from '../../../api/queries/people-counter';
+import {
+  Button,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Checkbox,
+  ScrollArea,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../ui';
 import { TimeSelect } from '../TimeSelect';
 
 import { CommandRenderer } from './CommandRenderer';
@@ -31,6 +50,47 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
   // 필드별 선택된 유닛 관리 (필드 키 -> 선택된 유닛 키 Set)
   const [selectedUnitsByField, setSelectedUnitsByField] = useState<Record<string, Set<string>>>({});
   const [openPopoverField, setOpenPopoverField] = useState<string | null>(null);
+
+  const isPeopleCounter = device.type === 'people_counter';
+  const resetPcMutation = useResetPeopleCounter();
+  const [pcResetOpen, setPcResetOpen] = useState(false);
+  const [pcResetType, setPcResetType] = useState<ResetType | null>(null);
+
+  const getPcResetMessage = (type: ResetType): string => {
+    switch (type) {
+      case 'current':
+        return '현재 인원을 0으로 리셋하시겠습니까?';
+      case 'in':
+        return '입실 누적을 0으로 리셋하시겠습니까?';
+      case 'out':
+        return '퇴실 누적을 0으로 리셋하시겠습니까?';
+      case 'all':
+        return '모든 값(현재 인원, 입실 누적, 퇴실 누적)을 0으로 리셋하시겠습니까?';
+      default:
+        return '리셋하시겠습니까?';
+    }
+  };
+
+  const handlePcResetClick = useCallback((type: ResetType) => {
+    setPcResetType(type);
+    setPcResetOpen(true);
+  }, []);
+
+  const handlePcResetConfirm = useCallback(async () => {
+    if (!pcResetType) return;
+    try {
+      await resetPcMutation.mutateAsync({
+        deviceId: device.id,
+        unitId: unit.id,
+        type: pcResetType,
+      });
+      toast.success('피플카운터가 초기화되었습니다.', { id: 'people-counter-reset-success' });
+      setPcResetOpen(false);
+      setPcResetType(null);
+    } catch {
+      toast.error('피플카운터 초기화에 실패했습니다.', { id: 'people-counter-reset-error' });
+    }
+  }, [device.id, pcResetType, resetPcMutation, unit.id]);
 
   // 필드별 사용 가능한 다른 장비/유닛 목록 계산
   const getAvailableUnitsForField = useCallback(
@@ -385,37 +445,94 @@ export const UnitSettings: React.FC<UnitSettingsProps> = ({
             {renderOtherSettings()}
           </div>
         )}
+
+        {isPeopleCounter && (
+          <div className='space-y-3'>
+            <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2'>
+              <div className='w-1 h-4 bg-primary rounded-full' />
+              피플카운터
+            </h3>
+            <p className='text-xs text-muted-foreground'>
+              실시간 수치는 대시보드·<span className='font-medium'>GET /data</span> 폴링으로 표시됩니다. 아래는 APC
+              카운터 리셋(<span className='font-mono text-[11px]'>SET_RESET</span>)입니다.
+            </p>
+            <div className='flex flex-wrap gap-2'>
+              {(
+                [
+                  { type: 'current' as const, label: '현재 인원 리셋' },
+                  { type: 'in' as const, label: '입실 누적 리셋' },
+                  { type: 'out' as const, label: '퇴실 누적 리셋' },
+                  { type: 'all' as const, label: '전체 리셋' },
+                ] as const
+              ).map(({ type, label }) => (
+                <Button
+                  key={type}
+                  type='button'
+                  variant={type === 'all' ? 'destructive' : 'outline'}
+                  size='sm'
+                  className='text-xs'
+                  disabled={resetPcMutation.isPending}
+                  onClick={() => handlePcResetClick(type)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <Button variant='link' className='h-auto p-0 text-xs' asChild>
+              <Link to='/user-statistics'>이용자 통계 →</Link>
+            </Button>
+          </div>
+        )}
       </div>
+
+      <AlertDialog open={pcResetOpen} onOpenChange={setPcResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>피플카운터 초기화</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pcResetType ? getPcResetMessage(pcResetType) : '리셋하시겠습니까?'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePcResetConfirm} disabled={resetPcMutation.isPending}>
+              {resetPcMutation.isPending ? '처리 중...' : '확인'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 설정 버튼 - 다이얼로그 스타일로 표시 */}
       <div className='flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700'>
         <Button
           variant='outline'
           onClick={onCancel}
-          className='flex-1 h-10 font-medium transition-all duration-200 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+          className={`${isPeopleCounter ? 'w-full' : 'flex-1'} h-10 font-medium transition-all duration-200 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800`}
         >
-          취소
+          {isPeopleCounter ? '닫기' : '취소'}
         </Button>
-        <Button
-          onClick={handleSaveWithSelection}
-          disabled={Boolean(bulkCommandsMutation?.isPending) || isAutoEnabled}
-          className='flex-1 h-10 font-medium bg-primary hover:bg-primary/90 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
-          title={isAutoEnabled ? 'Auto 모드에서는 설정을 변경할 수 없습니다' : ''}
-        >
-          {bulkCommandsMutation?.isPending ? (
-            <div className='flex items-center gap-2'>
-              <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
-              전송 중...
-            </div>
-          ) : isAutoEnabled ? (
-            '비활성화됨'
-          ) : (
-            (() => {
-              const totalSelected = Object.values(selectedUnitsByField).reduce((sum, set) => sum + set.size, 0);
-              return totalSelected > 0 ? `저장 (+${totalSelected}개)` : '저장';
-            })()
-          )}
-        </Button>
+        {!isPeopleCounter && (
+          <Button
+            onClick={handleSaveWithSelection}
+            disabled={Boolean(bulkCommandsMutation?.isPending) || isAutoEnabled}
+            className='flex-1 h-10 font-medium bg-primary hover:bg-primary/90 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+            title={isAutoEnabled ? 'Auto 모드에서는 설정을 변경할 수 없습니다' : ''}
+          >
+            {bulkCommandsMutation?.isPending ? (
+              <div className='flex items-center gap-2'>
+                <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
+                전송 중...
+              </div>
+            ) : isAutoEnabled ? (
+              '비활성화됨'
+            ) : (
+              (() => {
+                const totalSelected = Object.values(selectedUnitsByField).reduce((sum, set) => sum + set.size, 0);
+                return totalSelected > 0 ? `저장 (+${totalSelected}개)` : '저장';
+              })()
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

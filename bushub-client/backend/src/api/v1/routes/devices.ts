@@ -38,7 +38,7 @@ import {
 interface MultiCommandBody {
   commands: {
     action: string;
-    value?: number;
+    value?: number | string;
   }[];
 }
 
@@ -266,6 +266,7 @@ async function deviceRoutes(fastify: FastifyInstance) {
           'bench',
           'door',
           'externalsw',
+          'people_counter',
         ];
         if (!supportedTypes.includes(unit.type)) {
           return reply

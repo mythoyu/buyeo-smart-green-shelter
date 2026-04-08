@@ -3,10 +3,8 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 
-import {
-  useGetPeopleCounterState,
-  useGetPeopleCounterUsage10Min,
-} from '../../api/queries/people-counter';
+import { useGetPeopleCounterUsage10Min } from '../../api/queries/people-counter';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -44,9 +42,7 @@ const chartTooltipStyles = {
 
 const UserStatisticsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>('');
-
-  // 피플카운터 활성화 상태 확인
-  const { data: pcState, isLoading: pcStateLoading } = useGetPeopleCounterState();
+  const { isPageVisible } = usePageVisibility();
 
   // 오늘 날짜 (YYYY-MM-DD)
   const todayDate = useMemo(() => todayYmdKst(), []);
@@ -76,8 +72,8 @@ const UserStatisticsPage: React.FC = () => {
   } = useGetPeopleCounterUsage10Min({
     start: usage10MinRange.start,
     end: usage10MinRange.end,
-    enabled:
-      pcState?.peopleCounterEnabled === true && !!usage10MinRange.start && !!usage10MinRange.end,
+    enabled: !!usage10MinRange.start && !!usage10MinRange.end,
+    refetchInterval: isPageVisible ? 60 * 1000 : false,
   });
 
   // 통계 계산 (입실 총합, 피크, 데이터 포인트)
@@ -150,22 +146,8 @@ const UserStatisticsPage: React.FC = () => {
 
   useRightSidebarContent(sidebarContent, [refetchUsage]);
 
-  // 피플카운터 비활성화 상태
-  if (!pcStateLoading && pcState?.peopleCounterEnabled === false) {
-    return (
-      <div className='p-6'>
-        <Alert>
-          <AlertCircle className='h-4 w-4' />
-          <AlertDescription>
-            피플카운터가 비활성화되어 있습니다. 시스템 설정에서 활성화해주세요.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   // 로딩 상태
-  if (pcStateLoading || usageLoading) {
+  if (usageLoading) {
     return <PageSectionLoading message={LOADING_MESSAGES.userStatistics} />;
   }
 

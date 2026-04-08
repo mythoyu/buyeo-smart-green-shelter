@@ -12,6 +12,7 @@ import { IControlService, CommandPayload, CommandResult } from './interfaces/ICo
 import { IErrorService } from './interfaces/IErrorService';
 import { IWebSocketService } from './interfaces/IWebSocketService';
 import { ModbusErrorFactory } from './ModbusErrorFactory';
+import type { ResetType } from './PeopleCounterQueueService';
 
 interface TimeCommand {
   hourCommand: string;
@@ -177,6 +178,10 @@ export class ControlService implements IControlService {
   ): Promise<CommandResult> {
     this.logger?.info(`🔍 executeUnitCommand 시작: ${unit.deviceId}/${unit.unitId} - ${commandKey} = ${value}`);
 
+    if (unit.type === 'people_counter' && commandKey === 'SET_RESET') {
+      return this.executePeopleCounterResetNewLog(unit, device, value, _request);
+    }
+
     // 🆕 시간 명령어를 일반 Modbus 경로로 처리
     if (this.isTimeCommand(commandKey)) {
       this.logger?.info(`[ControlService] 시간 명령어 감지: ${commandKey} - 일반 Modbus 경로로 처리`);
@@ -294,7 +299,7 @@ export class ControlService implements IControlService {
             slaveId: 1, // 기본값 사용 (unit.slaveId가 없음)
             functionCode: commandSpec.functionCode,
             address: commandSpec.address,
-            value: writeValue,
+            value: this.coerceModbusWriteValue(writeValue, commandKey),
             context: 'control', // 사용자 제어는 높은 우선순위
           });
 
@@ -420,12 +425,16 @@ export class ControlService implements IControlService {
     device: IDevice,
     commandKey: string,
     existingRequestId: string,
-    value?: number,
+    value?: number | string,
     request?: any,
   ): Promise<CommandResult> {
     this.logger?.info(
       `�� 기존 CommandLog로 명령 실행: ${unit.deviceId}/${unit.unitId} - ${commandKey} = ${value}, requestId: ${existingRequestId}`,
     );
+
+    if (unit.type === 'people_counter' && commandKey === 'SET_RESET') {
+      return this.executePeopleCounterResetWithExistingLog(unit, device, existingRequestId, value, request);
+    }
 
     // 🆕 시간 명령어를 일반 Modbus 경로로 처리
     if (this.isTimeCommand(commandKey)) {
@@ -530,7 +539,7 @@ export class ControlService implements IControlService {
             slaveId: 1,
             functionCode: commandSpec.functionCode,
             address: commandSpec.address,
-            value: writeValue,
+            value: this.coerceModbusWriteValue(writeValue, commandKey),
             context: 'control',
           });
 
@@ -1045,5 +1054,105 @@ export class ControlService implements IControlService {
 
       throw error;
     }
+  }
+
+  /** Modbus writeRegister는 `number`만 허용 — API는 boolean(전원 등)·string·number 혼재 */
+  private coerceModbusWriteValue(raw: unknown, commandKey: string): number {
+    if (typeof raw === 'boolean') {
+      return raw ? 1 : 0;
+    }
+    if (typeof raw === 'number') {
+      if (Number.isNaN(raw)) {
+        throw ModbusErrorFactory.createCommandExecutionError(commandKey, `숫자가 아닌 값(NaN)입니다: ${commandKey}`);
+      }
+      return raw;
+    }
+    if (typeof raw === 'string') {
+      const s = raw.trim();
+      if (s === 'true') return 1;
+      if (s === 'false') return 0;
+      const n = Number(s);
+      if (Number.isNaN(n)) {
+        throw ModbusErrorFactory.createCommandExecutionError(
+          commandKey,
+          `Modbus 쓰기 값을 숫자로 변환할 수 없습니다: ${raw}`,
+        );
+      }
+      return n;
+    }
+    throw ModbusErrorFactory.createCommandExecutionError(
+      commandKey,
+      `Modbus 쓰기에 지원하지 않는 타입입니다: ${typeof raw}`,
+    );
+  }
+
+  private normalizePeopleCounterResetValue(value: unknown): ResetType {
+    const v = typeof value === 'string' ? value.trim() : String(value ?? '').trim();
+    if (v === 'current' || v === 'in' || v === 'out' || v === 'all') {
+      return v;
+    }
+    throw new HttpValidationError(
+      `SET_RESET value는 current, in, out, all 중 하나여야 합니다 (입력: ${String(value)})`,
+    );
+  }
+
+  private async runPeopleCounterResetOnQueue(unit: IUnit, resetType: ResetType): Promise<void> {
+    // ServiceContainer는 ControlService 생성 시점보다 늦게 완성될 수 있어 require로 지연 로드
+    const { ServiceContainer } = require('../container/ServiceContainer');
+    const serviceContainer = ServiceContainer.getInstance();
+    const pcMap = serviceContainer.getPeopleCounterQueueServices();
+    const unitId = unit.unitId;
+    if (pcMap && pcMap.size > 0 && !pcMap.has(unitId)) {
+      const available = Array.from(pcMap.keys() as Iterable<string>)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        .join(', ');
+      throw new HttpValidationError(`유효하지 않은 unitId입니다. 사용 가능: ${available}`);
+    }
+    const queueService =
+      pcMap && pcMap.size > 0 ? pcMap.get(unitId) : serviceContainer.getPeopleCounterQueueService(unitId);
+    if (!queueService) {
+      throw new Error('피플카운터 큐 서비스를 찾을 수 없습니다.');
+    }
+    await queueService.enqueueReset(resetType);
+  }
+
+  private async executePeopleCounterResetWithExistingLog(
+    unit: IUnit,
+    device: IDevice,
+    existingRequestId: string,
+    value?: any,
+    _request?: any,
+  ): Promise<CommandResult> {
+    try {
+      const resetType = this.normalizePeopleCounterResetValue(value);
+      await this.runPeopleCounterResetOnQueue(unit, resetType);
+      await this.controlRepository.updateCommandLog(existingRequestId, {
+        status: 'success',
+        finishedAt: new Date(),
+        result: resetType,
+      });
+      return { _id: existingRequestId, action: 'SET_RESET', result: resetType };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      await this.commandResultHandler.handleFailure(existingRequestId, errorMsg, device, unit, 'SET_RESET');
+      throw error;
+    }
+  }
+
+  private async executePeopleCounterResetNewLog(
+    unit: IUnit,
+    device: IDevice,
+    value?: any,
+    _request?: any,
+  ): Promise<CommandResult> {
+    const commandLog = await this.controlRepository.createCommandLog({
+      deviceId: unit.deviceId,
+      unitId: unit.unitId,
+      action: 'SET_RESET',
+      value,
+      status: 'waiting',
+    });
+    const requestId = (commandLog._id as any)?.toString() || '';
+    return this.executePeopleCounterResetWithExistingLog(unit, device, requestId, value, _request);
   }
 }

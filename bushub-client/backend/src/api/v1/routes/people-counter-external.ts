@@ -8,7 +8,6 @@ import { DateTime } from 'luxon';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
-import { ServiceContainer } from '../../../core/container/ServiceContainer';
 import { Client as ClientSchema } from '../../../models/schemas/ClientSchema';
 import { PeopleCounterRaw } from '../../../models/schemas/PeopleCounterRawSchema';
 import { getPeopleCounterHourlyStats } from '../../../core/services/PeopleCounterAggregationService';
@@ -153,15 +152,6 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const systemService = ServiceContainer.getInstance().getSystemService();
-        const pcState = await systemService.getPeopleCounterState(false);
-        if (!pcState?.peopleCounterEnabled) {
-          return reply.code(404).send({
-            success: false,
-            message: '피플카운터가 비활성화되어 있습니다.',
-          });
-        }
-
         const q = request.query as { period?: Period; startDate?: string; endDate?: string; unitId?: string };
         const period = (q.period || 'day') as Period;
         let start: Date;
@@ -242,15 +232,6 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const systemService = ServiceContainer.getInstance().getSystemService();
-        const pcState = await systemService.getPeopleCounterState(false);
-        if (!pcState?.peopleCounterEnabled) {
-          return reply.code(404).send({
-            success: false,
-            message: '피플카운터가 비활성화되어 있습니다.',
-          });
-        }
-
         const q = request.query as { date?: string; clientId?: string; unitId?: string };
         if (!q.date) {
           return reply.code(400).send({
@@ -304,15 +285,6 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const systemService = ServiceContainer.getInstance().getSystemService();
-        const pcState = await systemService.getPeopleCounterState(false);
-        if (!pcState?.peopleCounterEnabled) {
-          return reply.code(404).send({
-            success: false,
-            message: '피플카운터가 비활성화되어 있습니다.',
-          });
-        }
-
         const q = request.query as { startDate?: string; endDate?: string; limit?: string; unitId?: string };
         let startDate: Date;
         let endDate: Date;
@@ -380,15 +352,6 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const systemService = ServiceContainer.getInstance().getSystemService();
-        const pcState = await systemService.getPeopleCounterState(false);
-        if (!pcState?.peopleCounterEnabled) {
-          return reply.code(404).send({
-            success: false,
-            message: '피플카운터가 비활성화되어 있습니다.',
-          });
-        }
-
         const q = request.query as { date?: string; start?: string; end?: string; period?: string; unitId?: string };
         const rangeResult = getUsage10MinRange(q);
         if ('error' in rangeResult) {

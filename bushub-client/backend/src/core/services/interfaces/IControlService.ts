@@ -3,7 +3,7 @@ import { IUnit } from '../../../models/schemas/UnitSchema';
 
 export interface CommandPayload {
   action: string;
-  value?: number;
+  value?: number | string;
 }
 
 export interface CommandResult {
@@ -17,7 +17,7 @@ export interface IControlService {
     unit: IUnit,
     device: IDevice,
     commandKey: string,
-    value?: number,
+    value?: number | string,
     request?: any,
   ): Promise<CommandResult>;
 
@@ -29,7 +29,7 @@ export interface IControlService {
     device: IDevice,
     commandKey: string,
     existingRequestId: string,
-    value?: number,
+    value?: number | string,
     request?: any,
   ): Promise<CommandResult>;
 

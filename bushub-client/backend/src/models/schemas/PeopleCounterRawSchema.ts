@@ -6,8 +6,8 @@ export interface IPeopleCounterRaw extends Document {
   unitId: string;
   timestamp: Date;
   inCumulative: number;
-  inDelta?: number; // 1분 동안 입실 증가분 (신규 1분 저장 시 필수)
-  inRef?: number; // 해당 분 시점 입실 누적값 (신규 1분 저장 시 필수)
+  inDelta?: number; // 직전 폴링 대비 입실 증가분(첫 폴링·같은 값이면 0, 카운터 리셋 시 이전 대비 감소면 장비 값으로 기준 맞춤)
+  inRef?: number; // 해당 폴링 시점 입실 누적(스냅샷과 동일 용도로 둘 수 있음)
   outCumulative: number;
   currentCount: number;
   output1: boolean;

@@ -1,13 +1,10 @@
-import { Settings, Users, TrendingUp, TrendingDown, ArrowRight, ChevronDown, RotateCcw } from 'lucide-react';
-import React, { useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Settings } from 'lucide-react';
+import React, { useCallback } from 'react';
 
 import { useSendUnitBulkCommands } from '../../../api/queries/device';
-import { useResetPeopleCounter, type ResetType } from '../../../api/queries/people-counter';
 import { smartcityMetaHelpers } from '../../../meta/smartcityMetaHelpers';
 import {
   Badge,
-  Button,
   Card,
   CardHeader,
   CardContent,
@@ -16,20 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
 } from '../../ui';
-import { toast } from 'sonner';
 
 import { CommandProcessingDialog } from './CommandProcessingDialog';
 import { UnitControls } from './components/UnitControls';
@@ -65,12 +49,6 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   deviceSpecs = {},
   renderSettingsDialogOnly = false,
 }) => {
-  const navigate = useNavigate();
-  const isPeopleCounter = device.type === 'people_counter' || device.id === 'd082';
-  const resetMutation = useResetPeopleCounter();
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [resetType, setResetType] = useState<ResetType | null>(null);
-
   // 상태 관리 Hook 사용
   const {
     commandManager,
@@ -228,41 +206,8 @@ export const UnitCard: React.FC<UnitCardProps> = ({
     [deviceSpec, unitForm, unit.id, device.id, commandManager, sendCommandMutation]
   );
 
-  // 리셋 핸들러
-  const handleResetClick = useCallback((type: ResetType) => {
-    setResetType(type);
-    setResetDialogOpen(true);
-  }, []);
-
-  const handleResetConfirm = useCallback(async () => {
-    if (!resetType) return;
-    try {
-      await resetMutation.mutateAsync({ type: resetType, unitId: unit.id });
-      toast.success('피플카운터가 초기화되었습니다.', { id: 'people-counter-reset-success' });
-      setResetDialogOpen(false);
-      setResetType(null);
-    } catch (error) {
-      toast.error('피플카운터 초기화에 실패했습니다.', { id: 'people-counter-reset-error' });
-    }
-  }, [resetType, resetMutation, unit.id]);
-
-  const getResetMessage = (type: ResetType): string => {
-    switch (type) {
-      case 'current':
-        return '현재 인원을 0으로 리셋하시겠습니까?';
-      case 'in':
-        return '입실 누적을 0으로 리셋하시겠습니까?';
-      case 'out':
-        return '퇴실 누적을 0으로 리셋하시겠습니까?';
-      case 'all':
-        return '모든 값(현재 인원, 입실 누적, 퇴실 누적)을 0으로 리셋하시겠습니까?';
-      default:
-        return '리셋하시겠습니까?';
-    }
-  };
-
   const settingsDialog =
-    canShowSettings && (deviceSpec?.commands?.length ?? 0) > 0 && !isPeopleCounter ? (
+    canShowSettings && (deviceSpec?.commands?.length ?? 0) > 0 ? (
       <Dialog
         open={isSelected}
         onOpenChange={open => {
@@ -361,17 +306,18 @@ export const UnitCard: React.FC<UnitCardProps> = ({
           {/* CardHeader - 클릭 불가능한 영역 */}
           <CardHeader className='px-4'>
             <div className='flex items-center justify-between w-full'>
-              {/* 유닛 이름 및 설정 아이콘 (피플카운터는 설정 없음) */}
               <div className='flex items-center gap-3'>
-                {!isPeopleCounter && (
-                  <Settings
-                    className={`w-4 h-4 transition-all duration-300 ${
-                      isSelected ? 'text-blue-600 dark:text-blue-400 rotate-90' : 'text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400'
-                    }`}
-                  />
-                )}
+                <Settings
+                  className={`w-4 h-4 transition-all duration-300 ${
+                    isSelected
+                      ? 'text-blue-600 dark:text-blue-400 rotate-90'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400'
+                  }`}
+                />
                 <div className='flex flex-col'>
-                  <span className='text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200'>{unit.name || unit.id}</span>
+                  <span className='text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200'>
+                    {unit.name || unit.id}
+                  </span>
                 </div>
               </div>
 
@@ -405,10 +351,9 @@ export const UnitCard: React.FC<UnitCardProps> = ({
             </div>
           </CardHeader>
 
-          {/* CardContent - 피플카운터 전용 영역 또는 Get 가능한 데이터 Badge들 */}
           <CardContent
             onClick={
-              isPeopleCounter || Boolean(autoValue)
+              Boolean(autoValue)
                 ? undefined
                 : () => {
                     if (isSelected) {
@@ -418,143 +363,45 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                     }
                   }
             }
-            className={`px-4 ${
-              isPeopleCounter ? 'cursor-default' : Boolean(autoValue) ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
-            }`}
+            className={`px-4 ${Boolean(autoValue) ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
           >
-            {isPeopleCounter ? (
-              <div className='space-y-3' onClick={e => e.stopPropagation()}>
-                {unit.data ? (
-                  <>
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center gap-2'>
-                        <Users className='h-4 w-4 text-muted-foreground' />
-                        <span className='text-sm text-muted-foreground'>현재 인원</span>
-                      </div>
-                      <span className='text-xl font-bold text-blue-600 dark:text-blue-400'>
-                        {Number(unit.data.currentCount ?? 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className='grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700'>
-                      <div className='flex flex-col'>
-                        <div className='flex items-center gap-1 mb-0.5'>
-                          <TrendingUp className='h-3 w-3 text-green-600 dark:text-green-400' />
-                          <span className='text-xs text-muted-foreground'>입실 누적</span>
-                        </div>
-                        <span className='text-sm font-semibold text-green-600 dark:text-green-400'>
-                          {Number(unit.data.inCumulative ?? 0).toLocaleString()}
+            {getCommands.length > 0 && (
+              <div className='grid grid-cols-3 md:grid-cols-4 gap-2'>
+                {getCommands.map((cmd: any) => {
+                  const value = unit.data?.[cmd.key];
+
+                  const displayValue = smartcityMetaHelpers.getCommandDisplayValue(cmd, value);
+                  const { badgeVariant, badgeClassName } = smartcityMetaHelpers.getCommandBadgeStyle(cmd);
+
+                  return (
+                    <Badge
+                      key={cmd.key}
+                      variant={badgeVariant}
+                      className={`w-full min-w-0 ${badgeClassName} transition-all duration-300 hover:scale-105`}
+                      onClick={e => e.stopPropagation()}
+                      title={`${cmd.label}: ${displayValue}`}
+                    >
+                      <div className='flex flex-col items-center w-full min-w-0'>
+                        <span className='text-xs text-gray-500 dark:text-gray-400 font-medium leading-none truncate max-w-full'>
+                          {cmd.label}
                         </span>
+                        <span className='text-xs font-bold leading-none mt-0.5 truncate max-w-full'>{displayValue}</span>
                       </div>
-                      <div className='flex flex-col'>
-                        <div className='flex items-center gap-1 mb-0.5'>
-                          <TrendingDown className='h-3 w-3 text-red-600 dark:text-red-400' />
-                          <span className='text-xs text-muted-foreground'>퇴실 누적</span>
-                        </div>
-                        <span className='text-sm font-semibold text-red-600 dark:text-red-400'>
-                          {Number(unit.data.outCumulative ?? 0).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className='flex flex-col items-center justify-center py-4 space-y-1'>
-                    <Users className='h-6 w-6 text-muted-foreground' />
-                    <span className='text-sm text-muted-foreground'>데이터 수집 중...</span>
-                  </div>
-                )}
-                <div className='flex gap-2 mt-1'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() => navigate('/user-statistics')}
-                    className='flex-1 h-8 text-xs justify-center bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 hover:bg-green-100 hover:border-green-300 dark:hover:bg-green-800/40 dark:hover:border-green-700 text-green-800 dark:text-green-200'
-                  >
-                    상세보기
-                    <ArrowRight className='h-3 w-3 ml-1' />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant='outline' size='sm' className='h-8 text-xs px-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 hover:border-gray-300 dark:hover:bg-gray-800 dark:hover:border-gray-600'>
-                        <RotateCcw className='h-3 w-3 mr-1' />
-                        초기화
-                        <ChevronDown className='h-3 w-3 ml-1' />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align='end'>
-                      <DropdownMenuItem onClick={() => handleResetClick('current')}>
-                        현재 인원 리셋
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleResetClick('in')}>
-                        입실 누적 리셋
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleResetClick('out')}>
-                        퇴실 누적 리셋
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleResetClick('all')} className='text-red-600 dark:text-red-400'>
-                        전체 리셋
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                    </Badge>
+                  );
+                })}
               </div>
-            ) : (
-              getCommands.length > 0 && (
-                <div className='grid grid-cols-3 md:grid-cols-4 gap-2'>
-                  {getCommands.map((cmd: any) => {
-                    const value = unit.data?.[cmd.key];
-
-                    const displayValue = smartcityMetaHelpers.getCommandDisplayValue(cmd, value);
-                    const { badgeVariant, badgeClassName } = smartcityMetaHelpers.getCommandBadgeStyle(cmd);
-
-                    return (
-                      <Badge
-                        key={cmd.key}
-                        variant={badgeVariant}
-                        className={`w-full min-w-0 ${badgeClassName} transition-all duration-300 hover:scale-105`}
-                        onClick={e => e.stopPropagation()}
-                        title={`${cmd.label}: ${displayValue}`}
-                      >
-                        <div className='flex flex-col items-center w-full min-w-0'>
-                          <span className='text-xs text-gray-500 dark:text-gray-400 font-medium leading-none truncate max-w-full'>{cmd.label}</span>
-                          <span className='text-xs font-bold leading-none mt-0.5 truncate max-w-full'>{displayValue}</span>
-                        </div>
-                      </Badge>
-                    );
-                  })}
-                </div>
-              )
             )}
           </CardContent>
 
-          {/* 유닛 설정 다이얼로그 (명령이 있는 장비만, 피플카운터 제외) */}
           {settingsDialog}
         </Card>
       </div>
 
-      {/* 리셋 확인 다이얼로그 */}
-      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>피플카운터 초기화</AlertDialogTitle>
-            <AlertDialogDescription>
-              {resetType ? getResetMessage(resetType) : '리셋하시겠습니까?'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetConfirm} disabled={resetMutation.isPending}>
-              {resetMutation.isPending ? '처리 중...' : '확인'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* 명령 처리 중 팝업 다이얼로그 */}
       <CommandProcessingDialog
         isOpen={showDialog}
         onClose={() => {
           setShowDialog(false);
-          // 다이얼로그 닫을 때 백그라운드 폴링도 중지
           if (commandManager.commandStatus === 'loading') {
             commandManager.resetStatus();
           }
@@ -563,8 +410,8 @@ export const UnitCard: React.FC<UnitCardProps> = ({
           commandManager.commandStatus === 'idle' || commandManager.commandStatus === 'loading'
             ? 'waiting'
             : commandManager.commandStatus === 'success'
-            ? 'success'
-            : 'fail'
+              ? 'success'
+              : 'fail'
         }
         progress={commandManager.progress}
         error={commandManager.error}
