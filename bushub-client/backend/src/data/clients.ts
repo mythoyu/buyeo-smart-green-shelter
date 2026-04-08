@@ -25,6 +25,13 @@ export const commonDevices = {
   people_counter: { id: 'd082', name: '피플카운터' },
 };
 
+/** PEOPLE_COUNTER_PORTS(최대 3포트)와 대응하는 대시보드 유닛 */
+const peopleCounterUnitsDefault: UnitData[] = [
+  { id: 'u001', name: '피플카운터 1' },
+  { id: 'u002', name: '피플카운터 2' },
+  { id: 'u003', name: '피플카운터 3' },
+];
+
 /** c0102와 동일 + 피플카운터 (c0103~c0111, LG 냉난방 템플릿) */
 const unitsC0102TemplateWithPeople: {
   lighting: UnitData[];
@@ -37,7 +44,7 @@ const unitsC0102TemplateWithPeople: {
   cooler: [{ id: 'u001', name: '냉난방기' }],
   bench: [{ id: 'u001', name: '스마트벤치' }],
   door: [{ id: 'u001', name: '자동문' }],
-  people_counter: [{ id: 'u001', name: '피플카운터' }],
+  people_counter: peopleCounterUnitsDefault,
 };
 
 // 클라이언트별 유닛 구성
@@ -51,14 +58,14 @@ export const clientUnits = {
     cooler: [{ id: 'u001', name: '냉난방기' }],
     bench: [{ id: 'u001', name: '스마트벤치' }],
     door: [{ id: 'u001', name: '자동문' }],
-    people_counter: [{ id: 'u001', name: '피플카운터' }],
+    people_counter: peopleCounterUnitsDefault,
   },
   c0102: {
     lighting: [{ id: 'u001', name: 'LED 조명' }],
     cooler: [{ id: 'u001', name: '냉난방기' }],
     bench: [{ id: 'u001', name: '스마트벤치' }],
     door: [{ id: 'u001', name: '자동문' }],
-    people_counter: [{ id: 'u001', name: '피플카운터' }],
+    people_counter: peopleCounterUnitsDefault,
   },
   c0103: unitsC0102TemplateWithPeople,
   c0104: unitsC0102TemplateWithPeople,

@@ -41,7 +41,7 @@ const CONSTANTS = {
       { label: '시스템', desc: '절기 설정 및 DDC 시간 설정' },
       {
         label: '피플APC',
-        desc: '피플카운터 APC100 시리얼 수동 테스트(PEOPLE_COUNTER_PORT, 폴링 중지 시에만 사용)',
+        desc: '피플카운터 APC100 시리얼 수동 테스트(PEOPLE_COUNTER_PORTS 유닛별, 폴링 중지 시에만 사용)',
       },
       { label: '주의사항', desc: '폴링이 활성화된 상태에서는 직접 제어가 불가능합니다.' },
       { label: '권한', desc: '관리자(superuser) 또는 엔지니어(engineer)만 사용할 수 있습니다.' },

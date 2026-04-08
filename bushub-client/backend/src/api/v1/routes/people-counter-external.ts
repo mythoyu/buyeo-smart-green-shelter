@@ -129,6 +129,24 @@ function toTimestampField(v: unknown): string {
   return formatKstLocal(new Date());
 }
 
+/** d082 Raw 조회: unitId 미지정 시 전 유닛(합산), 지정 시 해당 유닛만 */
+function buildPeopleCounterRawFilter(
+  clientId: string,
+  timeRange: { $gte: Date; $lte?: Date; $lt?: Date },
+  unitId?: string,
+): Record<string, unknown> {
+  const q: Record<string, unknown> = {
+    clientId,
+    deviceId: 'd082',
+    timestamp: timeRange,
+  };
+  const u = typeof unitId === 'string' ? unitId.trim() : '';
+  if (u && /^u\d{3}$/.test(u)) {
+    q.unitId = u;
+  }
+  return q;
+}
+
 async function peopleCounterExternalRoutes(app: FastifyInstance) {
   app.get(
     '/people-counter/stats',
@@ -144,7 +162,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           });
         }
 
-        const q = request.query as { period?: Period; startDate?: string; endDate?: string };
+        const q = request.query as { period?: Period; startDate?: string; endDate?: string; unitId?: string };
         const period = (q.period || 'day') as Period;
         let start: Date;
         let end: Date;
@@ -167,11 +185,9 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         const latest = await ClientSchema.findOne({}).sort({ createdAt: -1 }).lean();
         const clientId = latest?.id ?? 'c0101';
 
-        const docs = await PeopleCounterRaw.find({
-          clientId,
-          deviceId: 'd082',
-          timestamp: { $gte: start, $lte: end },
-        })
+        const docs = await PeopleCounterRaw.find(
+          buildPeopleCounterRawFilter(clientId, { $gte: start, $lte: end }, q.unitId),
+        )
           .sort({ timestamp: 1 })
           .lean();
 
@@ -235,7 +251,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           });
         }
 
-        const q = request.query as { date?: string; clientId?: string };
+        const q = request.query as { date?: string; clientId?: string; unitId?: string };
         if (!q.date) {
           return reply.code(400).send({
             success: false,
@@ -253,9 +269,18 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           });
         }
 
-        const params: { date: Date; dateString: string; clientId?: string } = { date: baseDate, dateString: q.date };
+        const params: {
+          date: Date;
+          dateString: string;
+          clientId?: string;
+          unitId?: string;
+        } = { date: baseDate, dateString: q.date };
         if (q.clientId) {
           params.clientId = q.clientId;
+        }
+        const uid = typeof q.unitId === 'string' ? q.unitId.trim() : '';
+        if (uid && /^u\d{3}$/.test(uid)) {
+          params.unitId = uid;
         }
 
         const stats = await getPeopleCounterHourlyStats(params);
@@ -288,7 +313,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           });
         }
 
-        const q = request.query as { startDate?: string; endDate?: string; limit?: string };
+        const q = request.query as { startDate?: string; endDate?: string; limit?: string; unitId?: string };
         let startDate: Date;
         let endDate: Date;
         try {
@@ -313,11 +338,9 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         const latest = await ClientSchema.findOne({}).sort({ createdAt: -1 }).lean();
         const clientId = latest?.id ?? 'c0101';
 
-        const docs = await PeopleCounterRaw.find({
-          clientId,
-          deviceId: 'd082',
-          timestamp: { $gte: startDate, $lte: endDate },
-        })
+        const docs = await PeopleCounterRaw.find(
+          buildPeopleCounterRawFilter(clientId, { $gte: startDate, $lte: endDate }, q.unitId),
+        )
           .sort({ timestamp: 1 })
           .limit(limit)
           .lean();
@@ -366,7 +389,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
           });
         }
 
-        const q = request.query as { date?: string; start?: string; end?: string; period?: string };
+        const q = request.query as { date?: string; start?: string; end?: string; period?: string; unitId?: string };
         const rangeResult = getUsage10MinRange(q);
         if ('error' in rangeResult) {
           return reply.code(400).send({
@@ -379,11 +402,9 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
         const latest = await ClientSchema.findOne({}).sort({ createdAt: -1 }).lean();
         const clientId = latest?.id ?? 'c0101';
 
-        const docs = await PeopleCounterRaw.find({
-          clientId,
-          deviceId: 'd082',
-          timestamp: { $gte: start, $lt: end },
-        })
+        const docs = await PeopleCounterRaw.find(
+          buildPeopleCounterRawFilter(clientId, { $gte: start, $lt: end }, q.unitId),
+        )
           .sort({ timestamp: 1 })
           .lean();
 

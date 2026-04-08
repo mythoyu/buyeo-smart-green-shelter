@@ -1,18 +1,19 @@
 /**
- * 피플카운터 APC100 시리얼 수동 테스트 (PEOPLE_COUNTER_PORT 전용, 백엔드 큐 직렬화)
+ * 피플카운터 APC100 시리얼 수동 테스트 (PEOPLE_COUNTER_PORTS 유닛별, 백엔드 큐 직렬화)
  * @see people-counter-tester
  */
 import { AlertCircle } from 'lucide-react';
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePeopleCounterApcTest } from '../../../../api/queries/people-counter';
+import { useGetPeopleCounterUnits, usePeopleCounterApcTest } from '../../../../api/queries/people-counter';
 import { Alert, AlertDescription } from '../../../ui/alert';
 import { Button } from '../../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import { Checkbox } from '../../../ui/checkbox';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Textarea } from '../../../ui/textarea';
 
 import type { HardwareControlError } from '../../../../types/hardware';
@@ -121,6 +122,11 @@ const PeopleCounterApcTestTab: React.FC<PeopleCounterApcTestTabProps> = ({
   pollingStatus,
 }) => {
   const apcTest = usePeopleCounterApcTest();
+  const { data: unitsData, isLoading: unitsLoading } = useGetPeopleCounterUnits({
+    enabled: !disabled,
+  });
+  const unitIds = unitsData?.unitIds?.length ? unitsData.unitIds : ['u001'];
+  const [selectedUnitId, setSelectedUnitId] = useState('u001');
   const busy = apcTest.isPending;
   const [deviceId, setDeviceId] = useState('0000');
   const [timeoutMs, setTimeoutMs] = useState('1000');
@@ -129,6 +135,13 @@ const PeopleCounterApcTestTab: React.FC<PeopleCounterApcTestTabProps> = ({
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [logFollowLatest, setLogFollowLatest] = useState(true);
   const logScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!unitsData?.unitIds?.length) return;
+    if (!unitsData.unitIds.includes(selectedUnitId)) {
+      setSelectedUnitId(unitsData.unitIds[0]);
+    }
+  }, [unitsData, selectedUnitId]);
 
   const pushLog = useCallback((kind: LogLine['kind'], text: string) => {
     const at = new Date().toLocaleTimeString('ko-KR');
@@ -171,6 +184,7 @@ const PeopleCounterApcTestTab: React.FC<PeopleCounterApcTestTabProps> = ({
     try {
       const result = await apcTest.mutateAsync({
         data,
+        unitId: selectedUnitId,
         timeoutMs: parseTimeout(),
         waitForClosingBracket,
       });
@@ -229,11 +243,12 @@ const PeopleCounterApcTestTab: React.FC<PeopleCounterApcTestTabProps> = ({
         <AlertCircle className='h-4 w-4' />
         <AlertDescription className='space-y-2 text-sm leading-relaxed'>
           <p>
-            이 탭의 통신은 <strong className='font-mono text-xs'>PEOPLE_COUNTER_PORT</strong> 전용입니다.
+            이 탭의 통신은 <strong className='font-mono text-xs'>PEOPLE_COUNTER_PORTS</strong>에 매핑된 유닛(
+            <strong className='font-mono text-xs'>u001</strong> …)별 시리얼 포트 전용입니다.
           </p>
           <p>
             DDC·Modbus 경로(<code className='rounded bg-muted px-1 py-0.5 font-mono text-[11px]'>MODBUS_PORT</code>)와는
-            분리되어 있으며, 같은 장비 포트로 가는 폴링·테스트 요청은 서버 큐에서 순차 처리됩니다.
+            분리되어 있으며, 같은 유닛 포트로 가는 폴링·테스트 요청은 서버 큐에서 순차 처리됩니다.
           </p>
           <p>
             <code className='rounded bg-muted px-1 py-0.5 font-mono text-[11px]'>PEOPLE_COUNTER_MOCK_ENABLED=true</code>
@@ -258,6 +273,25 @@ const PeopleCounterApcTestTab: React.FC<PeopleCounterApcTestTabProps> = ({
           </CardHeader>
           <CardContent className='space-y-3'>
             <div className='flex flex-wrap items-end gap-2'>
+              <div className='space-y-1'>
+                <Label htmlFor='pc-apc-unit'>유닛 (시리얼)</Label>
+                <Select
+                  value={selectedUnitId}
+                  onValueChange={setSelectedUnitId}
+                  disabled={busy || pollingBlocks || unitsLoading}
+                >
+                  <SelectTrigger id='pc-apc-unit' className='w-[140px] font-mono text-xs' size='sm'>
+                    <SelectValue placeholder='유닛 선택' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitIds.map(id => (
+                      <SelectItem key={id} value={id} className='font-mono text-xs'>
+                        {id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className='space-y-1'>
                 <Label htmlFor='pc-apc-device-id'>장비 ID (4자리)</Label>
                 <Input

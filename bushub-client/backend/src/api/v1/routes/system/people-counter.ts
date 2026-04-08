@@ -7,6 +7,7 @@ import { FastifyInstance } from 'fastify';
 
 import { ILogger } from '../../../../core/interfaces/ILogger';
 import { getPeopleCounterHourlyStats } from '../../../../core/services/PeopleCounterAggregationService';
+import { Client as ClientSchema } from '../../../../models/schemas/ClientSchema';
 import { Data } from '../../../../models/schemas/DataSchema';
 import { PeopleCounterRaw } from '../../../../models/schemas/PeopleCounterRawSchema';
 import { isPeopleCounterMockEnabled } from '../../../../config/mock.config';
@@ -69,6 +70,59 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           success: false,
           message: '내부 서버 오류',
           error: String(error),
+        });
+      }
+    },
+  );
+
+  /**
+   * GET /system/people-counter/units
+   * PEOPLE_COUNTER_PORTS 기준으로 등록된 유닛 ID 목록 (직접 제어 APC 테스트용)
+   */
+  fastify.get(
+    '/system/people-counter/units',
+    {
+      preHandler: [fastify.requireAuth],
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              data: {
+                type: 'object',
+                properties: {
+                  unitIds: { type: 'array', items: { type: 'string' } },
+                },
+              },
+            },
+          },
+          500: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              message: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (_request, reply) => {
+      try {
+        const map = serviceContainer.getPeopleCounterQueueServices?.();
+        const unitIds =
+          map && typeof map.keys === 'function'
+            ? Array.from(map.keys()).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+            : ['u001'];
+        return reply.send({
+          success: true,
+          data: { unitIds },
+        });
+      } catch (error) {
+        logger.error(`[People Counter API] units 조회 오류: ${error}`);
+        return (reply as any).code(500).send({
+          success: false,
+          message: '내부 서버 오류',
         });
       }
     },
@@ -173,6 +227,8 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
               type: 'string',
               enum: ['current', 'in', 'out', 'all'],
             },
+            /** PEOPLE_COUNTER_PORTS 유닛(예: u001). 미지정 시 u001 큐 */
+            unitId: { type: 'string' },
           },
         },
         response: {
@@ -220,7 +276,8 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
         }
 
         // type 검증
-        const { type } = request.body as { type: string };
+        const body = request.body as { type?: string; unitId?: string };
+        const { type } = body;
         if (!type || !['current', 'in', 'out', 'all'].includes(type)) {
           return (reply as any).code(400).send({
             success: false,
@@ -228,8 +285,22 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           });
         }
 
+        const unitId =
+          typeof body.unitId === 'string' && body.unitId.trim() !== '' ? body.unitId.trim() : 'u001';
+        const pcMap = serviceContainer.getPeopleCounterQueueServices?.();
+        if (pcMap && pcMap.size > 0 && !pcMap.has(unitId)) {
+          const available = Array.from(pcMap.keys())
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+            .join(', ');
+          return (reply as any).code(400).send({
+            success: false,
+            message: `유효하지 않은 unitId입니다. 사용 가능: ${available}`,
+          });
+        }
+
         // QueueService 획득 및 리셋 실행
-        const queueService = serviceContainer.getPeopleCounterQueueService();
+        const queueService =
+          pcMap && pcMap.size > 0 ? pcMap.get(unitId) : serviceContainer.getPeopleCounterQueueService(unitId);
         if (!queueService) {
           return (reply as any).code(500).send({
             success: false,
@@ -273,6 +344,13 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
       schema: {
         description: '피플카운터 데이터 초기화 (people_counter_raw + data.d082)',
         tags: ['System'],
+        body: {
+          type: 'object',
+          properties: {
+            /** 지정 시 해당 유닛 Raw 삭제 + data.d082.units.<unitId> 제거. 미지정 시 전체 삭제 */
+            unitId: { type: 'string' },
+          },
+        },
         response: {
           200: {
             type: 'object',
@@ -284,6 +362,7 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
                 properties: {
                   rawDeleted: { type: 'number' },
                   dataDeleted: { type: 'number' },
+                  unitId: { type: 'string' },
                 },
               },
             },
@@ -299,7 +378,7 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (_request, reply) => {
+    async (request, reply) => {
       try {
         // 운영 환경에서 필요 시 전체 삭제를 ENV로 차단할 수 있게 한다. (기본값: 허용 → 기존 동작 보존)
         const resetDisabled = String(process.env.PEOPLE_COUNTER_RESET_DATA_DISABLED || '').toLowerCase() === 'true';
@@ -308,6 +387,35 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           return (reply as any).code(403).send({
             success: false,
             message: '피플카운터 데이터 초기화가 차단되어 있습니다.',
+          });
+        }
+
+        const body = (request.body as { unitId?: string } | undefined) ?? {};
+        const uid = typeof body.unitId === 'string' ? body.unitId.trim() : '';
+
+        if (uid && /^u\d{3}$/.test(uid)) {
+          const latest = await ClientSchema.findOne({}).sort({ createdAt: -1 }).lean();
+          const clientId = latest?.id ?? 'c0101';
+          const rawResult = await PeopleCounterRaw.deleteMany({ clientId, deviceId: 'd082', unitId: uid });
+          const dataResult = await Data.updateOne({ deviceId: 'd082' }, { $unset: { [`units.${uid}`]: '' } });
+
+          logger.info(
+            `[People Counter API] reset-data(유닛 ${uid}): rawDeleted=${rawResult.deletedCount}, dataModified=${dataResult.modifiedCount}`,
+          );
+
+          return reply.send(
+            createSuccessResponse(`피플카운터 유닛 ${uid} 데이터 초기화가 완료되었습니다.`, {
+              rawDeleted: rawResult.deletedCount ?? 0,
+              dataDeleted: 0,
+              unitId: uid,
+            }),
+          );
+        }
+
+        if (uid) {
+          return (reply as any).code(400).send({
+            success: false,
+            message: 'unitId는 u001 형식이어야 합니다.',
           });
         }
 
@@ -349,6 +457,7 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           properties: {
             date: { type: 'string', description: '기준 날짜 (YYYY-MM-DD)', examples: ['2025-01-09'] },
             clientId: { type: 'string', description: '클라이언트 ID (선택)' },
+            unitId: { type: 'string', description: '유닛(예: u001). 미지정 시 전 유닛 합산' },
           },
           required: ['date'],
         },
@@ -416,7 +525,11 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const { date, clientId } = request.query as { date?: string; clientId?: string };
+        const { date, clientId, unitId: unitIdQ } = request.query as {
+          date?: string;
+          clientId?: string;
+          unitId?: string;
+        };
         if (!date) {
           return (reply as any).code(400).send({
             success: false,
@@ -448,9 +561,16 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const params: { date: Date; dateString: string; clientId?: string } = { date: kstBaseDate, dateString: date };
+        const params: { date: Date; dateString: string; clientId?: string; unitId?: string } = {
+          date: kstBaseDate,
+          dateString: date,
+        };
         if (resolvedClientId) {
           params.clientId = resolvedClientId;
+        }
+        const uid = typeof unitIdQ === 'string' ? unitIdQ.trim() : '';
+        if (uid && /^u\d{3}$/.test(uid)) {
+          params.unitId = uid;
         }
 
         const stats = await getPeopleCounterHourlyStats(params);
@@ -476,7 +596,7 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
 
   /**
    * POST /system/people-counter/apc-test
-   * PEOPLE_COUNTER_PORT 전용 APC 수동 송수신 (폴링과 큐로 직렬화). Modbus와 무관.
+   * PEOPLE_COUNTER_PORTS 유닛별 APC 수동 송수신 (폴링과 큐로 직렬화). Modbus와 무관.
    * — Mock 모드 비허용, DDC 폴링 활성 시 비허용(직접 제어 페이지 정책과 동일).
    */
   fastify.post(
@@ -489,6 +609,8 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           required: ['data'],
           properties: {
             data: { type: 'string' },
+            /** PEOPLE_COUNTER_PORTS 순서에 대응하는 유닛 (예: u001, u002). 미지정 시 u001 */
+            unitId: { type: 'string' },
             timeoutMs: { type: 'number' },
             waitForClosingBracket: { type: 'boolean' },
           },
@@ -514,6 +636,7 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
 
         const body = request.body as {
           data?: string;
+          unitId?: string;
           timeoutMs?: number;
           waitForClosingBracket?: boolean;
         };
@@ -525,6 +648,19 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           });
         }
 
+        const unitId =
+          typeof body.unitId === 'string' && body.unitId.trim() !== '' ? body.unitId.trim() : 'u001';
+        const pcMap = serviceContainer.getPeopleCounterQueueServices?.();
+        if (pcMap && pcMap.size > 0 && !pcMap.has(unitId)) {
+          const available = Array.from(pcMap.keys())
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+            .join(', ');
+          return (reply as any).code(400).send({
+            success: false,
+            message: `유효하지 않은 unitId입니다. 사용 가능: ${available}`,
+          });
+        }
+
         let timeoutMs = typeof body.timeoutMs === 'number' && Number.isFinite(body.timeoutMs) ? body.timeoutMs : 1000;
         timeoutMs = Math.min(30000, Math.max(100, timeoutMs));
         const waitForClosingBracket = body.waitForClosingBracket !== false;
@@ -532,10 +668,10 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
         const apiKey = (request as any).apiKey;
         const keyLabel = apiKey?.name ?? apiKey?.id ?? 'unknown';
         logger.info(
-          `[People Counter APC-TEST] apiKey=${keyLabel} wait=${waitForClosingBracket} timeoutMs=${timeoutMs} dataLen=${data.length}`,
+          `[People Counter APC-TEST] apiKey=${keyLabel} unitId=${unitId} wait=${waitForClosingBracket} timeoutMs=${timeoutMs} dataLen=${data.length}`,
         );
 
-        const queueService = serviceContainer.getPeopleCounterQueueService();
+        const queueService = pcMap && pcMap.size > 0 ? pcMap.get(unitId) : serviceContainer.getPeopleCounterQueueService(unitId);
         if (!queueService) {
           return (reply as any).code(500).send({
             success: false,

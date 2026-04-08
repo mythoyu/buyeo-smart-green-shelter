@@ -67,6 +67,28 @@ if [ "$MODE" = "usb485" ]; then
       exit 1
     fi
     COMPOSE_FILES+=("$PC_OVERRIDE")
+
+    # 백엔드 ServiceContainer u001..uN: PEOPLE_COUNTER_PORTS 가 셸에 없을 때만 udev 심볼릭 경로를 개수만큼 자동 생성
+    # (.env 에 PEOPLE_COUNTER_PORTS 가 있으면 compose 가 치환 시 사용 — 셸에서 중복 export 하지 않음)
+    if [ -z "${PEOPLE_COUNTER_PORTS:-}" ]; then
+      skip_pc_ports_auto=0
+      if [ -f "$REPO_ROOT/.env" ] && grep -Eq '^[[:space:]]*PEOPLE_COUNTER_PORTS=' "$REPO_ROOT/.env" 2>/dev/null; then
+        skip_pc_ports_auto=1
+      fi
+      if [ "$skip_pc_ports_auto" -eq 0 ]; then
+        pc_ports=""
+        for _i in $(seq 1 "$PC_COUNT"); do
+          [ -n "$pc_ports" ] && pc_ports+=","
+          pc_ports+="/dev/bushub-people-counter-${_i}"
+        done
+        export PEOPLE_COUNTER_PORTS="$pc_ports"
+        echo "🔌 PEOPLE_COUNTER_PORTS 자동 설정 (PEOPLE_COUNTER_COUNT=$PC_COUNT): $PEOPLE_COUNTER_PORTS"
+      else
+        echo "🔌 PEOPLE_COUNTER_PORTS 는 .env 에 정의됨 — 자동 생성 생략 (compose 치환 사용)"
+      fi
+    else
+      echo "🔌 PEOPLE_COUNTER_PORTS 이미 설정됨: $PEOPLE_COUNTER_PORTS"
+    fi
   fi
 fi
 

@@ -90,15 +90,25 @@ export const useGetPeopleCounterStats = (options?: {
   period?: Period;
   startDate?: string;
   endDate?: string;
+  /** 미지정 시 전 유닛 합산 */
+  unitId?: string;
   enabled?: boolean;
 }) => {
   return useQuery<PeopleCounterStats>({
-    queryKey: ['people-counter', 'stats', options?.period, options?.startDate, options?.endDate],
+    queryKey: [
+      'people-counter',
+      'stats',
+      options?.period,
+      options?.startDate,
+      options?.endDate,
+      options?.unitId,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (options?.period) params.append('period', options.period);
       if (options?.startDate) params.append('startDate', options.startDate);
       if (options?.endDate) params.append('endDate', options.endDate);
+      if (options?.unitId) params.append('unitId', options.unitId);
       const response = await externalApi.get(`/people-counter/stats?${params.toString()}`);
       return response.data.data;
     },
@@ -109,13 +119,15 @@ export const useGetPeopleCounterStats = (options?: {
 
 export const useGetPeopleCounterHourlyStats = (options: {
   date: string;
+  unitId?: string;
   enabled?: boolean;
 }) => {
   return useQuery<PeopleCounterHourlyStats>({
-    queryKey: ['people-counter', 'hourly-stats', options.date],
+    queryKey: ['people-counter', 'hourly-stats', options.date, options.unitId],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('date', options.date);
+      if (options.unitId) params.append('unitId', options.unitId);
       const response = await externalApi.get(`/people-counter/hourly-stats?${params.toString()}`);
       return response.data.data;
     },
@@ -128,15 +140,17 @@ export const useGetPeopleCounterRaw = (options?: {
   startDate?: string;
   endDate?: string;
   limit?: number;
+  unitId?: string;
   enabled?: boolean;
 }) => {
   return useQuery<{ data: PeopleCounterRawData[]; total: number }>({
-    queryKey: ['people-counter', 'raw', options?.startDate, options?.endDate, options?.limit],
+    queryKey: ['people-counter', 'raw', options?.startDate, options?.endDate, options?.limit, options?.unitId],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (options?.startDate) params.append('startDate', options.startDate);
       if (options?.endDate) params.append('endDate', options.endDate);
       if (options?.limit) params.append('limit', options.limit.toString());
+      if (options?.unitId) params.append('unitId', options.unitId);
       const response = await externalApi.get(`/people-counter/raw?${params.toString()}`);
       return response.data.data;
     },
@@ -163,14 +177,16 @@ export interface PeopleCounterUsage10Min {
 export const useGetPeopleCounterUsage10Min = (options: {
   start: string;
   end: string;
+  unitId?: string;
   enabled?: boolean;
 }) => {
   return useQuery<PeopleCounterUsage10Min>({
-    queryKey: ['people-counter', 'usage-10min', options.start, options.end],
+    queryKey: ['people-counter', 'usage-10min', options.start, options.end, options.unitId],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('start', options.start);
       params.append('end', options.end);
+      if (options.unitId) params.append('unitId', options.unitId);
       const response = await externalApi.get(`/people-counter/usage-10min?${params.toString()}`);
       return response.data.data;
     },
@@ -182,8 +198,8 @@ export const useGetPeopleCounterUsage10Min = (options: {
 export const useResetPeopleCounterData = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
-      const response = await internalApi.post('/system/people-counter/reset-data');
+    mutationFn: async (payload?: { unitId?: string }) => {
+      const response = await internalApi.post('/system/people-counter/reset-data', payload ?? {});
       return response.data;
     },
     onSuccess: () => {
@@ -198,20 +214,26 @@ export const useResetPeopleCounterData = () => {
 export const useResetPeopleCounter = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (type: ResetType) => {
-      const response = await internalApi.post('/system/people-counter/reset', { type });
+    mutationFn: async (payload: ResetType | { type: ResetType; unitId?: string }) => {
+      const body =
+        typeof payload === 'string'
+          ? { type: payload }
+          : { type: payload.type, ...(payload.unitId ? { unitId: payload.unitId } : {}) };
+      const response = await internalApi.post('/system/people-counter/reset', body);
       return response.data;
     },
     onSuccess: () => {
-      // 즉시 refetch로 UX 개선
       queryClient.invalidateQueries({ queryKey: ['clientData'] });
+      queryClient.invalidateQueries({ queryKey: ['people-counter'] });
     },
   });
 };
 
-/** PEOPLE_COUNTER_PORT APC 수동 송수신 (`POST /system/people-counter/apc-test`) */
+/** PEOPLE_COUNTER_PORTS 유닛별 APC 수동 송수신 (`POST /system/people-counter/apc-test`) */
 export interface PeopleCounterApcTestPayload {
   data: string;
+  /** 서버에 등록된 유닛(예: u001, u002). 미지정 시 백엔드 기본 u001 */
+  unitId?: string;
   timeoutMs?: number;
   waitForClosingBracket?: boolean;
 }
@@ -222,6 +244,20 @@ export interface PeopleCounterApcTestResult {
   timedOut: boolean;
   writeOnly: boolean;
 }
+
+export const useGetPeopleCounterUnits = (options?: { enabled?: boolean }) => {
+  return useQuery<{ unitIds: string[] }>({
+    queryKey: ['people-counter', 'units'],
+    queryFn: async () => {
+      const response = await internalApi.get<{ success: boolean; data: { unitIds: string[] } }>(
+        '/system/people-counter/units',
+      );
+      return response.data.data;
+    },
+    staleTime: 60_000,
+    enabled: options?.enabled ?? true,
+  });
+};
 
 export const usePeopleCounterApcTest = () => {
   return useMutation({

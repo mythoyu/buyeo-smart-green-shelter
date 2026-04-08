@@ -237,14 +237,14 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   const handleResetConfirm = useCallback(async () => {
     if (!resetType) return;
     try {
-      await resetMutation.mutateAsync(resetType);
+      await resetMutation.mutateAsync({ type: resetType, unitId: unit.id });
       toast.success('피플카운터가 초기화되었습니다.', { id: 'people-counter-reset-success' });
       setResetDialogOpen(false);
       setResetType(null);
     } catch (error) {
       toast.error('피플카운터 초기화에 실패했습니다.', { id: 'people-counter-reset-error' });
     }
-  }, [resetType, resetMutation]);
+  }, [resetType, resetMutation, unit.id]);
 
   const getResetMessage = (type: ResetType): string => {
     switch (type) {

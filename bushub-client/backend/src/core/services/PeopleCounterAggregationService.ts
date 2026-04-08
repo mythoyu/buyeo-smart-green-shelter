@@ -32,12 +32,16 @@ interface GetHourlyStatsParams {
    * 명시적인 clientId가 없으면 최신 클라이언트를 사용
    */
   clientId?: string;
+  /** 미지정 시 d082 전 유닛 합산(필터 없음과 동일 목적) */
+  deviceId?: string;
+  /** 예: u001. 지정 시 해당 유닛 Raw만 집계 */
+  unitId?: string;
 }
 
 export async function getPeopleCounterHourlyStats(
   params: GetHourlyStatsParams,
 ): Promise<PeopleCounterHourlyStats> {
-  const { date, dateString, clientId: explicitClientId } = params;
+  const { date, dateString, clientId: explicitClientId, deviceId = 'd082', unitId } = params;
 
   // KST 달력일(00:00~24:00) 기준 범위. date는 이미 KST 00:00을 가리키는 UTC Date로 들어온다.
   const startOfDay = new Date(date);
@@ -50,13 +54,17 @@ export async function getPeopleCounterHourlyStats(
     clientId = latest?.id ?? 'c0101';
   }
 
-  // 하루 범위의 Raw 데이터 조회 (clientId + timestamp 인덱스 사용)
-  const docs = await PeopleCounterRaw.find({
+  // 하루 범위의 Raw 데이터 조회
+  const rawQuery: Record<string, unknown> = {
     clientId,
+    deviceId,
     timestamp: { $gte: startOfDay, $lt: endOfDay },
-  })
-    .sort({ timestamp: 1 })
-    .lean();
+  };
+  if (unitId && /^u\d{3}$/.test(unitId)) {
+    rawQuery.unitId = unitId;
+  }
+
+  const docs = await PeopleCounterRaw.find(rawQuery).sort({ timestamp: 1 }).lean();
 
   // 24개 버킷 초기화
   const bucketsInternal: {
