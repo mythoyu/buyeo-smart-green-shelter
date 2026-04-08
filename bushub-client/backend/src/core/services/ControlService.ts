@@ -1097,8 +1097,8 @@ export class ControlService implements IControlService {
   }
 
   private async runPeopleCounterResetOnQueue(unit: IUnit, resetType: ResetType): Promise<void> {
-    // ServiceContainer는 ControlService 생성 시점보다 늦게 완성될 수 있어 require로 지연 로드
-    const { ServiceContainer } = require('../container/ServiceContainer');
+    // ControlService 생성 시점과 무관하게 ServiceContainer 싱글톤을 사용한다.
+    const { ServiceContainer } = await import('../container/ServiceContainer');
     const serviceContainer = ServiceContainer.getInstance();
     const pcMap = serviceContainer.getPeopleCounterQueueServices();
     const unitId = unit.unitId;

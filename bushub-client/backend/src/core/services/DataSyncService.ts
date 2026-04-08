@@ -802,14 +802,12 @@ export class DataSyncService {
       const bulkOps = dataCollection.map((item) => ({
         updateOne: {
           filter:
-            item.deviceType === 'people_counter'
-              ? { deviceId: item.deviceId, type: item.deviceType }
-              : { deviceId: item.deviceId, type: item.deviceType, 'units.unitId': item.unitId },
+            // data.units는 배열로 통일한다. (people_counter 포함)
+            { deviceId: item.deviceId, type: item.deviceType, 'units.unitId': item.unitId },
           update: {
             $set: {
-              ...(item.deviceType === 'people_counter'
-                ? { [`units.${item.unitId}.data`]: item.data }
-                : { 'units.$.data': item.data, 'units.$.updatedAt': item.timestamp }),
+              'units.$.data': item.data,
+              'units.$.updatedAt': item.timestamp,
               updatedAt: item.timestamp,
             },
           },

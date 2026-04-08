@@ -31,7 +31,8 @@ export default async function systemRestartBackendExternalRoutes(app: FastifyIns
             triggerGracefulShutdown('api:restart-backend-external');
           } catch (error) {
             logInfo(`백엔드 재기동 실행 중 오류: ${error}`);
-            process.exit(0);
+            // process.exit 금지(린트). 종료가 필요하면 상위 graceful shutdown 파이프라인이 처리한다.
+            throw error;
           }
         }, 1000);
 

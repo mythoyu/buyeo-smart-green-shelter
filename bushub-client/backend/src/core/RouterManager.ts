@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, type FastifyPluginAsync, type FastifyPluginCallback } from 'fastify';
 
 // 라우터 import
 import apiKeysRoutes from '../api/v1/routes/apiKeys';
@@ -19,8 +19,6 @@ import systemSeasonalRoutes from '../api/v1/routes/system/seasonal';
 import systemRestartBackendExternalRoutes from '../api/v1/routes/system/restart-backend-external';
 import usersRoutes from '../api/v1/routes/users';
 import { logInfo, logError, logDebug } from '../logger';
-
-import type { FastifyPluginCallback, FastifyPluginAsync } from 'fastify';
 
 type RouteModule = FastifyPluginCallback | FastifyPluginAsync;
 

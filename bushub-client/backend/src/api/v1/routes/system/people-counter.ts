@@ -12,7 +12,7 @@ import { Data } from '../../../../models/schemas/DataSchema';
 import { PeopleCounterRaw } from '../../../../models/schemas/PeopleCounterRawSchema';
 import { isPeopleCounterMockEnabled } from '../../../../config/mock.config';
 import { createSuccessResponse } from '../../../../shared/utils/responseHelper';
-import { startOfKstDayFromYmd } from '../../../../shared/utils/kstDateTime';
+import { formatKstLocal, startOfKstDayFromYmd } from '../../../../shared/utils/kstDateTime';
 
 export default async function peopleCounterRoutes(fastify: FastifyInstance) {
   const logger: ILogger = fastify.log;
@@ -274,7 +274,26 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
           const latest = await ClientSchema.findOne({}).sort({ createdAt: -1 }).lean();
           const clientId = latest?.id ?? 'c0101';
           const rawResult = await PeopleCounterRaw.deleteMany({ clientId, deviceId: 'd082', unitId: uid });
-          const dataResult = await Data.updateOne({ deviceId: 'd082' }, { $unset: { [`units.${uid}`]: '' } });
+          const dataResult = await Data.updateOne(
+            { deviceId: 'd082', type: 'people_counter', 'units.unitId': uid },
+            {
+              $set: {
+                'units.$.data': {
+                  currentCount: 0,
+                  inCumulative: 0,
+                  outCumulative: 0,
+                  output1: false,
+                  output2: false,
+                  countEnabled: true,
+                  buttonStatus: false,
+                  sensorStatus: true,
+                  limitExceeded: false,
+                  timestamp: formatKstLocal(new Date()),
+                },
+                updatedAt: new Date(),
+              },
+            },
+          );
 
           logger.info(
             `[People Counter API] reset-data(유닛 ${uid}): rawDeleted=${rawResult.deletedCount}, dataModified=${dataResult.modifiedCount}`,

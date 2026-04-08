@@ -4,12 +4,11 @@ import { toast } from 'sonner';
 
 import { getDeviceTypeIcon } from '../../meta/smartcityMetaHelpers';
 import { useSendUnitBulkCommands } from '../../api/queries/device';
-import { Device, DeviceSpec } from '../DeviceListShowDetail/types';
+import { Device, DeviceSpec, DeviceStyle } from '../DeviceListShowDetail/types';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Checkbox } from '../ui/checkbox';
 import { Separator } from '../ui/separator';
-import { DeviceStyle } from '../DeviceListShowDetail/types';
 
 interface ModeControlCardProps {
   className?: string;

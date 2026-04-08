@@ -1,7 +1,6 @@
-import { Activity, Clock, AlertTriangle } from 'lucide-react';
+import { Activity, Clock } from 'lucide-react';
 import React from 'react';
 
-import { Badge } from '../../../ui/badge';
 import { TableCell, TableRow } from '../../../ui/table';
 
 import type { SensorPort, SensorData } from '../../../../types/hardware';

@@ -319,7 +319,6 @@ every 10s:
   - 응답의 `range.start/end`, `buckets[].start/end`는 **KST 무오프셋 문자열**입니다.
 - **Query Parameters**:
   - `start`, `end` (**필수**): 임의 구간 `[start, end)` — **KST 무오프셋** (`YYYY-MM-DDTHH:mm:ss` 등) 또는 `Z`/`+09:00` 포함 ISO(호환).
-  - `date`, `period` 등 다른 방식은 **지원하지 않습니다**.
 - **clientId**: 미지정. 서버가 최신 클라이언트 사용(IP로 구분되는 환경 가정).
 - **응답 예시:**
 ```json

@@ -1,7 +1,5 @@
 import {
   Gauge,
-  ThermometerSun,
-  DoorOpen,
   Users,
   Snowflake,
   ArrowLeftRight,

@@ -12,7 +12,7 @@ import { ILogger } from '../interfaces/ILogger';
 import { PeopleCounterQueueService } from './PeopleCounterQueueService';
 import type { IStatusService } from './interfaces/IStatusService';
 import type { IErrorService } from './interfaces/IErrorService';
-import { formatKstLocal } from '../../shared/utils/kstDateTime';
+import { formatKstLocal, getKstCalendarParts, startOfKstDayFromYmd } from '../../shared/utils/kstDateTime';
 
 import type { ISystemService } from './interfaces/ISystemService';
 
@@ -34,11 +34,12 @@ function computePollInDelta(prevIn: number | null, endRef: number): { inDelta: n
 type UnitRuntime = {
   unitId: string;
   queue: PeopleCounterQueueService;
-  lastInCumulative: number | null;
-  lastOutCumulative: number | null;
-  lastCurrentCount: number | null;
   /** Raw inDelta 계산용: 직전 폴링 성공 시 inCumulative */
   lastRawPollInCumulative: number | null;
+  /** 유닛카드용: KST 달력일 키 (YYYY-MM-DD) */
+  todayKey: string | null;
+  /** 유닛카드용: 오늘(00:00~현재, KST) 입실 누적 */
+  todayInCount: number;
 };
 
 export class PeopleCounterPollerService {
@@ -61,19 +62,17 @@ export class PeopleCounterPollerService {
         ? entries.map(([unitId, queue]) => ({
             unitId,
             queue,
-            lastInCumulative: null,
-            lastOutCumulative: null,
-            lastCurrentCount: null,
             lastRawPollInCumulative: null,
+            todayKey: null,
+            todayInCount: 0,
           }))
         : [
             {
               unitId: 'u001',
               queue: serviceContainer.getPeopleCounterQueueService('u001'),
-              lastInCumulative: null,
-              lastOutCumulative: null,
-              lastCurrentCount: null,
               lastRawPollInCumulative: null,
+              todayKey: null,
+              todayInCount: 0,
             },
           ];
   }
@@ -124,23 +123,53 @@ export class PeopleCounterPollerService {
       }
 
       // 초기값으로 d082 문서 upsert (데이터가 없으면 0으로 설정)
-      const initialData = {
-        currentCount: 0,
-        inCumulative: 0,
-        outCumulative: 0,
-        output1: false,
-        output2: false,
-        countEnabled: true,
-        buttonStatus: false,
-        sensorStatus: true,
-        limitExceeded: false,
-        timestamp: formatKstLocal(new Date()),
+      const parts = getKstCalendarParts(new Date());
+      const todayKey = `${String(parts.year).padStart(4, '0')}-${String(parts.month).padStart(2, '0')}-${String(
+        parts.day,
+      ).padStart(2, '0')}`;
+
+      // 시작 시 1회 보정: 오늘 00:00~현재(KST) inDelta 합
+      const todayStart = startOfKstDayFromYmd(todayKey);
+      const now = new Date();
+
+      const initialBase = {
+        todayKey,
+        timestamp: formatKstLocal(now),
       };
 
-      const units: Record<string, any> = {};
-      for (const u of this.units) {
-        units[u.unitId] = { unitId: u.unitId, data: initialData };
-      }
+      // 런타임 상태도 함께 초기화 (유닛카드/자정 리셋 기준)
+      const units = await Promise.all(
+        this.units.map(async (u) => {
+          let todayInCount = 0;
+          try {
+            const result = await PeopleCounterRaw.aggregate([
+              {
+                $match: {
+                  clientId,
+                  deviceId: DEVICE_ID,
+                  unitId: u.unitId,
+                  timestamp: { $gte: todayStart, $lte: now },
+                },
+              },
+              { $group: { _id: null, sum: { $sum: { $ifNull: ['$inDelta', 0] } } } },
+            ]);
+            todayInCount = typeof result?.[0]?.sum === 'number' ? result[0].sum : 0;
+          } catch (e) {
+            this.logger?.warn(`[PeopleCounterPoller] 시작 보정 집계 실패 unit=${u.unitId}: ${e}`);
+          }
+
+          u.todayKey = todayKey;
+          u.todayInCount = todayInCount;
+
+          return {
+            unitId: u.unitId,
+            data: {
+              ...initialBase,
+              todayInCount,
+            },
+          };
+        }),
+      );
 
       await Data.updateOne(
         { deviceId: DEVICE_ID },
@@ -167,12 +196,23 @@ export class PeopleCounterPollerService {
       this.timer = null;
     }
     this.units.forEach((u) => {
-      u.lastInCumulative = null;
-      u.lastOutCumulative = null;
-      u.lastCurrentCount = null;
       u.lastRawPollInCumulative = null;
+      u.todayKey = null;
+      u.todayInCount = 0;
     });
     this.logger?.info('[PeopleCounterPoller] 중지');
+  }
+
+  /**
+   * 외부 스케줄러(00:00 KST 자동 리셋 등)에서 todayInCount를 즉시 0으로 맞추기 위한 런타임 동기화.
+   * - Data 컬렉션은 스케줄러에서 별도로 0으로 반영한다.
+   * - 여기서는 폴러 내부 누적값이 다음 tick에 덮어쓰지 않도록 메모리 상태를 리셋한다.
+   */
+  resetTodayInCountRuntime(unitId: string, todayKey: string): void {
+    const u = this.units.find((x) => x.unitId === unitId);
+    if (!u) return;
+    u.todayKey = todayKey;
+    u.todayInCount = 0;
   }
 
   /**
@@ -285,7 +325,7 @@ export class PeopleCounterPollerService {
       this.logger?.warn(`[PeopleCounterPoller] 클라이언트 조회 실패: ${e}`);
     }
 
-    const results = await Promise.allSettled(
+    const results = await Promise.all(
       this.units.map(async (u) => {
         let data: PeopleCounterData | null = null;
         try {
@@ -313,29 +353,30 @@ export class PeopleCounterPollerService {
         u.lastRawPollInCumulative = data.inCumulative;
         this.broadcastPollSuccessWs(clientId, u.unitId, data, pollInDelta);
 
-        // Data 컬렉션: in / out / currentCount 중 하나라도 바뀌면 업데이트 (유닛별)
-        const prevIn = u.lastInCumulative;
-        const prevOut = u.lastOutCumulative;
-        const prevRoom = u.lastCurrentCount;
-        const firstPoll = prevIn === null;
-        const changed =
-          firstPoll ||
-          data.inCumulative !== prevIn ||
-          (prevOut !== null && data.outCumulative !== prevOut) ||
-          (prevRoom !== null && data.currentCount !== prevRoom);
+        // ===== Data 컬렉션(d082): 유닛카드는 todayKey/todayInCount만 사용한다. =====
+        const parts = getKstCalendarParts(data.timestamp);
+        const todayKeyNow = `${String(parts.year).padStart(4, '0')}-${String(parts.month).padStart(2, '0')}-${String(
+          parts.day,
+        ).padStart(2, '0')}`;
 
-        if (changed) {
-          this.logger?.info(
-            `[PeopleCounterPoller] data 테이블 갱신 진입 unit=${u.unitId} clientId=${clientId} in ${
-              firstPoll ? 'null' : prevIn
-            }→${data.inCumulative} out ${firstPoll ? 'null' : prevOut}→${data.outCumulative} room ${
-              firstPoll ? 'null' : prevRoom
-            }→${data.currentCount}`,
-          );
-          u.lastInCumulative = data.inCumulative;
-          u.lastOutCumulative = data.outCumulative;
-          u.lastCurrentCount = data.currentCount;
-          await this.upsertData(clientId, u.unitId, data);
+        const hadKey = typeof u.todayKey === 'string' && u.todayKey !== '';
+        const dayChanged = hadKey && u.todayKey !== todayKeyNow;
+        if (!hadKey || dayChanged) {
+          u.todayKey = todayKeyNow;
+          u.todayInCount = 0;
+        }
+
+        if (pollInDelta !== 0) {
+          u.todayInCount += pollInDelta;
+        }
+
+        // 첫 폴링, 자정 전환, 또는 증분 발생 시에만 반영(불필요한 write 최소화)
+        if (!hadKey || dayChanged || pollInDelta !== 0) {
+          await this.upsertData(clientId, u.unitId, {
+            todayKey: todayKeyNow,
+            todayInCount: u.todayInCount,
+            timestamp: data.timestamp,
+          });
         }
       }),
     );
@@ -344,41 +385,60 @@ export class PeopleCounterPollerService {
     results.forEach((_r) => {});
   }
 
-  private async upsertData(clientId: string, unitId: string, d: PeopleCounterData): Promise<void> {
+  private async upsertData(
+    clientId: string,
+    unitId: string,
+    d: { todayKey: string; todayInCount: number; timestamp: Date },
+  ): Promise<void> {
     try {
       const unitData = {
         unitId,
         data: {
-          currentCount: d.currentCount,
-          inCumulative: d.inCumulative,
-          outCumulative: d.outCumulative,
-          output1: d.output1,
-          output2: d.output2,
-          countEnabled: d.countEnabled,
-          buttonStatus: d.buttonStatus,
-          sensorStatus: d.sensorStatus,
-          limitExceeded: d.limitExceeded,
+          todayKey: d.todayKey,
+          todayInCount: d.todayInCount,
           timestamp: formatKstLocal(d.timestamp),
         },
       };
-      const result = await Data.updateOne(
-        { deviceId: DEVICE_ID },
+
+      // 배열 구조(units: [{unitId,...}])로 통일: 존재하면 $로 갱신, 없으면 push
+      const updateExisting = await Data.updateOne(
+        { deviceId: DEVICE_ID, type: DEVICE_TYPE, 'units.unitId': unitId },
         {
           $set: {
             clientId,
-            type: DEVICE_TYPE,
-            [`units.${unitId}`]: unitData,
+            'units.$': unitData,
             updatedAt: d.timestamp,
           },
         },
-        { upsert: true },
       );
+
+      // 해당 unitId가 없으면 배열에 추가 (문서 자체가 없으면 upsert로 생성)
+      const updateResult =
+        (updateExisting?.matchedCount ?? 0) > 0
+          ? updateExisting
+          : await Data.updateOne(
+              { deviceId: DEVICE_ID, type: DEVICE_TYPE },
+              {
+                $set: {
+                  clientId,
+                  updatedAt: d.timestamp,
+                },
+                $setOnInsert: {
+                  type: DEVICE_TYPE,
+                },
+                $push: {
+                  units: unitData,
+                },
+              },
+              { upsert: true },
+            );
+
       this.logger?.info(
-        `[PeopleCounterPoller] data 컬렉션 반영 완료 deviceId=${DEVICE_ID} unitId=${unitId} clientId=${clientId} inCumulative=${d.inCumulative} outCumulative=${d.outCumulative} currentCount=${d.currentCount} matched=${result.matchedCount} modified=${result.modifiedCount} upserted=${result.upsertedCount ?? 0}`,
+        `[PeopleCounterPoller] data 컬렉션 반영 완료 deviceId=${DEVICE_ID} unitId=${unitId} clientId=${clientId} todayKey=${d.todayKey} todayInCount=${d.todayInCount} matched=${updateResult.matchedCount} modified=${updateResult.modifiedCount} upserted=${updateResult.upsertedCount ?? 0}`,
       );
     } catch (e) {
       this.logger?.error(
-        `[PeopleCounterPoller] Data upsert 실패 deviceId=${DEVICE_ID} unitId=${unitId} clientId=${clientId} inCumulative=${d.inCumulative}: ${e}`,
+        `[PeopleCounterPoller] Data upsert 실패 deviceId=${DEVICE_ID} unitId=${unitId} clientId=${clientId} todayKey=${d.todayKey} todayInCount=${d.todayInCount}: ${e}`,
       );
     }
   }

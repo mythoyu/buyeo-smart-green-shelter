@@ -5,8 +5,7 @@
  */
 
 import { ILogger } from '../interfaces/ILogger';
-import type { ManualApcSendResult, PeopleCounterData } from './PeopleCounterService';
-import { PeopleCounterService } from './PeopleCounterService';
+import { PeopleCounterService, type ManualApcSendResult, type PeopleCounterData } from './PeopleCounterService';
 
 export type ResetType = 'current' | 'in' | 'out' | 'all';
 

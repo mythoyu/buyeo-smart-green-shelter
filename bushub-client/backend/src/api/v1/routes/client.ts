@@ -18,14 +18,12 @@ import { Device as DeviceSchema } from '../../../models/schemas/DeviceSchema';
 import { Error as ErrorSchema } from '../../../models/schemas/ErrorSchema';
 import { Status as StatusSchema } from '../../../models/schemas/StatusSchema';
 import { Unit as UnitSchema } from '../../../models/schemas/UnitSchema';
-import { BushubOperationManager } from '../../../operationManager';
 import { toApiDateTimeStringOrNow } from '../../../shared/utils/kstDateTime';
 import {
   createSuccessResponse,
   ErrorMessages,
   HttpValidationError,
   handleHttpSuccess,
-  handleHttpError,
   handleRouteError,
 } from '../../../shared/utils/responseHelper';
 import { ClientResponseSchema, CLIENT_RESPONSE_EXAMPLE } from '../schemas/client.schema';

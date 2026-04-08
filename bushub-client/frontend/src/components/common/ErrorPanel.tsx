@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AlertTriangle, X, MapPin, Clock, ChevronDown, ChevronUp, Filter, Trash2 } from 'lucide-react';
+import { AlertTriangle, X, MapPin, Clock, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { Card, CardContent } from '../ui';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';

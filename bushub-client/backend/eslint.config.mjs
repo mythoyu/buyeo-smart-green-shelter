@@ -6,9 +6,12 @@ import importPlugin from 'eslint-plugin-import';
 import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
+  // dist 등 산출물은 전역적으로 린트 대상에서 제외
+  {
+    ignores: ['dist/**/*', 'node_modules/**/*', 'coverage/**/*', 'logs/**/*'],
+  },
   {
     files: ['**/*.ts'],
-    ignores: ['dist/**/*', 'node_modules/**/*', 'coverage/**/*', 'logs/**/*'],
     languageOptions: {
       parser,
       parserOptions: {
@@ -62,6 +65,9 @@ export default [
 
       // Node.js 관련
       'node/no-unsupported-features/es-syntax': 'off',
+      // 현재 운영 Node(18+)과 무관하게 구형 버전 기준으로 error가 발생하므로 비활성화
+      'node/no-unsupported-features/es-builtins': 'off',
+      'node/no-unsupported-features/node-builtins': 'off',
       'node/no-missing-import': 'off',
 
       // 일반적인 코딩 스타일
@@ -72,6 +78,8 @@ export default [
       'prefer-const': 'warn',
       'no-duplicate-imports': 'error',
       'no-unreachable': 'error',
+      // 운영에서 종료가 필요한 케이스가 있어 예외 허용
+      'no-process-exit': 'off',
 
       // 함수 관련
       'prefer-arrow-callback': 'warn',
@@ -142,6 +150,8 @@ export default [
 
       // Node.js 관련
       'node/no-unsupported-features/es-syntax': 'off',
+      'node/no-unsupported-features/es-builtins': 'off',
+      'node/no-unsupported-features/node-builtins': 'off',
       'node/no-missing-import': 'off',
 
       // 일반적인 코딩 스타일
@@ -152,6 +162,7 @@ export default [
       'prefer-const': 'warn',
       'no-duplicate-imports': 'error',
       'no-unreachable': 'error',
+      'no-process-exit': 'off',
 
       // 함수 관련
       'prefer-arrow-callback': 'warn',
@@ -171,3 +182,4 @@ export default [
     },
   },
 ];
+

@@ -283,6 +283,17 @@ export class ServerInitializer {
     }
   }
 
+  private async startPeopleCounterResetScheduler(): Promise<void> {
+    try {
+      logInfo('🕛 피플카운터 00:00 KST 자동 리셋 스케줄러 시작 중...');
+      const scheduler = this.serviceContainer.getPeopleCounterResetSchedulerService?.();
+      scheduler?.start?.();
+      logInfo('✅ 피플카운터 자동 리셋 스케줄러 시작 완료');
+    } catch (error) {
+      logWarn(`⚠️ 피플카운터 자동 리셋 스케줄러 시작 실패: ${error}`);
+    }
+  }
+
   private async fallbackToMemoryMode(): Promise<void> {
     logWarn('⚠️ MongoDB 연결 실패, 서버 종료...');
     throw new Error('MongoDB 연결 실패로 서버를 시작할 수 없습니다.');
@@ -344,6 +355,9 @@ export class ServerInitializer {
     // 🔄 12단계: 폴링 자동 복구 서비스 시작
     await this.startPollingRecovery();
 
+    // 🕛 12.5단계: 피플카운터 00:00 KST 자동 리셋 스케줄러 시작
+    await this.startPeopleCounterResetScheduler();
+
     // 13단계: 피플카운터 폴러 시작 (DDC pollingEnabled일 때 tick에서 시리얼 폴링)
     await this.startPeopleCounterPoller();
   }
@@ -376,6 +390,14 @@ export class ServerInitializer {
       logInfo('[SHUTDOWN] ① PeopleCounterPoller stop 완료');
     } catch (e) {
       logWarn(`[SHUTDOWN] ① PeopleCounterPoller stop 실패: ${e}`);
+    }
+
+    logInfo('[SHUTDOWN] ①.5 PeopleCounterResetScheduler stop…');
+    try {
+      sc?.getPeopleCounterResetSchedulerService?.()?.stop?.();
+      logInfo('[SHUTDOWN] ①.5 PeopleCounterResetScheduler stop 완료');
+    } catch (e) {
+      logWarn(`[SHUTDOWN] ①.5 PeopleCounterResetScheduler stop 실패: ${e}`);
     }
 
     logInfo('[SHUTDOWN] ② PollingAutoRecovery stop…');

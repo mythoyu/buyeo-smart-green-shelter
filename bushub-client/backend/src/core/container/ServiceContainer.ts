@@ -57,6 +57,7 @@ import { ModbusCommandQueue } from '../services/ModbusCommandQueue';
 import { ModbusService } from '../services/ModbusService';
 import { PeopleCounterPollerService } from '../services/PeopleCounterPollerService';
 import { PeopleCounterQueueService } from '../services/PeopleCounterQueueService';
+import { PeopleCounterResetSchedulerService } from '../services/PeopleCounterResetSchedulerService';
 import { PollingDataPersistenceService } from '../services/PollingDataPersistenceService';
 import { SecurityService } from '../services/SecurityService';
 import { StatusService } from '../services/StatusService';
@@ -317,6 +318,14 @@ export class ServiceContainer {
     peopleCounterPoller.initialize(this);
     this.services.set('peopleCounterPoller', peopleCounterPoller);
 
+    // 피플카운터 매일 00:00 KST 자동 리셋 스케줄러
+    const peopleCounterResetScheduler = new PeopleCounterResetSchedulerService(
+      peopleCounterQueueServices,
+      peopleCounterPoller,
+      logger,
+    );
+    this.services.set('peopleCounterResetSchedulerService', peopleCounterResetScheduler);
+
     // 🎯 DDC 설정 서비스 등록
 
     // CommandResultHandler 서비스 등록 (이미 생성된 인스턴스 사용)
@@ -370,6 +379,10 @@ export class ServiceContainer {
 
   public getPeopleCounterPoller(): PeopleCounterPollerService {
     return this.services.get('peopleCounterPoller');
+  }
+
+  public getPeopleCounterResetSchedulerService(): PeopleCounterResetSchedulerService {
+    return this.services.get('peopleCounterResetSchedulerService');
   }
 
   public getControlService(): IControlService {

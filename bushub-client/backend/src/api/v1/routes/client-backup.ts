@@ -18,14 +18,12 @@ import { Device as DeviceSchema } from '../../../models/schemas/DeviceSchema';
 import { Error as ErrorSchema } from '../../../models/schemas/ErrorSchema';
 import { Status as StatusSchema } from '../../../models/schemas/StatusSchema';
 import { Unit as UnitSchema } from '../../../models/schemas/UnitSchema';
-import { BushubOperationManager } from '../../../operationManager';
 import { getDeviceDefaultValues, getFallbackDeviceValues } from '../../../data/clientDefaultDataMapping';
 import {
   createSuccessResponse,
   ErrorMessages,
   HttpValidationError,
   handleHttpSuccess,
-  handleHttpError,
   handleRouteError,
 } from '../../../shared/utils/responseHelper';
 import { formatKstLocal } from '../../../shared/utils/kstDateTime';

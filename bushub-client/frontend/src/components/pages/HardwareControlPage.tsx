@@ -1,4 +1,4 @@
-import { AlertCircle, Cpu, Zap, Radio, Thermometer, Gauge, Settings, Users } from 'lucide-react';
+import { AlertCircle, Zap, Radio, Thermometer, Gauge, Settings, Users } from 'lucide-react';
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +10,7 @@ import { HardwareControlTabs } from '../common/HardwareControl/HardwareControlTa
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { PollingDialog } from '../common/PollingDialog';
 import { Alert, AlertDescription } from '../ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { PageSectionLoading } from '../common/PageSectionLoading';
 import { LOADING_MESSAGES } from '../../constants/loadingMessages';
 

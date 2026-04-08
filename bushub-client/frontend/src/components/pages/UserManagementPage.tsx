@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Copy as CopyIcon,
-  Users,
   User,
   Globe,
   Crown,
@@ -60,7 +59,6 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
-  Checkbox,
 } from '../ui';
 
 // 새로운 커스텀 훅들 import

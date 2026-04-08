@@ -1,8 +1,7 @@
 import { IDevice } from '../../models/schemas/DeviceSchema';
 import { IUnit } from '../../models/schemas/UnitSchema';
 
-import { CommandPayload, CommandResult } from './interfaces/IControlService';
-import { IControlService } from './interfaces/IControlService';
+import { IControlService, CommandPayload, CommandResult } from './interfaces/IControlService';
 
 export interface CommandExecutionStrategy {
   execute(

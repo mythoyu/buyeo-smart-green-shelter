@@ -4,14 +4,12 @@ import { toast } from 'sonner';
 
 import { useGetClient } from '../../../../api/queries/client';
 import { useSendDirectHardwareCommand, useReadAllHardwareStatus } from '../../../../api/queries/hardware';
-import { SCHEDULE2_SUPPORTED_PORTS } from '../../../../types/hardware';
+import { SCHEDULE2_SUPPORTED_PORTS, type DOPort, type DOPortState, type HardwareControlError } from '../../../../types/hardware';
 import { Button } from '../../../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../ui/card';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '../../../ui/table';
 
 import { DOPortTableRow } from '../components/DOPortTableRow';
-
-import type { DOPort, DOPortState, HardwareControlError } from '../../../../types/hardware';
 
 // DO 포트 목록
 const DO_PORTS: DOPort[] = [

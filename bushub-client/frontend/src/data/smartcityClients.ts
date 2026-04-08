@@ -207,7 +207,7 @@ export const deviceUnits = [
     unitId: 'u001',
     unitName: '피플카운터',
     clients: [...ALL_CLIENT_IDS],
-    defaultConfig: { currentCount: 0, inCumulative: 0, outCumulative: 0 },
+    defaultConfig: { todayKey: '', todayInCount: 0 },
     unitType: 'people_counter',
   },
 ];

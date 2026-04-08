@@ -1,9 +1,8 @@
-import { RefreshCw, Server, Wifi, Database, Package, Cpu, Activity, BarChart2, Network } from 'lucide-react';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { RefreshCw, Server, Activity, BarChart2, Network } from 'lucide-react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import { useGetSystemMonitoring } from '../../api/queries/system-monitoring';
 import { useRightSidebarContent } from '../../hooks/useRightSidebarContent';
-import { MONITOR_NAV } from '../../constants/sidebarConfig';
 import {
   ServerStatusCard,
   DatabaseStatusCard,

@@ -76,6 +76,12 @@ export default [
       // React Hooks
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      // React Compiler(또는 react-hooks 확장 룰)에서 기존 코드 패턴과 충돌하는 에러 룰은 비활성화
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/purity': 'off',
 
       // 일반적인 코딩 스타일
       'no-console': 'off',

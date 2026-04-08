@@ -50,26 +50,13 @@ function getDateRange(period: Period): { start: Date; end: Date } {
 }
 
 /**
- * usage-10min: start·end 필수. date / period 미지원. 구간 [start, end).
+ * usage-10min: start·end 필수. 구간 [start, end).
  * 무오프셋 start/end는 KST 벽시계. Z/오프셋 포함 ISO는 호환 파싱.
  */
 function getUsage10MinRange(q: {
-  date?: string;
   start?: string;
   end?: string;
-  period?: string;
 }): { start: Date; end: Date } | { error: string } {
-  if (q.date != null && String(q.date).trim() !== '') {
-    return {
-      error: 'usage-10min은 date 파라미터를 지원하지 않습니다. start와 end를 지정하세요.',
-    };
-  }
-  if (q.period != null && String(q.period).trim() !== '') {
-    return {
-      error: 'usage-10min은 period 파라미터를 지원하지 않습니다. start와 end를 지정하세요.',
-    };
-  }
-
   const startStr = q.start != null ? String(q.start).trim() : '';
   const endStr = q.end != null ? String(q.end).trim() : '';
   if (!startStr || !endStr) {
@@ -352,7 +339,7 @@ async function peopleCounterExternalRoutes(app: FastifyInstance) {
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const q = request.query as { date?: string; start?: string; end?: string; period?: string; unitId?: string };
+        const q = request.query as { start?: string; end?: string; unitId?: string };
         const rangeResult = getUsage10MinRange(q);
         if ('error' in rangeResult) {
           return reply.code(400).send({

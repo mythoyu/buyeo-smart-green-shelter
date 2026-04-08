@@ -176,24 +176,27 @@ export class CommandResultHandler {
 
     const now = new Date();
 
-    // 1) 맵 구조(units.<unitId>) 우선 업데이트 (피플카운터 등)
-    const mapUpdateResult = await this.dataModel.updateOne(
-      { deviceId, [`units.${unitId}`]: { $exists: true } },
-      { $set: { [`units.${unitId}.data.${field}`]: value, updatedAt: now } },
-    );
+    // data.units는 배열로 통일한다: units.$ 경로로 단일 필드 업데이트
+    const queryCondition = { deviceId, 'units.unitId': unitId };
+    const updateContent: any = {
+      [`units.$.data.${field}`]: value,
+      updatedAt: now,
+    };
 
-    // 2) 배열 구조(units: [{unitId,...}]) fallback 업데이트 (레거시)
-    if ((mapUpdateResult?.matchedCount ?? 0) === 0) {
-      const queryCondition = { deviceId, 'units.unitId': unitId };
-      const updateContent: any = {
-        [`units.$.data.${field}`]: value,
-        updatedAt: now,
-      };
+    // 🎯 시간 필드 연동 처리 (배열 구조에서만 units.$ 사용)
+    await this.handleTimeFieldSync(deviceId, unitId, field, value, updateContent);
 
-      // 🎯 시간 필드 연동 처리 (배열 구조에서만 units.$ 사용)
-      await this.handleTimeFieldSync(deviceId, unitId, field, value, updateContent);
-
-      await this.dataModel.findOneAndUpdate(queryCondition, { $set: updateContent }, { new: true });
+    const result = await this.dataModel.updateOne(queryCondition, { $set: updateContent });
+    if ((result?.matchedCount ?? 0) === 0) {
+      // 방어: 유닛이 누락된 비정상 데이터일 때 최소 형태로 추가
+      await this.dataModel.updateOne(
+        { deviceId },
+        {
+          $set: { updatedAt: now },
+          $push: { units: { unitId, data: { [field]: value } } },
+        },
+      );
+      this.logger.warn(`[CommandResultHandler] units에 ${unitId}가 없어 새로 추가했습니다: ${deviceId}/${unitId}`);
     }
   }
 

@@ -369,6 +369,8 @@ export class UnifiedModbusService {
   getPerformanceMetrics() {
     // ServiceContainer를 통해 UnifiedModbusPollerService에 접근
     try {
+      // 순환 의존성/초기화 순서 이슈를 피하기 위해 require 사용 (런타임에서만 필요)
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { ServiceContainer } = require('../container/ServiceContainer');
       const serviceContainer = ServiceContainer.getInstance();
       const pollerService = serviceContainer.getUnifiedModbusPollerService();
