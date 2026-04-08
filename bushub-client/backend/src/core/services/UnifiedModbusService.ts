@@ -13,6 +13,22 @@ import { IPollingDataPersistenceService } from './interfaces/IPollingDataPersist
 import { IUnifiedModbusCommunicationService } from './interfaces/IUnifiedModbusCommunicationService';
 import { ModbusCommand, ModbusCommandQueue } from './ModbusCommandQueue';
 
+/** 로그용 — Error가 아닌 serialport 계열 객체가 ${error}로 찍히는 것을 방지 */
+function formatErrorForLog(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`;
+  }
+  if (typeof error === 'object' && error !== null) {
+    const o = error as Record<string, unknown>;
+    const name = typeof o.name === 'string' ? o.name : '';
+    const message = typeof o.message === 'string' ? o.message : '';
+    const errno = typeof o.errno === 'string' ? o.errno : String(o.errno ?? '');
+    const joined = `${name} ${message} ${errno}`.trim();
+    return joined || JSON.stringify(error);
+  }
+  return String(error);
+}
+
 /**
  * 통합 Modbus 서비스
  * Mock 모드와 실제 RS-485 모드를 상황에 맞게 선택하여 사용
@@ -82,12 +98,12 @@ export class UnifiedModbusService {
       this.logger?.error(errorMsg);
       throw new Error(errorMsg);
     } catch (error) {
-      this.logger?.error(`[UnifiedModbusService] 연결 시도 실패: ${error}`);
+      this.logger?.error(`[UnifiedModbusService] 연결 시도 실패: ${formatErrorForLog(error)}`);
 
       // Mock 모드 비활성화 시 에러 전파 (Docker 재시작 유도)
       const currentConfig = getModbusConfig();
       if (!currentConfig.mockEnabled) {
-        throw new Error(`[UnifiedModbusService] 실제 하드웨어 연결 실패: ${error}`);
+        throw new Error(`[UnifiedModbusService] 실제 하드웨어 연결 실패: ${formatErrorForLog(error)}`);
       }
 
       // 명시적으로 Mock 모드가 활성화된 경우에만 연결 허용
@@ -105,7 +121,7 @@ export class UnifiedModbusService {
       await this.communicationService.disconnect();
       this.logger?.info(`[UnifiedModbusService] ${this.activeService} 서비스 연결 해제 완료`);
     } catch (error) {
-      this.logger?.error(`[UnifiedModbusService] 연결 해제 실패: ${error}`);
+      this.logger?.error(`[UnifiedModbusService] 연결 해제 실패: ${formatErrorForLog(error)}`);
     }
   }
 
@@ -312,7 +328,7 @@ export class UnifiedModbusService {
 
       return result;
     } catch (error) {
-      this.logger?.error(`[UnifiedModbusService] 명령 실행 실패: ${command.id} - ${error}`);
+      this.logger?.error(`[UnifiedModbusService] 명령 실행 실패: ${command.id} - ${formatErrorForLog(error)}`);
       throw error;
     }
   }
@@ -358,7 +374,7 @@ export class UnifiedModbusService {
       const pollerService = serviceContainer.getUnifiedModbusPollerService();
       return pollerService.getPerformanceMetrics();
     } catch (error) {
-      this.logger?.warn(`[UnifiedModbusService] 성능 메트릭 조회 실패: ${error}`);
+      this.logger?.warn(`[UnifiedModbusService] 성능 메트릭 조회 실패: ${formatErrorForLog(error)}`);
       return {
         totalPollingCalls: 0,
         successfulPolls: 0,

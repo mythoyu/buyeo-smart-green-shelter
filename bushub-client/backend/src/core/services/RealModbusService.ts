@@ -1,3 +1,5 @@
+import { EventEmitter } from 'events';
+
 import ModbusRTU from 'modbus-serial';
 
 import { buildReverseIndex, ReverseIndexSpec } from '../../meta/protocols/mockValueGenerator';
@@ -108,65 +110,66 @@ export class RealModbusService implements IModbusCommunication {
       }
       throw new Error(`지원하지 않는 명령 타입: ${command.type}`);
     } catch (error) {
-      this.logger?.error(`[RealModbusService] executeCommand 실패: ${error}`);
+      this.logger?.error(`[RealModbusService] executeCommand 실패: ${this.errorToSearchableString(error)}`);
       throw error;
     }
   }
 
-  // 포트 접근 테스트 (modbus-serial 전용)
+  /**
+   * 포트 접근 테스트 (modbus-serial)
+   * connectRTUBuffered는 Promise를 반환하므로 await·이벤트·타임아웃을 한 경로로 묶어 미처리 rejection을 방지한다.
+   */
   private async testPortAccess(): Promise<boolean> {
+    this.logger?.info(`[RealModbusService] 포트 ${this.config.port} 접근 테스트 시작`);
+
+    const testClient = new ModbusRTU();
+    const testConnectOptions: any = { baudRate: this.config.baudRate };
+    if (this.config.rtscts) {
+      testConnectOptions.rtscts = true;
+    }
+
+    const closeSafe = async (): Promise<void> => {
+      try {
+        await testClient.close();
+      } catch {
+        /* 닫기 실패는 무시 */
+      }
+    };
+
+    const testEmitter = testClient as unknown as EventEmitter;
+    let onError: ((err: unknown) => void) | undefined;
+
     try {
-      this.logger?.info(`[RealModbusService] 포트 ${this.config.port} 접근 테스트 시작`);
-
-      // ✅ 정적 import 사용
-      const testClient = new ModbusRTU();
-
-      return new Promise((resolve) => {
-        // 타임아웃 설정
-        const timeout = setTimeout(() => {
-          this.logger?.warn(`[RealModbusService] 포트 접근 테스트 타임아웃`);
-          testClient.close();
-          resolve(false);
-        }, 5000);
-
-        try {
-          // 연결 시도 (기본값 사용)
-          const testConnectOptions: any = {
-            baudRate: this.config.baudRate,
-          };
-          // RTS/CTS 흐름 제어 설정 (옵션)
-          if (this.config.rtscts) {
-            testConnectOptions.rtscts = true;
-          }
-          testClient.connectRTUBuffered(this.config.port, testConnectOptions);
-
-          // 연결 성공 시 (1초 후 확인)
-          setTimeout(() => {
-            clearTimeout(timeout);
-            this.logger?.info(`[RealModbusService] 포트 ${this.config.port} 접근 테스트 성공`);
-            testClient.close();
-            resolve(true);
-          }, 1000);
-
-          // 에러 발생 시
-          testClient.on('error', (error: any) => {
-            clearTimeout(timeout);
-            this.logger?.warn(`[RealModbusService] 포트 접근 테스트 실패: ${error.message || error}`);
-            testClient.close();
-            resolve(false);
-          });
-        } catch (error) {
-          clearTimeout(timeout);
-          this.logger?.error(
-            `[RealModbusService] 포트 접근 테스트 중 오류: ${error instanceof Error ? error.message : String(error)}`,
-          );
-          resolve(false);
-        }
+      const errorPromise = new Promise<never>((_, reject) => {
+        onError = (err: unknown) => {
+          reject(err instanceof Error ? err : new Error(this.errorToSearchableString(err)));
+        };
+        testEmitter.once('error', onError);
       });
+
+      await Promise.race([
+        testClient.connectRTUBuffered(this.config.port, testConnectOptions),
+        errorPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('포트 접근 테스트 타임아웃')), 5000),
+        ),
+      ]);
+
+      if (onError) {
+        testEmitter.removeListener('error', onError);
+      }
+
+      await closeSafe();
+      this.logger?.info(`[RealModbusService] 포트 ${this.config.port} 접근 테스트 성공`);
+      return true;
     } catch (error) {
-      this.logger?.error(
-        `[RealModbusService] 포트 접근 테스트 실패: ${error instanceof Error ? error.message : String(error)}`,
+      if (onError) {
+        testEmitter.removeListener('error', onError);
+      }
+      this.logger?.warn(
+        `[RealModbusService] 포트 접근 테스트 실패: ${this.errorToSearchableString(error)}`,
       );
+      await closeSafe();
       return false;
     }
   }
@@ -178,13 +181,13 @@ export class RealModbusService implements IModbusCommunication {
     try {
       this.logger?.info(`[RealModbusService] 포트 ${this.config.port} 연결 시도`);
 
-      // 포트 접근 테스트
+      // 포트 사전 테스트(실패해도 본 연결 시도는 진행 — 테스트만으로는 일시적/USB 재열림 등을 구분하기 어려움)
       if (this.config.enablePortTest !== false) {
         const portAccessible = await this.testPortAccess();
         if (!portAccessible) {
-          const errorMsg = `[RealModbusService] 포트 ${this.config.port} 접근 불가 - 권한 문제 또는 포트가 존재하지 않음`;
-          this.logger?.error(errorMsg);
-          throw new Error(errorMsg);
+          this.logger?.warn(
+            `[RealModbusService] 포트 ${this.config.port} 사전 테스트 실패 — Modbus 본 연결을 계속 시도합니다`,
+          );
         }
       }
 
@@ -211,15 +214,16 @@ export class RealModbusService implements IModbusCommunication {
       return true;
     } catch (error) {
       this.connectionRetryCount++;
-      const errorMsg = `[RealModbusService] 연결 시도 실패 (${this.connectionRetryCount}/${this.maxConnectionRetries}): ${error}`;
+      const detail = this.errorToSearchableString(error);
+      const errorMsg = `[RealModbusService] 연결 시도 실패 (${this.connectionRetryCount}/${this.maxConnectionRetries}): ${detail}`;
       this.logger?.error(errorMsg);
 
       if (this.connectionRetryCount >= this.maxConnectionRetries) {
-        const finalErrorMsg = `[RealModbusService] 최대 재시도 횟수 초과 - 포트 ${this.config.port} 연결 불가`;
+        const finalErrorMsg = `[RealModbusService] 최대 재시도 횟수 초과 - 포트 ${this.config.port} 연결 불가 (${detail})`;
         this.logger?.error(finalErrorMsg);
         throw new Error(finalErrorMsg);
       }
-      throw error; // 에러를 다시 던져서 상위에서 처리하도록 함
+      throw error instanceof Error ? error : new Error(detail);
     }
   }
 
@@ -239,6 +243,36 @@ export class RealModbusService implements IModbusCommunication {
     return await this.connect();
   }
 
+  /** 시리얼/Modbus 에러에서 검색용 문자열 (PortNotOpenError 객체 등) */
+  private errorToSearchableString(error: unknown): string {
+    if (error instanceof Error) {
+      return `${error.name} ${error.message}`;
+    }
+    if (typeof error === 'object' && error !== null) {
+      const o = error as Record<string, unknown>;
+      const name = typeof o.name === 'string' ? o.name : '';
+      const message = typeof o.message === 'string' ? o.message : '';
+      const errno = typeof o.errno === 'string' ? o.errno : '';
+      return `${name} ${message} ${errno}`;
+    }
+    return String(error);
+  }
+
+  /** USB 재연결·포트 끊김 등 재연결 후 재시도할 만한 오류 */
+  private isRecoverableSerialError(error: unknown): boolean {
+    const s = this.errorToSearchableString(error).toLowerCase();
+    if (s.includes('portnotopen') || s.includes('port not open')) {
+      return true;
+    }
+    if (s.includes('econnrefused')) {
+      return true;
+    }
+    if (s.includes('port is closed') || (s.includes('closed') && s.includes('port'))) {
+      return true;
+    }
+    return false;
+  }
+
   /**
    * ✅ 에러 분류 및 처리 개선
    */
@@ -246,6 +280,20 @@ export class RealModbusService implements IModbusCommunication {
     let errorType = ModbusErrorType.UNKNOWN_ERROR;
     let retryable = false;
     let message = '알 수 없는 오류가 발생했습니다';
+
+    // serialport 등 Error 가 아닌 { name, message, errno } 객체
+    if (error && typeof error === 'object' && !(error instanceof Error)) {
+      const name = String((error as { name?: string }).name ?? '');
+      const msg = String((error as { message?: string }).message ?? '');
+      if (name === 'PortNotOpenError' || msg.toLowerCase().includes('port not open')) {
+        return {
+          type: ModbusErrorType.CONNECTION_ERROR,
+          message: `${context}: 시리얼 포트가 열려 있지 않습니다`,
+          retryable: true,
+          originalError: error,
+        };
+      }
+    }
 
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
@@ -309,8 +357,18 @@ export class RealModbusService implements IModbusCommunication {
         message = '프로토콜 통신 오류가 발생했습니다';
       }
     } else {
-      // Error 객체가 아닌 경우의 처리
-      message = `예상치 못한 에러 타입: ${typeof error}, 값: ${JSON.stringify(error)}`;
+      // Error 객체가 아닌 경우 — 객체 형태면 짧게 표시
+      if (error && typeof error === 'object') {
+        const name = (error as { name?: string }).name;
+        const msg = (error as { message?: string }).message;
+        if (name || msg) {
+          message = `${name ?? '?'}: ${msg ?? ''}`;
+        } else {
+          message = `예상치 못한 에러 타입: ${typeof error}, 값: ${JSON.stringify(error)}`;
+        }
+      } else {
+        message = `예상치 못한 에러 타입: ${typeof error}, 값: ${JSON.stringify(error)}`;
+      }
     }
 
     return {
@@ -322,35 +380,48 @@ export class RealModbusService implements IModbusCommunication {
   }
 
   async disconnect(): Promise<void> {
+    const client = this.modbusClient;
     try {
-      if (this.modbusClient && this._isConnected) {
-        await this.modbusClient.close();
-        this._isConnected = false;
-        // ✅ 리소스 정리 완성
-        this.modbusClient = null;
-        this.connectionPromise = null;
+      if (client) {
+        await client.close();
         this.logger?.info(`[RealModbusService] RS485 연결 해제 완료`);
       }
     } catch (error) {
-      this.logger?.error(
-        `[RealModbusService] 연결 해제 중 오류: ${error instanceof Error ? error.message : String(error)}`,
+      this.logger?.warn(
+        `[RealModbusService] 연결 해제 중 오류(상태는 정리함): ${error instanceof Error ? error.message : String(error)}`,
       );
-      // ✅ 에러 발생 시에도 상태 정리
+    } finally {
       this._isConnected = false;
       this.modbusClient = null;
       this.connectionPromise = null;
     }
   }
 
-  async readRegisters(request: ModbusReadRequest): Promise<ModbusResponse> {
+  /**
+   * 읽기/쓰기 공통: 포트 끊김 등 복구 가능 오류 시 disconnect → connect 후 1회만 재시도 (USB·내장 RS-485 공통)
+   */
+  private async runWithSerialReconnect<T>(operation: () => Promise<T>, label: 'read' | 'write'): Promise<T> {
     try {
-      // 단순화: 필요 시 1회 연결 시도
       if (!this.isConnected()) {
         await this.connect();
       }
+      return await operation();
+    } catch (error) {
+      if (!this.isRecoverableSerialError(error)) {
+        throw error;
+      }
+      this.logger?.warn(
+        `[RealModbusService] 시리얼 끊김 감지(${label}), 재연결 후 1회 재시도: ${this.errorToSearchableString(error)}`,
+      );
+      await this.disconnect();
+      await this.connect();
+      return await operation();
+    }
+  }
 
-      // 실제 Modbus 읽기 실행
-      const result = await this.executeRealRead(request);
+  async readRegisters(request: ModbusReadRequest): Promise<ModbusResponse> {
+    try {
+      const result = await this.runWithSerialReconnect(() => this.executeRealRead(request), 'read');
 
       return {
         success: true,
@@ -374,13 +445,7 @@ export class RealModbusService implements IModbusCommunication {
 
   async writeRegister(request: ModbusWriteRequest): Promise<ModbusResponse> {
     try {
-      // 단순화: 필요 시 1회 연결 시도
-      if (!this.isConnected()) {
-        await this.connect();
-      }
-
-      // 실제 Modbus 쓰기 실행
-      const result = await this.executeRealWrite(request);
+      const result = await this.runWithSerialReconnect(() => this.executeRealWrite(request), 'write');
 
       return {
         success: true,
@@ -492,7 +557,7 @@ export class RealModbusService implements IModbusCommunication {
       return result;
     } catch (error) {
       this.logger?.error(
-        `[RealModbusService] 읽기 실패 - FC: ${request.functionCode}, Address: ${request.address}, Length: ${request.length}, Error: ${error}`,
+        `[RealModbusService] 읽기 실패 - FC: ${request.functionCode}, Address: ${request.address}, Length: ${request.length}, Error: ${this.errorToSearchableString(error)}`,
       );
       throw error;
     }
@@ -685,7 +750,9 @@ export class RealModbusService implements IModbusCommunication {
 
       return converted;
     } catch (error) {
-      this.logger?.error(`[RealModbusService] 데이터 변환 중 오류: ${error}, 원본: ${JSON.stringify(result)}`);
+      this.logger?.error(
+        `[RealModbusService] 데이터 변환 중 오류: ${this.errorToSearchableString(error)}, 원본: ${JSON.stringify(result)}`,
+      );
       return [0];
     }
   }

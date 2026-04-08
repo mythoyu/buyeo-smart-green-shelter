@@ -1,0 +1,9 @@
+# PeopleCounter 유닛 1 — /dev 마운트만 (create_host_path: false)
+services:
+  backend:
+    volumes:
+      - type: bind
+        source: /dev/bushub-people-counter-1
+        target: /dev/bushub-people-counter-1
+        bind:
+          create_host_path: false

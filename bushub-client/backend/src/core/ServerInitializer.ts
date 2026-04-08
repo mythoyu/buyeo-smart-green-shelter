@@ -7,6 +7,20 @@ import { getModbusConfig } from '../utils/environment';
 
 import { ServiceContainer } from './container/ServiceContainer';
 
+function formatInitError(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`;
+  }
+  if (typeof error === 'object' && error !== null) {
+    const o = error as Record<string, unknown>;
+    const name = typeof o.name === 'string' ? o.name : '';
+    const message = typeof o.message === 'string' ? o.message : '';
+    const joined = `${name} ${message}`.trim();
+    return joined || JSON.stringify(error);
+  }
+  return String(error);
+}
+
 export interface InitStatus {
   mongodb: boolean;
   serviceContainer: boolean;
@@ -481,7 +495,7 @@ export class ServerInitializer {
         logWarn('⚠️ UnifiedModbusService를 찾을 수 없음');
       }
     } catch (error) {
-      logError(`❌ Modbus 서비스 초기화 실패: ${error}`);
+      logError(`❌ Modbus 서비스 초기화 실패: ${formatInitError(error)}`);
 
       // Docker Compose 재시작 정책을 위해 서버 종료 (Mock 모드가 아닌 경우)
       const isMockEnabled = process.env.MODBUS_MOCK_ENABLED === 'true';

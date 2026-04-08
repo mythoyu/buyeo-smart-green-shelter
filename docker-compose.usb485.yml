@@ -40,7 +40,12 @@ services:
       - "3000:3000"
     volumes:
       - backend_logs:/app/logs
-      - /dev/bushub-controller:/dev/bushub-controller:rw
+      # Docker 기본: 소스 없으면 호스트에 빈 디렉터리 생성 → /dev udev 링크가 막힘. create_host_path: false 로 방지
+      - type: bind
+        source: /dev/bushub-controller
+        target: /dev/bushub-controller
+        bind:
+          create_host_path: false
       # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
     privileged: true
