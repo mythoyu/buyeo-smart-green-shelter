@@ -1,6 +1,6 @@
 /**
  * People Counter Service (APC100)
- * ttyS1 RS485 통신, 상태 조회 9바이트 ASCII `[0000BTR]`, 응답 파싱
+ * RS485 시리얼, 상태 조회 9바이트 ASCII `[0000BTR]`, 응답 파싱
  * @see docs/APC100_RS485_PROTOCOL.md, docs/PEOPLE_COUNTER_SPEC.md
  */
 
@@ -11,7 +11,8 @@ import { isPeopleCounterMockEnabled } from '../../config/mock.config';
 
 /** `[` + 4자리 ID + 3자리 명령 + `]` = 9바이트 */
 const REQUEST = '[0000BTR]';
-const DEFAULT_PORT = process.env.PEOPLE_COUNTER_PORT || '/dev/ttyS1';
+/** PEOPLE_COUNTER_COUNT=0 등 시리얼 미사용(컨테이너 내 더미 경로) */
+export const PEOPLE_COUNTER_DISABLED_PATH = '__BUSHUB_PEOPLE_COUNTER_OFF__';
 const DEFAULT_BAUD = Number(process.env.PEOPLE_COUNTER_BAUD_RATE) || 9600;
 const READ_TIMEOUT_MS = 1000;
 
@@ -53,9 +54,12 @@ const MANUAL_WRITE_FLUSH_MS = 50;
 export class PeopleCounterService {
   private logger: ILogger | undefined;
   private port: SerialPort | null = null;
-  private path = DEFAULT_PORT;
+  /** 포트 미지정 시 암시적 /dev/ttyS1 없음 — 비활성(sentinel) */
+  private path = PEOPLE_COUNTER_DISABLED_PATH;
   private baudRate = DEFAULT_BAUD;
   private mockEnabled: boolean;
+  /** 시리얼 미사용(폴링 생략) */
+  private disabled = false;
   private mockInCumulative: number = 0;
   private mockOutCumulative: number = 0;
   private mockCurrentCount: number = 0;
@@ -63,8 +67,15 @@ export class PeopleCounterService {
   constructor(logger?: ILogger, portPath?: string) {
     this.logger = logger;
     this.mockEnabled = isPeopleCounterMockEnabled();
-    if (portPath && String(portPath).trim() !== '') {
-      this.path = String(portPath).trim();
+    const trimmed = portPath != null ? String(portPath).trim() : '';
+    if (trimmed === PEOPLE_COUNTER_DISABLED_PATH) {
+      this.disabled = true;
+      this.path = PEOPLE_COUNTER_DISABLED_PATH;
+    } else if (trimmed !== '') {
+      this.path = trimmed;
+    } else {
+      this.disabled = true;
+      this.path = PEOPLE_COUNTER_DISABLED_PATH;
     }
     if (this.mockEnabled) {
       this.logger?.info('[PeopleCounterService] Mock 모드 활성화');
@@ -80,6 +91,7 @@ export class PeopleCounterService {
   }
 
   async open(customPath?: string): Promise<boolean> {
+    if (this.disabled) return false;
     if (this.port?.isOpen) return true;
     const path = customPath ?? this.path;
     try {
@@ -118,7 +130,7 @@ export class PeopleCounterService {
    * 상태 조회: `[0000BTR]`(9바이트) 전송 후 응답 파싱
    */
   async query(): Promise<PeopleCounterData | null> {
-    // Mock 모드: 더미 데이터 반환
+    // Mock 모드: 시리얼 비활성이어도 더미 데이터 반환
     if (this.mockEnabled) {
       // 시뮬레이션: 가끔 입실/퇴실 발생
       const rand = Math.random();
@@ -148,6 +160,10 @@ export class PeopleCounterService {
         timestamp: new Date(),
         raw: `[0000 BTW ,${String(this.mockInCumulative).padStart(6, '0')},${String(this.mockOutCumulative).padStart(6, '0')},${String(this.mockCurrentCount).padStart(6, '0')},1,0,1,0,1,0,0,0]`,
       };
+    }
+
+    if (this.disabled) {
+      return null;
     }
 
     // 실제 하드웨어 통신
@@ -210,6 +226,9 @@ export class PeopleCounterService {
     timeoutMs: number,
     waitForClosingBracket: boolean,
   ): Promise<ManualApcSendResult> {
+    if (this.disabled) {
+      throw new Error('PeopleCounter 시리얼이 비활성화되어 있습니다.');
+    }
     if (this.mockEnabled) {
       throw new Error('피플카운터 Mock 모드에서는 APC 테스트를 사용할 수 없습니다.');
     }
@@ -327,6 +346,10 @@ export class PeopleCounterService {
    * @param type 리셋 타입: 'current' (현재 인원), 'in' (입실 누적), 'out' (퇴실 누적), 'all' (전체)
    */
   async reset(type: ResetType): Promise<boolean> {
+    if (this.disabled) {
+      this.logger?.warn('[PeopleCounterService] 비활성 상태 — 리셋 생략');
+      return false;
+    }
     // Mock 모드
     if (this.mockEnabled) {
       switch (type) {

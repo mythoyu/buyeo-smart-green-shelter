@@ -1,4 +1,4 @@
-# PC A: 내장 RS-485 두 포트 — DDC/Modbus(ttyS0), 피플카운터 APC(ttyS1). 보드에 맞게 경로 수정.
+# PC A: 내장 Modbus /dev/ttyS0. 피플카운터(APC)는 USB + udev(/dev/bushub-people-counter-N) — docker-compose.common.* 로 마운트.
 # USB 변환기만 쓰는 PC B는 docker-compose.usb485.yml 사용.
 services:
   # MongoDB 데이터베이스
@@ -38,7 +38,6 @@ services:
     volumes:
       - backend_logs:/app/logs
       - /dev/ttyS0:/dev/ttyS0:rw
-      - /dev/ttyS1:/dev/ttyS1:rw
       # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
     privileged: true
@@ -52,7 +51,8 @@ services:
       - MODBUS_PORT=/dev/ttyS0
       - MODBUS_BAUD_RATE=9600
       - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
-      - PEOPLE_COUNTER_PORT=/dev/ttyS1
+      # PEOPLE_COUNTER_COUNT: 0이면 피플카운터 비활성(백엔드). 1~3이면 run-docker-stack 이 common 조각 + PORTS 자동 설정
+      - PEOPLE_COUNTER_COUNT=${PEOPLE_COUNTER_COUNT:-0}
       - PEOPLE_COUNTER_BAUD_RATE=9600
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:

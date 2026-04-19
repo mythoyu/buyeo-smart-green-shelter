@@ -94,7 +94,7 @@ inCount(bucket) = \sum_{\substack{doc \in people\_counter\_raw \\\\ doc.deviceId
 ### 4.3 compose 운영 방식(옵션 A 확정: compose 분리)
 
 - **0대**: `docker-compose.usb485.yml`만 사용
-- **1~3대**: `docker-compose.usb485.yml` + `docker-compose.usb485.people-counter.yml`를 함께 사용
+- **1~3대**: 베이스(`docker-compose.usb485.yml` 또는 `docker-compose.integrated.yml`) + `docker-compose.common.people-counter.yml` + `docker-compose.common.pc-dev-N.yml`를 함께 사용
 
 > 이유: 0대 환경에서 “존재하지 않는 디바이스 마운트로 인해 compose 기동 실패”를 구조적으로 줄이기 위함.
 
@@ -117,24 +117,23 @@ inCount(bucket) = \sum_{\substack{doc \in people\_counter\_raw \\\\ doc.deviceId
 - `scripts/lib/udev/00-wizard-bushub-usb-serial.sh`
   - 피플카운터 개수(0~3) 선택 UI 추가
   - PeopleCounter 프로브 단계 반복 실행(1개씩 연결 방식)
-- `scripts/lib/udev/02-probe-pc-bushub-usb-serial.sh`
+- `scripts/lib/udev/common/02-probe-pc-bushub-usb-serial.sh` (루트 `02-*.sh`는 호환 래퍼)
   - `--index 1|2|3` 지원
   - 심볼릭 이름을 `bushub-people-counter-$index`로 생성
   - fragment 파일도 인덱스별로 분리
-- `scripts/lib/udev/03-install-bushub-usb-serial.sh`
-  - `PEOPLE_COUNTER_COUNT=0..3`를 입력으로 받아,
-    - 0이면 PeopleCounter fragment 요구/삽입을 스킵
-    - 1~3이면 people-counter-1..N fragment를 rules에 포함
-- `scripts/lib/udev/04-verify-bushub-usb-serial.sh`
+- `scripts/lib/udev/common/03-install-bushub-serial.sh` — 단일 `/etc/udev/rules.d/99-bushub-serial.rules` 덮어쓰기
+  - usb485: `usb485/03-install-bushub-usb-serial.sh`(컨트롤러+APC)
+  - integrated(Modbus=ttyS0): `integrated/03-install-bushub-serial.sh`(`--apc-only`, APC만)
+- `scripts/lib/udev/common/04-verify-bushub-serial.sh` — `integrated/04-*.sh`는 `--apc-only` 전달
   - count에 따라 `/dev/bushub-people-counter-1..N`을 검사
 
 ### 5.3 compose/기동 스크립트
 
-- `docker-compose.usb485.people-counter.yml` (신규)
+- `docker-compose.common.people-counter.yml` (공통)
   - people-counter-1..3 볼륨 마운트 및 환경변수 전달
 - compose up 실행부(예: `start-docker-compose-usb485.sh`)
   - count=0이면 기본 compose만 사용
-  - count>=1이면 `-f docker-compose.usb485.yml -f docker-compose.usb485.people-counter.yml`로 기동
+  - count>=1이면 `run-docker-stack.sh`가 베이스 + `docker-compose.common.people-counter.yml` + `pc-dev-1..N`을 붙여 기동
 
 ---
 

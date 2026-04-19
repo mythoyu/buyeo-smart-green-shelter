@@ -481,7 +481,7 @@ export class ServerInitializer {
       const poller = this.serviceContainer.getPeopleCounterPoller();
       if (poller) {
         await poller.start();
-        logInfo('✅ 피플카운터 폴러 시작 (pollingEnabled ON일 때 PEOPLE_COUNTER_PORT 폴링)');
+        logInfo('✅ 피플카운터 폴러 시작 (pollingEnabled ON일 때 시리얼 폴링)');
       }
     } catch (error) {
       logWarn(`⚠️ 피플카운터 폴러 시작 건너뜀: ${error}`);

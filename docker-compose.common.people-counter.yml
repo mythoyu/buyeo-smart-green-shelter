@@ -1,0 +1,10 @@
+# 피플카운터 공통: 백엔드 env (usb485 / integrated 동일)
+# 디바이스 마운트는 PEOPLE_COUNTER_COUNT 에 맞게 docker-compose.common.pc-dev-N.yml 을 추가합니다.
+# 사용: scripts/lib/run-docker-stack.sh
+# 수동 예(1대): docker compose -f docker-compose.usb485.yml -f docker-compose.common.people-counter.yml -f docker-compose.common.pc-dev-1.yml up -d
+services:
+  backend:
+    environment:
+      # 멀티 유닛 포트 목록(프로브 순서=유닛 번호). 미설정 시 run-docker-stack.sh 가 PEOPLE_COUNTER_COUNT 로 1..N 경로를 채움
+      - PEOPLE_COUNTER_PORTS=${PEOPLE_COUNTER_PORTS:-/dev/bushub-people-counter-1}
+      - PEOPLE_COUNTER_BAUD_RATE=9600

@@ -59,6 +59,8 @@ services:
       - MODBUS_PORT=/dev/bushub-controller
       - MODBUS_BAUD_RATE=9600
       - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
+      # PEOPLE_COUNTER_COUNT: 단독 기동 시 0(시리얼 미사용). run-docker-stack 가 1~3 export 시 피플카운터 활성
+      - PEOPLE_COUNTER_COUNT=${PEOPLE_COUNTER_COUNT:-0}
       - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
     depends_on:
       - db

@@ -38,7 +38,7 @@
 
 ### 2.1 통신 포트
 
-- **포트**: `/dev/ttyS1`
+- **포트**: `PEOPLE_COUNTER_PORT` / `PEOPLE_COUNTER_PORTS`로 지정하는 시리얼 디바이스(예: udev 심볼릭 `/dev/bushub-people-counter-N` 또는 보드에 따라 `/dev/ttyUSB0` 등). 암시적 기본 `/dev/ttyS1` 은 없습니다.
 - **통신 방식**: RS485
 - **통신 속도**: 9600 bps
 - **데이터 형식**: 8N1 (8 Data Bit, No Parity, 1 Stop Bit)
@@ -356,9 +356,10 @@ every 10s:
 #### 6.1.1 PeopleCounterService
 
 - **역할**: APC100 장비와의 통신 담당
-- **포트**:
-  - 단일 포트(레거시): `PEOPLE_COUNTER_PORT` (미설정 시 기본값 `/dev/ttyS1`)
-  - 멀티 유닛: `PEOPLE_COUNTER_PORTS` (쉼표로 구분된 포트 목록, 예: `/dev/bushub-people-counter-1,/dev/bushub-people-counter-2`)
+- **포트** (`ServiceContainer`):
+  - `PEOPLE_COUNTER_COUNT=0` 이면 시리얼 미사용
+  - 그 외에는 **`PEOPLE_COUNTER_PORTS` 또는 `PEOPLE_COUNTER_PORT`를 반드시 명시** (암시적 기본 `/dev/ttyS1` 없음, 미설정 시 기동 실패)
+  - 멀티 유닛: `PEOPLE_COUNTER_PORTS` (쉼표 구분, 예: `/dev/bushub-people-counter-1,/dev/bushub-people-counter-2`)
 - **통신 주기**: 1초
 - **기능**:
   - 상태 조회 (9바이트 ASCII `[xxxxBTR]`, 예: `[0000BTR]`)
@@ -460,8 +461,9 @@ PeopleCounterRawSchema.index({ timestamp: 1 }, { expireAfterSeconds: 3024000 });
 ### 7.1 환경 변수
 
 ```bash
-# 피플카운터 개수(USB-RS485 스택에서 compose override 적용 여부에 사용)
-PEOPLE_COUNTER_COUNT=0  # 0~3
+# 피플카운터 개수(compose override 및 백엔드 비활성에 사용, 0~3)
+# docker-compose: integrated·usb485 베이스 모두 기본 0. run-docker-stack(usb485)가 1~3이면 export 후 기동
+PEOPLE_COUNTER_COUNT=0
 
 # 피플카운터 포트 설정(택1)
 # - 단일 포트(레거시)
@@ -479,32 +481,22 @@ PEOPLE_COUNTER_RAW_DATA_RETENTION_DAYS=35
 위 환경 변수들은 **포트/보드레이트/폴링 주기 등 기본 동작 파라미터를 설정하기 위한 선택 사항**입니다.  
 피플카운터 기능의 **ON/OFF 자체는 데이터베이스의 `System.runtime.peopleCounterEnabled` 필드**로 관리되며,
 해당 값은 시스템 설정 UI(관리자 페이지)에서 변경합니다.  
-환경 변수를 설정하지 않더라도:
+시리얼 포트 관련:
 
-- `PEOPLE_COUNTER_PORT` 등이 정의되어 있지 않으면 코드에 정의된 기본값(`/dev/ttyS1`, `9600bps`, `10000ms`)을 사용합니다.
+- `PEOPLE_COUNTER_COUNT=0` 이 아니면 **`PEOPLE_COUNTER_PORTS` 또는 `PEOPLE_COUNTER_PORT`를 반드시 설정**해야 하며, 암시적 기본 `/dev/ttyS1` 은 없습니다.
+- `PEOPLE_COUNTER_BAUD_RATE`·`PEOPLE_COUNTER_POLL_INTERVAL` 등은 기존과 같이 기본값을 둘 수 있습니다.
 - `peopleCounterEnabled`의 기본값은 항상 `false`이며, 사용자가 시스템 설정에서 명시적으로 ON 으로 변경하기 전까지는 피플카운터 기능이 비활성화된 상태로 동작합니다.
 
 ### 7.2 Docker 설정
 
-모노레포 루트의 `docker-compose.integrated.yml`에 다음 설정을 참고합니다:
+모노레포 루트의 `docker-compose.integrated.yml`은 **Modbus=/dev/ttyS0** 만 마운트합니다.  
+PeopleCounter(APC100)는 **USB–시리얼 + udev**로 `/dev/bushub-people-counter-N`을 만든 뒤, `PEOPLE_COUNTER_COUNT>=1`일 때 `docker-compose.common.*` 조각으로 컨테이너에 마운트합니다.  
+`PEOPLE_COUNTER_COUNT=0`(기본)이면 백엔드에서 피플카운터 시리얼을 사용하지 않습니다.
 
-```yaml
-services:
-  backend:
-    volumes:
-      - /dev/ttyS0:/dev/ttyS0:rw  # 기존 Modbus 포트
-      # (선택) 피플카운터(APC100) 사용 시에만 ttyS1 마운트
-      # - /dev/ttyS1:/dev/ttyS1:rw  # 피플카운터 포트
-```
+#### 7.2.1 USB-RS485 / integrated 공통(0~3대) — compose override
 
-피플카운터 장비가 실제로 연결되어 있지 않은 환경에서는 `/dev/ttyS1` 마운트를 생략해도 됩니다.  
-이 경우 피플카운터 서비스는 포트 오픈 실패를 로그로만 남기고, `peopleCounterEnabled`가 기본값 `false` 상태인 한
-시스템의 다른 기능(DDC, 센서, 조명 등)에는 영향을 주지 않습니다.
-
-#### 7.2.1 USB-RS485 스택(0~3대) — compose override 분리
-
-- 기본 compose: `docker-compose.usb485.yml` (0대에서도 안전)
-- 피플카운터 override: `docker-compose.usb485.people-counter.yml` (count>=1일 때만 적용)
+- 기본 compose: `docker-compose.usb485.yml` 또는 `docker-compose.integrated.yml` (0대에서도 안전)
+- 피플카운터 override: `docker-compose.common.people-counter.yml` + `docker-compose.common.pc-dev-N.yml` (count>=1일 때만 적용, usb485·integrated 공통)
 
 수동 절차/현장 예시는 `docs/PEOPLE_COUNTER_FIELD_RUNBOOK.md`를 참고하세요.
 
@@ -575,7 +567,7 @@ services:
 ### 11.2 기존 시스템과의 통합
 
 - 피플카운터는 기존 Modbus 시스템(`ttyS0`)과 독립적으로 동작합니다.
-- `ttyS1` 포트를 전용으로 사용합니다.
+- APC100용 RS485 시리얼은 Modbus와 **별도 디바이스 경로**로 구성합니다(`PEOPLE_COUNTER_PORT` / `PEOPLE_COUNTER_PORTS`).
 - 기존 `data` 엔드포인트에 자동으로 포함됩니다.
 
 ### 11.3 외부 프로그램 연동
@@ -597,7 +589,7 @@ services:
   - `GET /api/v1/external/data` 응답에서 피플카운터 장비(`deviceId = d082`)는 제외됩니다.
   - `GET /api/v1/external/people-counter/stats`, `GET /api/v1/external/people-counter/raw` 요청 시
     HTTP 404와 함께 "피플카운터가 비활성화되어 있습니다." 메시지를 반환합니다.
-  - 시리얼 포트(`/dev/ttyS1`) 연결 실패나 피플카운터 통신 오류는 로그 및 상태/에러 컬렉션에만 기록되며,
+  - 시리얼 포트 연결 실패나 피플카운터 통신 오류는 로그 및 상태/에러 컬렉션에만 기록되며,
     시스템 전체 동작에는 영향을 주지 않습니다.
 
 ---
@@ -615,7 +607,7 @@ services:
 ### 12.2 피플카운터 장비가 없는 제품 릴리즈
 
 - 하드웨어에 APC100 피플카운터가 연결되어 있지 않은 모델에서는:
-  - `/dev/ttyS1` 디바이스를 Docker 컨테이너에 마운트하지 않습니다.
+  - 피플카운터용 시리얼 디바이스를 Docker 컨테이너에 마운트하지 않으며, `PEOPLE_COUNTER_COUNT=0` 등으로 백엔드에서 시리얼을 사용하지 않습니다.
   - 시스템 설정에서 `peopleCounterEnabled`를 **OFF(기본값)** 상태로 유지합니다.
 - 이 구성에서도:
   - DDC/센서/조명 등 다른 장비는 정상 동작합니다.

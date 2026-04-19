@@ -1,4 +1,4 @@
-import { logDebug, logInfo } from '../../logger';
+import { logDebug, logError, logInfo } from '../../logger';
 import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { Logger } from '../../shared/services/Logger';
@@ -56,6 +56,7 @@ import { LogSchedulerService } from '../services/LogSchedulerService';
 import { ModbusCommandQueue } from '../services/ModbusCommandQueue';
 import { ModbusService } from '../services/ModbusService';
 import { PeopleCounterPollerService } from '../services/PeopleCounterPollerService';
+import { PEOPLE_COUNTER_DISABLED_PATH } from '../services/PeopleCounterService';
 import { PeopleCounterQueueService } from '../services/PeopleCounterQueueService';
 import { PeopleCounterResetSchedulerService } from '../services/PeopleCounterResetSchedulerService';
 import { PollingDataPersistenceService } from '../services/PollingDataPersistenceService';
@@ -290,16 +291,34 @@ export class ServiceContainer {
     this.services.set('pollingAutoRecoveryService', pollingAutoRecoveryService);
 
     // 피플카운터 큐 서비스 (포트별 직렬화)
+    // - PEOPLE_COUNTER_COUNT=0: 시리얼 미사용(integrated 등)
     // - PEOPLE_COUNTER_PORTS: "/dev/xxx-1,/dev/xxx-2,..." (권장)
-    // - PEOPLE_COUNTER_PORT: 레거시 단일 포트
+    // - PEOPLE_COUNTER_PORT: 단일 포트(명시 시에만). 암시적 기본 /dev/ttyS1 은 사용하지 않음
+    const pcCountRaw = (process.env.PEOPLE_COUNTER_COUNT || '').trim();
     const portsEnv = (process.env.PEOPLE_COUNTER_PORTS || '').trim();
-    const ports =
-      portsEnv !== ''
-        ? portsEnv
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s !== '')
-        : [(process.env.PEOPLE_COUNTER_PORT || '/dev/ttyS1').trim()].filter((s) => s !== '');
+    const portSingle = (process.env.PEOPLE_COUNTER_PORT || '').trim();
+    let ports: string[];
+    if (pcCountRaw === '0') {
+      ports = [];
+    } else if (portsEnv !== '') {
+      ports = portsEnv
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s !== '');
+      if (ports.length === 0) {
+        const msg =
+          '[ServiceContainer] PEOPLE_COUNTER_PORTS 가 비어 있습니다. 쉼표 구분 경로를 설정하거나 PEOPLE_COUNTER_COUNT=0 을 사용하세요.';
+        logError(msg);
+        throw new Error(msg);
+      }
+    } else if (portSingle !== '') {
+      ports = [portSingle];
+    } else {
+      const msg =
+        '[ServiceContainer] 피플카운터 시리얼 설정이 없습니다. PEOPLE_COUNTER_COUNT=0(미사용) 또는 PEOPLE_COUNTER_PORTS(또는 PEOPLE_COUNTER_PORT)를 환경 변수로 명시하세요. 암시적 기본 /dev/ttyS1 은 지원하지 않습니다.';
+      logError(msg);
+      throw new Error(msg);
+    }
 
     const unitIdOfIndex = (idx: number) => `u${String(idx + 1).padStart(3, '0')}`;
     const peopleCounterQueueServices = new Map<string, PeopleCounterQueueService>();
@@ -309,11 +328,13 @@ export class ServiceContainer {
     });
 
     // 기본 서비스 키: 기존 코드 호환을 위해 u001을 peopleCounterQueueService로 노출
-    const defaultQueue = peopleCounterQueueServices.get('u001') ?? new PeopleCounterQueueService(logger, ports[0]);
+    const defaultQueue =
+      peopleCounterQueueServices.get('u001') ??
+      new PeopleCounterQueueService(logger, ports[0] ?? PEOPLE_COUNTER_DISABLED_PATH);
     this.services.set('peopleCounterQueueService', defaultQueue);
     this.services.set('peopleCounterQueueServices', peopleCounterQueueServices);
 
-    // 피플카운터 폴러 (ttyS1, APC100)
+    // 피플카운터 폴러 (APC100)
     const peopleCounterPoller = new PeopleCounterPollerService(logger);
     peopleCounterPoller.initialize(this);
     this.services.set('peopleCounterPoller', peopleCounterPoller);

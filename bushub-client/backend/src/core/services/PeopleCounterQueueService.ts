@@ -1,6 +1,6 @@
 /**
  * People Counter Queue Service
- * ttyS1 포트 직렬화를 위한 큐 시스템
+ * APC100 시리얼 포트별 직렬화를 위한 큐 시스템
  * query와 reset 작업을 순차적으로 처리
  */
 

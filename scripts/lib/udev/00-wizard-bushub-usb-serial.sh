@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 현장용 원샷: 호스트 설정 → [2/5] RS-485 연결 방식( USB 어댑터 vs 내장 ) 선택
-#   · USB 어댑터: udev(01·02·03·04) 후 rebuild-and-up-usb485
-#   · 내장: udev 생략 후 rebuild-and-up-integrated
+#   · USB 어댑터: udev usb485(01·02·03·04) 후 rebuild-and-up-usb485
+#   · 내장: Modbus=ttyS0 고정, APC는 USB — udev common/02 + integrated/03·04(APC만) 후 rebuild-and-up-integrated
 # 데스크톱(DISP/WAYLAND)이면 zenity로 단계 안내, tty 선택은 yad → zenity → 터미널 순 폴백
 #
 set -euo pipefail
@@ -20,8 +20,10 @@ REBUILD_INT="$SCRIPTS_DIR/rebuild-and-up-integrated.sh"
 
 PROBE_DDC="$SCRIPT_DIR/01-probe-ddc-bushub-usb-serial.sh"
 PROBE_PC="$SCRIPT_DIR/02-probe-pc-bushub-usb-serial.sh"
-INSTALL="$SCRIPT_DIR/03-install-bushub-usb-serial.sh"
-VERIFY_UDEV="$SCRIPT_DIR/04-verify-bushub-usb-serial.sh"
+INSTALL_USB="$SCRIPT_DIR/03-install-bushub-usb-serial.sh"
+VERIFY_USB="$SCRIPT_DIR/04-verify-bushub-usb-serial.sh"
+INSTALL_INT="$SCRIPT_DIR/integrated/03-install-bushub-serial.sh"
+VERIFY_INT="$SCRIPT_DIR/integrated/04-verify-bushub-serial.sh"
 
 ui_available() {
   command -v zenity >/dev/null 2>&1 && { [[ -n "${DISPLAY:-}" ]] || [[ -n "${WAYLAND_DISPLAY:-}" ]]; }
@@ -199,12 +201,109 @@ done
 
 if [ "$stack_sel" = "2" ]; then
   echo ""
-  ui_info "내장 RS-485" "[3] docker-compose.integrated.yml 은 기본으로\n/dev/ttyS0(Modbus)·/dev/ttyS1(PeopleCounter) 를 사용합니다.\n보드와 다르면 compose 수정 후 진행하세요."
-  echo "[3] 내장 RS-485: 기본 ttyS0(Modbus), ttyS1(PeopleCounter). 보드·compose 경로를 확인하세요."
-  read -r -p "[3] 확인 후 Enter... " _
+  ui_info "내장 RS-485" "[3/5] Modbus는 /dev/ttyS0 고정입니다.\nPeopleCounter(APC)는 USB–시리얼이며, udev로 /dev/bushub-people-counter-N 을 만듭니다."
+  echo "[3/5] 내장: Modbus=/dev/ttyS0. PeopleCounter는 USB 어댑터 + udev(common/02 → integrated/03·04)."
 
   echo ""
-  echo "Docker 스택 — 이미지 재빌드 후 기동 (integrated)"
+  echo "[4/5] PeopleCounter 개수 선택"
+  pc_count=""
+  if ui_available; then
+    pc_count="$(ui_pick_people_counter_count)"
+  fi
+  while true; do
+    if [ -z "$pc_count" ]; then
+      echo "  0) 미설치/미사용"
+      echo "  1) 1대"
+      echo "  2) 2대"
+      echo "  3) 3대"
+      read -r -p "[4/5] PeopleCounter 개수 선택 (0~3): " pc_count
+    fi
+    if [[ "$pc_count" =~ ^[0-3]$ ]]; then
+      break
+    fi
+    if ui_available; then
+      zenity --error --text="0~3 중 하나를 선택하세요." 2>/dev/null || true
+    fi
+    echo "   0~3 중 하나를 입력하세요."
+    pc_count=""
+  done
+
+  export PEOPLE_COUNTER_COUNT="$pc_count"
+
+  if [ "$pc_count" -ge 1 ]; then
+    for i in $(seq 1 "$pc_count"); do
+      echo ""
+      ui_info "udev [4/5]" "[4/5] PeopleCounter #$i (APC)용 USB–시리얼만 연결합니다.\n\n• 다른 USB 시리얼은 뽑으세요.\n• 지금은 PeopleCounter #$i 에 해당하는 케이블 1개만 연결하세요."
+      echo "[4/5] PeopleCounter #$i 케이블만 연결하세요."
+      read -r -p "[4/5] PC#$i 만 연결했으면 Enter... " _
+
+      run_probe_with_tty_ui "$PROBE_PC" "udev [4/5] PeopleCounter #$i tty" --index "$i"
+
+      echo ""
+      echo "✅ PeopleCounter #$i 프로브 완료. 다음 장비를 위해 케이블을 뽑아주세요."
+      read -r -p "[4/5] 케이블을 뽑았으면 Enter... " _
+    done
+  else
+    echo ""
+    echo "ℹ️  PeopleCounter 0대 선택 — udev APC 단계 생략"
+  fi
+
+  echo ""
+  echo "[5/5] udev rules 설치(APC만, 단일 파일 덮어쓰기)..."
+  ui_info "sudo" "integrated 는 /etc/udev/rules.d/99-bushub-serial.rules 에\nPeopleCounter 규칙만 기록합니다(Modbus ttyS0 는 이 파일에 넣지 않습니다)."
+
+  UDEV_INSTALL_MAX_RETRY="${UDEV_INSTALL_MAX_RETRY:-15}"
+
+  if [ "$pc_count" -ge 1 ]; then
+    if sudo PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$INSTALL_INT" --strict; then
+      echo ""
+      echo "✅ [5/5] udev 설치·검증 단계를 통과했습니다."
+    else
+      echo ""
+      echo "❌ [5/5] integrated 03-install 이 실패했습니다. Docker 기동은 아직 실행하지 않습니다."
+      udev_install_attempt=0
+      while true; do
+        udev_install_attempt=$((udev_install_attempt + 1))
+        if [ "$udev_install_attempt" -gt "$UDEV_INSTALL_MAX_RETRY" ]; then
+          echo ""
+          echo "❌ [5/5] 최대 재시도(${UDEV_INSTALL_MAX_RETRY})에 도달했습니다. 수동:"
+          echo "   sudo bash $INSTALL_INT --strict   또는   bash $VERIFY_INT"
+          exit 1
+        fi
+        echo ""
+        echo "🔄 [5/5] 04-verify (${udev_install_attempt}/${UDEV_INSTALL_MAX_RETRY})"
+        PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$VERIFY_INT"
+        ok_links=1
+        for i in $(seq 1 "$PEOPLE_COUNTER_COUNT"); do
+          [ -L "/dev/bushub-people-counter-$i" ] || ok_links=0
+        done
+        if [ "$ok_links" -eq 1 ]; then
+          echo ""
+          echo "🎉 [5/5] 심볼릭 링크 확인됨 — Docker 기동으로 진행합니다."
+          break
+        fi
+        echo ""
+        echo "❌ [5/5] 아직 필요한 /dev/bushub-people-counter-* 링크가 없습니다."
+        echo "   • Enter — 다시 04-verify 만 실행"
+        echo "   • q 입력 후 Enter — 마법사 종료"
+        read -r -p "[5/5] 재시도? (Enter/q): " _retry_choice
+        if [[ "${_retry_choice:-}" =~ ^[qQ]$ ]]; then
+          echo "마법사를 종료합니다."
+          echo "   sudo bash $INSTALL_INT --strict   또는   bash $VERIFY_INT"
+          exit 1
+        fi
+      done
+    fi
+  else
+    echo ""
+    echo "ℹ️  PeopleCounter 0대 — udev 설치 생략(기존 99-bushub-serial.rules 는 그대로일 수 있음)"
+    ui_question "udev" "PeopleCounter 0대인데도 /etc/udev/rules.d/99-bushub-serial.rules 를\nAPC 규칙 비우기로 덮어쓸까요? (이전 USB 스택 규칙이 있으면 정리됩니다)" && {
+      sudo PEOPLE_COUNTER_COUNT=0 bash "$INSTALL_INT" --strict || true
+    } || true
+  fi
+
+  echo ""
+  echo "Docker 스택 — 이미지 재빌드 후 기동 (integrated, PEOPLE_COUNTER_COUNT=$pc_count)"
   bash "$REBUILD_INT"
 else
   echo ""
@@ -265,7 +364,7 @@ else
 
   UDEV_INSTALL_MAX_RETRY="${UDEV_INSTALL_MAX_RETRY:-15}"
 
-  if sudo PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$INSTALL" --strict; then
+  if sudo PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$INSTALL_USB" --strict; then
     echo ""
     echo "✅ [5/5] udev 설치·검증 단계를 통과했습니다."
   else
@@ -278,12 +377,12 @@ else
       if [ "$udev_install_attempt" -gt "$UDEV_INSTALL_MAX_RETRY" ]; then
         echo ""
         echo "❌ [5/5] 최대 재시도(${UDEV_INSTALL_MAX_RETRY})에 도달했습니다. 수동:"
-        echo "   sudo bash $INSTALL --strict   또는   bash $VERIFY_UDEV"
+        echo "   sudo bash $INSTALL_USB --strict   또는   bash $VERIFY_USB"
         exit 1
       fi
       echo ""
       echo "🔄 [5/5] 04-verify (${udev_install_attempt}/${UDEV_INSTALL_MAX_RETRY}) — 03-install 은 생략"
-      PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$VERIFY_UDEV"
+      PEOPLE_COUNTER_COUNT="$PEOPLE_COUNTER_COUNT" bash "$VERIFY_USB"
       ok_links=1
       [ -L /dev/bushub-controller ] || ok_links=0
       if [ "$PEOPLE_COUNTER_COUNT" -ge 1 ]; then
@@ -299,11 +398,11 @@ else
       echo ""
       echo "❌ [5/5] 아직 필요한 /dev 링크가 없습니다."
       echo "   • Enter — 다시 04-verify 만 실행"
-      echo "   • q 입력 후 Enter — 마법사 종료 (필요 시 수동으로 sudo bash $INSTALL --strict)"
+      echo "   • q 입력 후 Enter — 마법사 종료 (필요 시 수동으로 sudo bash $INSTALL_USB --strict)"
       read -r -p "[5/5] 재시도? (Enter/q): " _retry_choice
       if [[ "${_retry_choice:-}" =~ ^[qQ]$ ]]; then
         echo "마법사를 종료합니다."
-        echo "   sudo bash $INSTALL --strict   또는   bash $VERIFY_UDEV"
+        echo "   sudo bash $INSTALL_USB --strict   또는   bash $VERIFY_USB"
         exit 1
       fi
     done
@@ -317,9 +416,9 @@ fi
 echo ""
 echo "✅ 마법사 흐름을 마쳤습니다."
 if [ "$stack_sel" = "1" ]; then
-  echo "   udev 추가 확인: bash $VERIFY_UDEV"
+  echo "   udev 추가 확인: bash $VERIFY_USB"
   ui_info "완료" "설치 마법사 단계가 끝났습니다.\n문제가 있으면 터미널 로그와\n04-verify-bushub-usb-serial.sh 를 확인하세요."
 else
-  echo "   내장 시리얼: 보드 경로와 docker-compose.integrated.yml 의 ttyS0·ttyS1 설정이 일치하는지 확인하세요."
-  ui_info "완료" "설치 마법사 단계가 끝났습니다.\nintegrated 는 기본 /dev/ttyS0·ttyS1 을 사용합니다.\n문제가 있으면 터미널 로그와 compose 시리얼 경로를 확인하세요."
+  echo "   integrated: Modbus=/dev/ttyS0, PeopleCounter는 bash $VERIFY_INT"
+  ui_info "완료" "설치 마법사 단계가 끝났습니다.\nintegrated 는 Modbus=ttyS0, APC는 USB(/dev/bushub-people-counter-*).\n문제가 있으면 터미널 로그와 udev 링크를 확인하세요."
 fi

@@ -66,15 +66,7 @@ export class PeopleCounterPollerService {
             todayKey: null,
             todayInCount: 0,
           }))
-        : [
-            {
-              unitId: 'u001',
-              queue: serviceContainer.getPeopleCounterQueueService('u001'),
-              lastRawPollInCumulative: null,
-              todayKey: null,
-              todayInCount: 0,
-            },
-          ];
+        : [];
   }
 
   /**
@@ -88,6 +80,10 @@ export class PeopleCounterPollerService {
   async start(): Promise<void> {
     if (this.timer) {
       this.logger?.warn('[PeopleCounterPoller] 이미 실행 중');
+      return;
+    }
+    if (this.units.length === 0) {
+      this.logger?.info('[PeopleCounterPoller] PeopleCounter 유닛 없음 — 폴링 미시작');
       return;
     }
     this.logger?.info(`[PeopleCounterPoller] 시작 (${POLL_INTERVAL_MS}ms)`);
@@ -105,6 +101,7 @@ export class PeopleCounterPollerService {
   private async initializeDataDocument(): Promise<void> {
     const sc = this.serviceContainer;
     if (!sc) return;
+    if (this.units.length === 0) return;
 
     try {
       const systemService = sc.getSystemService();
