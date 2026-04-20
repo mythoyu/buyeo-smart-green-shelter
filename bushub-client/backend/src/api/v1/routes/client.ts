@@ -96,7 +96,7 @@ async function ensurePeopleCounterIfNeeded(clientId: string): Promise<void> {
   await StatusSchema.create({
     deviceId: 'd082',
     clientId,
-    status: 0,
+    status: 2,
     lastUpdated: new Date(),
   });
   await DataSchema.create({
@@ -126,7 +126,7 @@ async function ensurePeopleCounterIfNeeded(clientId: string): Promise<void> {
       deviceId: 'd082',
       clientId,
       name: u.name,
-      status: 0,
+      status: 2,
       type: 'people_counter',
       data: {},
     });
@@ -377,7 +377,7 @@ async function createDevicesAndUnits(savedClient: any, clientUnitInfo: any, init
       await StatusSchema.create({
         deviceId: createdDevice.deviceId,
         clientId: savedClient.id,
-        status: 0, // normal
+        status: 2, // 초기값: 통신 확인 전까지 미연결
         lastUpdated: new Date(),
       });
 
@@ -410,7 +410,7 @@ async function createDevicesAndUnits(savedClient: any, clientUnitInfo: any, init
           deviceId,
           clientId: savedClient.id,
           name: unit.name,
-          status: 0, // 0: normal
+          status: 2, // 초기값: 통신 확인 전까지 미연결
           type: deviceType,
           data: {},
         });
