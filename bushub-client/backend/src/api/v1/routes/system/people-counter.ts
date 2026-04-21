@@ -279,15 +279,8 @@ export default async function peopleCounterRoutes(fastify: FastifyInstance) {
             {
               $set: {
                 'units.$.data': {
-                  currentCount: 0,
-                  inCumulative: 0,
-                  outCumulative: 0,
-                  output1: false,
-                  output2: false,
-                  countEnabled: true,
-                  buttonStatus: false,
-                  sensorStatus: true,
-                  limitExceeded: false,
+                  todayKey: formatKstLocal(new Date()).slice(0, 10),
+                  todayInCount: 0,
                   timestamp: formatKstLocal(new Date()),
                 },
                 updatedAt: new Date(),

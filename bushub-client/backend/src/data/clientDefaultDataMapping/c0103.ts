@@ -63,15 +63,9 @@ export const c0103Defaults: DeviceDefaultValues = {
   },
   people_counter: {
     u001: {
-      currentCount: 0,
-      inCumulative: 0,
-      outCumulative: 0,
-      output1: false,
-      output2: false,
-      countEnabled: true,
-      buttonStatus: false,
-      sensorStatus: true,
-      limitExceeded: false,
+      todayKey: '1970-01-01',
+      todayInCount: 0,
+      timestamp: '1970-01-01T00:00:00',
     },
   },
 };
