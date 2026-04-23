@@ -34,7 +34,7 @@ const peopleCounterUnitsC0101: UnitData[] = [
   { id: 'u002', name: '피플카운터 2' },
 ];
 
-/** c0102와 동일 + 피플카운터 (c0103~c0111, LG 냉난방 템플릿) */
+/** c0102 기반 + 조명 3채널 + 피플카운터 (c0103~c0111) */
 const unitsC0102TemplateWithPeople: {
   lighting: UnitData[];
   cooler: UnitData[];
@@ -42,7 +42,11 @@ const unitsC0102TemplateWithPeople: {
   door: UnitData[];
   people_counter: UnitData[];
 } = {
-  lighting: [{ id: 'u001', name: 'LED 조명' }],
+  lighting: [
+    { id: 'u001', name: 'LED 조명' },
+    { id: 'u003', name: '간판등' },
+    { id: 'u004', name: '버스사각등' },
+  ],
   cooler: [{ id: 'u001', name: '냉난방기' }],
   bench: [{ id: 'u001', name: '스마트벤치' }],
   door: [{ id: 'u001', name: '자동문' }],

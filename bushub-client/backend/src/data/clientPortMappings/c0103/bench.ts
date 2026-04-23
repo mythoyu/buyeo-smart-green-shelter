@@ -4,25 +4,25 @@ export const bench = {
   // internal_bench_1
   u001: {
     SET_AUTO: {
-      port: HW_PORTS.DO9.AUTO.set,
+      port: HW_PORTS.DO6.AUTO.set,
       collection: 'data',
       field: 'auto',
       type: 'boolean',
     },
     GET_AUTO: {
-      port: HW_PORTS.DO9.AUTO.get,
+      port: HW_PORTS.DO6.AUTO.get,
       collection: 'data',
       field: 'auto',
       type: 'boolean',
     },
     SET_POWER: {
-      port: HW_PORTS.DO9.POWER.set,
+      port: HW_PORTS.DO6.POWER.set,
       collection: 'data',
       field: 'power',
       type: 'boolean',
     },
     GET_POWER: {
-      port: HW_PORTS.DO9.POWER.get,
+      port: HW_PORTS.DO6.POWER.get,
       collection: 'data',
       field: 'power',
       type: 'boolean',
@@ -36,50 +36,50 @@ export const bench = {
 
     // 🎯 스케줄1 - HOUR 명시 (내부 Modbus용)
     SET_START_TIME_1_HOUR: {
-      port: HW_PORTS.DO9.SCHED1_START_HOUR.set,
+      port: HW_PORTS.DO6.SCHED1_START_HOUR.set,
       collection: 'data',
       field: 'start_time_1_hour',
       type: 'number',
     },
     GET_START_TIME_1_HOUR: {
-      port: HW_PORTS.DO9.SCHED1_START_HOUR.get,
+      port: HW_PORTS.DO6.SCHED1_START_HOUR.get,
       collection: 'data',
       field: 'start_time_1_hour',
       type: 'number',
     },
     SET_END_TIME_1_HOUR: {
-      port: HW_PORTS.DO9.SCHED1_END_HOUR.set,
+      port: HW_PORTS.DO6.SCHED1_END_HOUR.set,
       collection: 'data',
       field: 'end_time_1_hour',
       type: 'number',
     },
     GET_END_TIME_1_HOUR: {
-      port: HW_PORTS.DO9.SCHED1_END_HOUR.get,
+      port: HW_PORTS.DO6.SCHED1_END_HOUR.get,
       collection: 'data',
       field: 'end_time_1_hour',
       type: 'number',
     },
     // 🎯 스케줄1 - MINUTE 명시
     SET_START_TIME_1_MINUTE: {
-      port: HW_PORTS.DO9.SCHED1_START_MIN.set,
+      port: HW_PORTS.DO6.SCHED1_START_MIN.set,
       collection: 'data',
       field: 'start_time_1_minute',
       type: 'number',
     },
     GET_START_TIME_1_MINUTE: {
-      port: HW_PORTS.DO9.SCHED1_START_MIN.get,
+      port: HW_PORTS.DO6.SCHED1_START_MIN.get,
       collection: 'data',
       field: 'start_time_1_minute',
       type: 'number',
     },
     SET_END_TIME_1_MINUTE: {
-      port: HW_PORTS.DO9.SCHED1_END_MIN.set,
+      port: HW_PORTS.DO6.SCHED1_END_MIN.set,
       collection: 'data',
       field: 'end_time_1_minute',
       type: 'number',
     },
     GET_END_TIME_1_MINUTE: {
-      port: HW_PORTS.DO9.SCHED1_END_MIN.get,
+      port: HW_PORTS.DO6.SCHED1_END_MIN.get,
       collection: 'data',
       field: 'end_time_1_minute',
       type: 'number',
