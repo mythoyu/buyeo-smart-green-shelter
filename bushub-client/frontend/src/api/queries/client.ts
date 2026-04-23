@@ -24,7 +24,12 @@ const getClientErrors = async (): Promise<ClientErrorDto> => {
 };
 
 const getClients = async (): Promise<ClientInfoDto[]> => {
-  const res = await internalApi.get('/clients');
+  const res = await internalApi.get('/clients', {
+    params: {
+      page: 1,
+      limit: 50,
+    },
+  });
   // API 응답 구조: { success: true, message: "...", data: { data: [...] } }
   return res.data.data.data || res.data.data || [];
 };
