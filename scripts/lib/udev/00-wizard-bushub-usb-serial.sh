@@ -132,24 +132,32 @@ ui_pick_people_counter_count() {
 }
 
 usage() {
-  echo "사용법: $0 [-h|--help]"
+  echo "사용법: $0 [--ports-only] [-h|--help]"
   echo ""
   echo "  순서: setup-host-ubuntu24.sh → RS-485 방식 선택 → (USB면 udev 프로브·설치) → rebuild-and-up"
   echo "  인터넷(예: 폰 USB 테더링) 연결을 권장합니다."
   echo "  USB 어댑터 경로에서는 해당 케이블만 연결한 뒤 안내에 따라 진행하세요."
+  echo "  --ports-only 를 주면 [1/5] 호스트 설정을 건너뛰고 [2/5]부터 시작합니다."
   exit 0
 }
 
-if [ $# -gt 0 ]; then
+PORTS_ONLY=0
+while [ $# -gt 0 ]; do
   case "${1:-}" in
-    -h|--help) usage ;;
+    --ports-only)
+      PORTS_ONLY=1
+      ;;
+    -h|--help)
+      usage
+      ;;
     *)
       echo "알 수 없는 인자: $1" >&2
       echo "도움말: $0 --help" >&2
       exit 1
       ;;
   esac
-fi
+  shift
+done
 
 echo "=========================================="
 echo " Bushub 현장 마법사 (호스트·RS-485 방식·udev·스택)"
@@ -161,13 +169,17 @@ echo ""
 ui_info "Bushub 설치" "GitHub 릴리즈 기준 소스에서 설치합니다.\n인터넷(테더링) 연결을 권장합니다.\n다음 단계는 이 터미널에서 진행됩니다."
 
 # --- [1/5] 호스트 환경 (Docker 등) ---
-if [ ! -f "$SETUP_HOST" ]; then
-  echo "⚠️  호스트 설정 스크립트가 없습니다: $SETUP_HOST"
+if [ "$PORTS_ONLY" -eq 1 ]; then
+  echo "[1/5] --ports-only: 호스트 설정을 건너뜁니다."
 else
-  if ui_question "Bushub 설치" "[1/5] Ubuntu 호스트 환경(Docker·zenity 등)을 설정합니다. 진행할까요?"; then
-    bash "$SETUP_HOST"
+  if [ ! -f "$SETUP_HOST" ]; then
+    echo "⚠️  호스트 설정 스크립트가 없습니다: $SETUP_HOST"
   else
-    echo "   (호스트 설정 건너뜀)"
+    if ui_question "Bushub 설치" "[1/5] Ubuntu 호스트 환경(Docker·zenity 등)을 설정합니다. 진행할까요?"; then
+      bash "$SETUP_HOST"
+    else
+      echo "   (호스트 설정 건너뜀)"
+    fi
   fi
 fi
 
