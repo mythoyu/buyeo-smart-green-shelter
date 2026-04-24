@@ -33,9 +33,9 @@ export const COOLER_ACTIONS: { [key: string]: DeviceAction } = {
     name: '운전 모드 설정',
     description: '냉방/난방/송풍/자동 모드 설정',
     minValue: 0,
-    maxValue: 3,
+    maxValue: 4,
     defaultValue: 0,
-    businessLogic: '0:자동, 1:냉방, 2:난방, 3:송풍',
+    businessLogic: '0:냉방, 1:제습, 2:송풍, 3:자동, 4:난방',
   },
   SET_SUMMER_CONT_TEMP: {
     name: '여름 목표 온도 설정',
