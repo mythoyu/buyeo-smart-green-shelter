@@ -150,9 +150,7 @@ export class RealModbusService implements IModbusCommunication {
       await Promise.race([
         testClient.connectRTUBuffered(this.config.port, testConnectOptions),
         errorPromise,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('포트 접근 테스트 타임아웃')), 5000),
-        ),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('포트 접근 테스트 타임아웃')), 5000)),
       ]);
 
       if (onError) {
@@ -166,9 +164,7 @@ export class RealModbusService implements IModbusCommunication {
       if (onError) {
         testEmitter.removeListener('error', onError);
       }
-      this.logger?.warn(
-        `[RealModbusService] 포트 접근 테스트 실패: ${this.errorToSearchableString(error)}`,
-      );
+      this.logger?.warn(`[RealModbusService] 포트 접근 테스트 실패: ${this.errorToSearchableString(error)}`);
       await closeSafe();
       return false;
     }
@@ -388,7 +384,9 @@ export class RealModbusService implements IModbusCommunication {
       }
     } catch (error) {
       this.logger?.warn(
-        `[RealModbusService] 연결 해제 중 오류(상태는 정리함): ${error instanceof Error ? error.message : String(error)}`,
+        `[RealModbusService] 연결 해제 중 오류(상태는 정리함): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     } finally {
       this._isConnected = false;
@@ -557,7 +555,9 @@ export class RealModbusService implements IModbusCommunication {
       return result;
     } catch (error) {
       this.logger?.error(
-        `[RealModbusService] 읽기 실패 - FC: ${request.functionCode}, Address: ${request.address}, Length: ${request.length}, Error: ${this.errorToSearchableString(error)}`,
+        `[RealModbusService] 읽기 실패 - FC: ${request.functionCode}, Address: ${request.address}, Length: ${
+          request.length
+        }, Error: ${this.errorToSearchableString(error)}`,
       );
       throw error;
     }
@@ -751,7 +751,9 @@ export class RealModbusService implements IModbusCommunication {
       return converted;
     } catch (error) {
       this.logger?.error(
-        `[RealModbusService] 데이터 변환 중 오류: ${this.errorToSearchableString(error)}, 원본: ${JSON.stringify(result)}`,
+        `[RealModbusService] 데이터 변환 중 오류: ${this.errorToSearchableString(error)}, 원본: ${JSON.stringify(
+          result,
+        )}`,
       );
       return [0];
     }
@@ -775,10 +777,10 @@ export class RealModbusService implements IModbusCommunication {
       if (field === 'mode') {
         const modbusValue = Number(rawValue);
         const modeMap: Record<number, number> = {
-          0: 3, // 자동 → 자동
-          1: 0, // 냉방 → 냉방
-          2: 1, // 제습 → 제습
-          3: 2, // 송풍 → 송풍
+          0: 0, // 자동 → 자동
+          1: 1, // 냉방 → 냉방
+          2: 2, // 제습 → 제습
+          3: 3, // 송풍 → 송풍
           4: 4, // 난방 → 난방
         };
         const restApiValue = modeMap[modbusValue];

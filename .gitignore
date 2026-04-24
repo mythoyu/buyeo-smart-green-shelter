@@ -120,3 +120,6 @@ packages/*/data/
 
 # ts-node-dev temporary files
 ts-node-dev 
+
+# Reference code archive
+docs/reference-code/
