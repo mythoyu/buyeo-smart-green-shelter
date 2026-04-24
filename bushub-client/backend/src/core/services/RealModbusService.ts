@@ -777,10 +777,10 @@ export class RealModbusService implements IModbusCommunication {
       if (field === 'mode') {
         const modbusValue = Number(rawValue);
         const modeMap: Record<number, number> = {
-          0: 0, // 자동 → 자동
-          1: 1, // 냉방 → 냉방
-          2: 2, // 제습 → 제습
-          3: 3, // 송풍 → 송풍
+          0: 3, // 자동 → 자동
+          1: 0, // 냉방 → 냉방
+          2: 1, // 제습 → 제습
+          3: 2, // 송풍 → 송풍
           4: 4, // 난방 → 난방
         };
         const restApiValue = modeMap[modbusValue];
@@ -866,10 +866,10 @@ export class RealModbusService implements IModbusCommunication {
       if (field === 'mode') {
         const modeValue = Number(userValue);
         const modeMap: Record<number, number> = {
-          0: 0, // 냉방 → 냉방
-          1: 1, // 제습 → 제습
-          2: 2, // 송풍 → 송풍
-          3: 3, // 자동 → 자동
+          0: 1, // 냉방 → 냉방
+          1: 2, // 제습 → 제습
+          2: 3, // 송풍 → 송풍
+          3: 0, // 자동 → 자동
           4: 4, // 난방 → 난방
         };
         const modbusValue = modeMap[modeValue];
