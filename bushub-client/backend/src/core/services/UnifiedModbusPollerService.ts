@@ -736,6 +736,7 @@ export class UnifiedModbusPollerService {
         functionCode,
         address,
         lengthOrValue: actionConfig.length || 1,
+        clientId,
         priority: 'low' as const,
         timestamp: new Date(),
         resolve: () => {
@@ -924,6 +925,7 @@ export class UnifiedModbusPollerService {
         functionCode: foundAction.port.functionCode,
         address: foundAction.port.address,
         lengthOrValue: foundAction.length || 1,
+        clientId,
         priority: 'low' as const,
         timestamp: new Date(),
         resolve: () => {
@@ -1103,6 +1105,7 @@ export class UnifiedModbusPollerService {
         functionCode,
         address,
         lengthOrValue: actionConfig.length || 1,
+        clientId,
         priority: 'low' as const,
         timestamp: new Date(),
         resolve: () => {

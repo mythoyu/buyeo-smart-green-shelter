@@ -10,12 +10,13 @@ export interface ModbusConnectionConfig {
   timeout: number;
 }
 
-// Modbus 읽기 요청
+// Modbus 읽기 요청 (IModbusCommunication.ModbusReadRequest 와 동기화)
 export interface ModbusReadRequest {
   slaveId: number;
   functionCode: number;
   address: number;
   length: number;
+  clientId?: string;
   context?: 'emergency' | 'control' | 'schedule' | 'polling' | 'maintenance';
 }
 
@@ -25,6 +26,7 @@ export interface ModbusWriteRequest {
   functionCode: number;
   address: number;
   value: number;
+  clientId?: string;
   context?: 'emergency' | 'control' | 'schedule' | 'polling' | 'maintenance';
 }
 

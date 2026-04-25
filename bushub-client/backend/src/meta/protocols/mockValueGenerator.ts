@@ -14,7 +14,15 @@ export interface ReverseIndexSpec extends PortSpec {
   clientId?: string; // 클라이언트 ID (c0101, c0102, c0103 …)
 }
 
-const makeKey = (functionCode: number, address: number): string => `${functionCode}:${address}`;
+/** 레거시 조회용: functionCode:address (clientId 미전달 시 폴백) */
+export const makeLegacyReverseIndexKey = (functionCode: number, address: number): string =>
+  `${functionCode}:${address}`;
+
+/**
+ * 클라이언트별 역색인 키. 동일 (fc,address)를 여러 개소가 쓸 때 덮어쓰기 방지.
+ */
+export const makeReverseIndexKey = (clientId: string, functionCode: number, address: number): string =>
+  `${clientId}:${functionCode}:${address}`;
 
 // ServiceContainer 전역 변수
 let serviceContainer: ServiceContainer | null = null;
@@ -28,6 +36,11 @@ export const initializeMockGenerator = (container: ServiceContainer): void => {
 
 export const buildReverseIndex = (): Map<string, ReverseIndexSpec> => {
   const index = new Map<string, ReverseIndexSpec>();
+  /** fc:address -> 해당 주소를 쓰는 clientId 집합 */
+  const clientsByLegacyKey = new Map<string, Set<string>>();
+  /** fc:address -> 대표 스펙 (레거시 키는 단일 개소일 때만 등록) */
+  const soleSpecByLegacyKey = new Map<string, ReverseIndexSpec>();
+
   try {
     const clients = CLIENT_PORT_MAPPINGS as any;
     for (const [clientId, clientMapping] of Object.entries(clients)) {
@@ -45,18 +58,36 @@ export const buildReverseIndex = (): Map<string, ReverseIndexSpec> => {
               typeof spec.port.functionCode === 'number' &&
               typeof spec.port.address === 'number'
             ) {
-              const key = makeKey(spec.port.functionCode, spec.port.address);
-              // 같은 address를 사용하는 경우 마지막 클라이언트의 clientId 저장
-              index.set(key, {
-                functionCode: spec.port.functionCode,
-                address: spec.port.address,
+              const fc = spec.port.functionCode;
+              const addr = spec.port.address;
+              const compositeKey = makeReverseIndexKey(clientId, fc, addr);
+              const legacyKey = makeLegacyReverseIndexKey(fc, addr);
+              const entry: ReverseIndexSpec = {
+                functionCode: fc,
+                address: addr,
                 field: spec.field,
                 type: spec.type,
                 deviceType,
-                clientId, // 클라이언트 ID 저장
-              });
+                clientId,
+              };
+              index.set(compositeKey, entry);
+
+              if (!clientsByLegacyKey.has(legacyKey)) {
+                clientsByLegacyKey.set(legacyKey, new Set());
+              }
+              clientsByLegacyKey.get(legacyKey)!.add(clientId);
+              soleSpecByLegacyKey.set(legacyKey, entry);
             }
           }
+        }
+      }
+    }
+
+    for (const [legacyKey, idSet] of clientsByLegacyKey) {
+      if (idSet.size === 1) {
+        const spec = soleSpecByLegacyKey.get(legacyKey);
+        if (spec) {
+          index.set(legacyKey, spec);
         }
       }
     }
@@ -65,6 +96,29 @@ export const buildReverseIndex = (): Map<string, ReverseIndexSpec> => {
   }
   return index;
 };
+
+/**
+ * Modbus 응답 변환용 스펙 조회. clientId가 있으면 복합 키 우선, 없으면 레거시 키(단일 개소 주소만 유효).
+ */
+export function resolveReverseIndexSpec(
+  index: Map<string, ReverseIndexSpec> | undefined,
+  clientId: string | undefined,
+  functionCode: number,
+  address: number,
+): ReverseIndexSpec | undefined {
+  if (!index || index.size === 0) {
+    return undefined;
+  }
+  if (clientId) {
+    const composite = makeReverseIndexKey(clientId, functionCode, address);
+    const hit = index.get(composite);
+    if (hit) {
+      return hit;
+    }
+  }
+  const legacyKey = makeLegacyReverseIndexKey(functionCode, address);
+  return index.get(legacyKey);
+}
 
 export const generateBySpec = async (
   spec: ReverseIndexSpec | undefined,

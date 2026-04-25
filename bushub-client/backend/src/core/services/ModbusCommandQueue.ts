@@ -11,6 +11,8 @@ export interface ModbusCommand {
   functionCode: number;
   address: number;
   lengthOrValue: number;
+  /** 스마트시티 클라이언트 ID (역색인·삼성 cooler 변환). UnifiedModbusCommunicationService → Real/Mock 전달. */
+  clientId?: string;
   priority: 'high' | 'normal' | 'low';
   timestamp: Date;
   resolve: (value: any) => void;

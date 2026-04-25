@@ -263,6 +263,7 @@ export class ControlService implements IControlService {
             functionCode: commandSpec.functionCode,
             address: commandSpec.address,
             length: readLength,
+            clientId: device.clientId,
             context: 'polling', // 읽기는 낮은 우선순위
           });
 
@@ -300,6 +301,7 @@ export class ControlService implements IControlService {
             functionCode: commandSpec.functionCode,
             address: commandSpec.address,
             value: this.coerceModbusWriteValue(writeValue, commandKey),
+            clientId: device.clientId,
             context: 'control', // 사용자 제어는 높은 우선순위
           });
 
@@ -497,6 +499,7 @@ export class ControlService implements IControlService {
             functionCode: commandSpec.functionCode,
             address: commandSpec.address,
             length: readLength,
+            clientId: device.clientId,
             context: 'polling',
           });
 
@@ -540,6 +543,7 @@ export class ControlService implements IControlService {
             functionCode: commandSpec.functionCode,
             address: commandSpec.address,
             value: this.coerceModbusWriteValue(writeValue, commandKey),
+            clientId: device.clientId,
             context: 'control',
           });
 

@@ -269,6 +269,7 @@ export class DataApplyService {
         functionCode: mapping.commandSpec.functionCode,
         address: mapping.commandSpec.address,
         value: adjustedValue,
+        clientId: unit.clientId,
         context: 'control',
       });
 
@@ -339,6 +340,7 @@ export class DataApplyService {
                 mapping,
                 unitData.data[mapping.field],
                 unifiedModbusService,
+                unit.clientId as string,
               );
 
               if (isVerified) {
@@ -380,6 +382,7 @@ export class DataApplyService {
     mapping: FieldActionMapping,
     expectedValue: any,
     unifiedModbusService: any,
+    clientId?: string,
   ): Promise<boolean> {
     try {
       this.logger?.info(`[DataApplyService] 필드 검증: ${mapping.actionKey} (예상값: ${expectedValue})`);
@@ -389,6 +392,7 @@ export class DataApplyService {
         functionCode: mapping.commandSpec.functionCode,
         address: mapping.commandSpec.address,
         length: mapping.commandSpec.length || 1,
+        clientId,
         context: 'control',
       });
 
@@ -540,7 +544,7 @@ export class DataApplyService {
 
       // 2단계: 모든 DOx 포트 직접 초기화
       this.updateProgress('applying', 'DOx 포트 초기화 진행 중...');
-      await this.resetAllDOxPortsDirectly(unifiedModbusService);
+      await this.resetAllDOxPortsDirectly(unifiedModbusService, clientId);
 
       // 3단계: 결과 정리
       this.updateProgress('completed', 'DDC 초기화 완료');
@@ -570,7 +574,7 @@ export class DataApplyService {
   /**
    * 모든 DOx 포트 직접 초기화 (Data 컬렉션 무관)
    */
-  private async resetAllDOxPortsDirectly(unifiedModbusService: any): Promise<void> {
+  private async resetAllDOxPortsDirectly(unifiedModbusService: any, clientId: string): Promise<void> {
     const doxPorts = [
       'DO1',
       'DO2',
@@ -599,34 +603,34 @@ export class DataApplyService {
         this.currentProgress!.current = i + 1;
 
         // AUTO = false
-        await this.executeDirectModbusWrite(doxPort, 'AUTO', false, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'AUTO', false, unifiedModbusService, clientId);
 
         // POWER = false
-        await this.executeDirectModbusWrite(doxPort, 'POWER', false, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'POWER', false, unifiedModbusService, clientId);
 
         // SCHED1_START_HOUR = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED1_START_HOUR', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED1_START_HOUR', 0, unifiedModbusService, clientId);
 
         // SCHED1_START_MIN = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED1_START_MIN', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED1_START_MIN', 0, unifiedModbusService, clientId);
 
         // SCHED1_END_HOUR = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED1_END_HOUR', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED1_END_HOUR', 0, unifiedModbusService, clientId);
 
         // SCHED1_END_MIN = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED1_END_MIN', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED1_END_MIN', 0, unifiedModbusService, clientId);
 
         // SCHED2_START_HOUR = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED2_START_HOUR', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED2_START_HOUR', 0, unifiedModbusService, clientId);
 
         // SCHED2_START_MIN = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED2_START_MIN', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED2_START_MIN', 0, unifiedModbusService, clientId);
 
         // SCHED2_END_HOUR = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED2_END_HOUR', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED2_END_HOUR', 0, unifiedModbusService, clientId);
 
         // SCHED2_END_MIN = 0
-        await this.executeDirectModbusWrite(doxPort, 'SCHED2_END_MIN', 0, unifiedModbusService);
+        await this.executeDirectModbusWrite(doxPort, 'SCHED2_END_MIN', 0, unifiedModbusService, clientId);
 
         this.logger?.info(`[DataApplyService] ${doxPort} 초기화 완료`);
       } catch (error) {
@@ -644,6 +648,7 @@ export class DataApplyService {
     field: string,
     value: any,
     unifiedModbusService: any,
+    clientId?: string,
   ): Promise<void> {
     try {
       // HW_PORTS에서 포트 정보 조회
@@ -665,6 +670,7 @@ export class DataApplyService {
         functionCode: portInfo.set.functionCode,
         address: portInfo.set.address,
         value: value,
+        clientId,
         context: 'control',
       });
 

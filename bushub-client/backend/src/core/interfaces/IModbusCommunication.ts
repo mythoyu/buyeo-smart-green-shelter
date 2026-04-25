@@ -10,21 +10,29 @@ export interface ModbusConnectionConfig {
   timeout: number;
 }
 
-// Modbus 읽기 요청
+/**
+ * Modbus 읽기 요청.
+ * REST/API·DB에 노출되는 cooler `mode`/`speed` 등은 LG 계약(현장 순서)이며,
+ * 삼성 와이어 값 ↔ 계약값 매핑은 RealModbusService에서 c0101·c0102에 한해 수행한다.
+ */
 export interface ModbusReadRequest {
   slaveId: number;
   functionCode: number;
   address: number;
   length: number;
+  /** 통신 대상 스마트시티 클라이언트 ID (역색인·삼성 cooler 변환용). 없으면 레거시 단일 키 조회. */
+  clientId?: string;
   context?: 'emergency' | 'control' | 'schedule' | 'polling' | 'maintenance';
 }
 
-// Modbus 쓰기 요청
+/** Modbus 쓰기 요청. cooler 계약·삼성 변환 규칙은 {@link ModbusReadRequest}와 동일. */
 export interface ModbusWriteRequest {
   slaveId: number;
   functionCode: number;
   address: number;
   value: number;
+  /** 통신 대상 스마트시티 클라이언트 ID (역색인·삼성 cooler 변환용). 없으면 레거시 단일 키 조회. */
+  clientId?: string;
   context?: 'emergency' | 'control' | 'schedule' | 'polling' | 'maintenance';
 }
 

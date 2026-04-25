@@ -175,6 +175,7 @@ export class UnifiedModbusService {
       reject: () => {
         // Placeholder for queue resolution
       },
+      ...(request.clientId !== undefined ? { clientId: request.clientId } : {}),
     };
 
     return await this.executeCommand(command);
@@ -197,6 +198,7 @@ export class UnifiedModbusService {
       reject: () => {
         // Placeholder for queue resolution
       },
+      ...(request.clientId !== undefined ? { clientId: request.clientId } : {}),
     };
 
     return await this.executeCommand(command);

@@ -40,13 +40,15 @@ export class UnifiedModbusCommunicationService implements IUnifiedModbusCommunic
         // 🆕 RealModbusService에 executeDirect 메소드가 없으므로 기존 메소드 사용
         if (command.type === 'read') {
           this.logger?.debug(`[UnifiedModbusCommunicationService] Real 서비스 읽기 명령 실행`);
-          const result = await this.realService.readRegisters({
+          const readReq = {
             slaveId: parseInt(command.unitId),
             functionCode: command.functionCode,
             address: command.address,
             length: command.lengthOrValue,
-            context: 'polling', // 🆕 올바른 context 값 사용
-          });
+            context: 'polling' as const,
+            ...(command.clientId !== undefined ? { clientId: command.clientId } : {}),
+          };
+          const result = await this.realService.readRegisters(readReq);
           // 🆕 타입 변환하여 호환성 맞춤
           this.logger?.debug(`[UnifiedModbusCommunicationService] Real 서비스 읽기 완료 - Success: ${result.success}`);
           return {
@@ -56,13 +58,15 @@ export class UnifiedModbusCommunicationService implements IUnifiedModbusCommunic
           };
         }
         this.logger?.debug(`[UnifiedModbusCommunicationService] Real 서비스 쓰기 명령 실행`);
-        const result = await this.realService.writeRegister({
+        const writeReq = {
           slaveId: parseInt(command.unitId),
           functionCode: command.functionCode,
           address: command.address,
           value: command.lengthOrValue,
-          context: 'control', // 🆕 올바른 context 값 사용
-        });
+          context: 'control' as const,
+          ...(command.clientId !== undefined ? { clientId: command.clientId } : {}),
+        };
+        const result = await this.realService.writeRegister(writeReq);
         // 🆕 타입 변환하여 호환성 맞춤
         this.logger?.debug(`[UnifiedModbusCommunicationService] Real 서비스 쓰기 완료 - Success: ${result.success}`);
         return {
@@ -74,13 +78,15 @@ export class UnifiedModbusCommunicationService implements IUnifiedModbusCommunic
       // 🆕 MockModbusService에 executeDirect 메소드가 없으므로 기존 메소드 사용
       if (command.type === 'read') {
         this.logger?.debug(`[UnifiedModbusCommunicationService] Mock 서비스 읽기 명령 실행`);
-        const result = await this.mockService.readRegisters({
+        const mockReadReq = {
           slaveId: parseInt(command.unitId),
           functionCode: command.functionCode,
           address: command.address,
           length: command.lengthOrValue,
-          context: 'polling', // 🆕 올바른 context 값 사용
-        });
+          context: 'polling' as const,
+          ...(command.clientId !== undefined ? { clientId: command.clientId } : {}),
+        };
+        const result = await this.mockService.readRegisters(mockReadReq);
         // 🆕 타입 변환하여 호환성 맞춤
         this.logger?.debug(`[UnifiedModbusCommunicationService] Mock 서비스 읽기 완료 - Success: ${result.success}`);
         return {
@@ -90,13 +96,15 @@ export class UnifiedModbusCommunicationService implements IUnifiedModbusCommunic
         };
       }
       this.logger?.debug(`[UnifiedModbusCommunicationService] Mock 서비스 쓰기 명령 실행`);
-      const result = await this.mockService.writeRegister({
+      const mockWriteReq = {
         slaveId: parseInt(command.unitId),
         functionCode: command.functionCode,
         address: command.address,
         value: command.lengthOrValue,
-        context: 'control', // 🆕 올바른 context 값 사용
-      });
+        context: 'control' as const,
+        ...(command.clientId !== undefined ? { clientId: command.clientId } : {}),
+      };
+      const result = await this.mockService.writeRegister(mockWriteReq);
       // 🆕 타입 변환하여 호환성 맞춤
       this.logger?.debug(`[UnifiedModbusCommunicationService] Mock 서비스 쓰기 완료 - Success: ${result.success}`);
       return {

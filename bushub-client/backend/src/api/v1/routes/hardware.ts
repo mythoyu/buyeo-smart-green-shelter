@@ -5,6 +5,17 @@ import { HW_PORTS } from '../../../meta/hardware/ports';
 import { createSuccessResponse, createErrorResponse } from '../../../shared/utils/responseHelper';
 import { logError, logInfo } from '../../../logger';
 
+/** 최근 선택 클라이언트 ID — Modbus 역색인·삼성 cooler 변환에 전달 */
+async function resolveHardwareClientId(): Promise<string | undefined> {
+  try {
+    const { Client } = await import('../../../models/schemas/ClientSchema');
+    const doc = await Client.findOne({}).sort({ createdAt: -1 }).select('id').lean<{ id: string }>();
+    return doc?.id;
+  } catch {
+    return undefined;
+  }
+}
+
 // 하드웨어 직접 제어 요청 타입
 interface HardwareDirectCommandRequest {
   port: string;
@@ -63,6 +74,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
     try {
       const body = (request.body as any) || {};
       const action = String(body.action || '').toLowerCase();
+      const routingClientId = await resolveHardwareClientId();
 
       const serviceContainer = ServiceContainer.getInstance();
       const modbusService = serviceContainer.getUnifiedModbusCommunicationService();
@@ -82,6 +94,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
           timestamp: new Date(),
           resolve: () => {},
           reject: () => {},
+          ...(routingClientId !== undefined ? { clientId: routingClientId } : {}),
         } as any);
         return result?.success ? (Array.isArray(result.data) ? result.data[0] : result.data) : null;
       };
@@ -102,6 +115,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
           timestamp: new Date(),
           resolve: () => {},
           reject: () => {},
+          ...(routingClientId !== undefined ? { clientId: routingClientId } : {}),
         } as any);
         return !!result?.success;
       };
@@ -128,6 +142,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
               timestamp: new Date(),
               resolve: () => {},
               reject: () => {},
+              ...(routingClientId !== undefined ? { clientId: routingClientId } : {}),
             } as any);
             mv = r?.success ? (Array.isArray(r.data) ? r.data[0] : r.data) : null;
           }
@@ -168,6 +183,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
                 timestamp: new Date(),
                 resolve: () => {},
                 reject: () => {},
+                ...(routingClientId !== undefined ? { clientId: routingClientId } : {}),
               } as any);
               if (!r?.success) return reply.code(500).send(createErrorResponse('COMMAND_FAILED', `${m} 설정 실패`));
             }
@@ -229,6 +245,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
 
         // 1. 폴링 상태 확인 (중지 시에만 허용)
         const serviceContainer = ServiceContainer.getInstance();
+        const hardwareClientId = await resolveHardwareClientId();
         logInfo(`[HardwareDirectCommand] ServiceContainer 인스턴스 획득 성공`);
 
         const pollingService = serviceContainer.getUnifiedModbusPollerService();
@@ -300,6 +317,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
           timestamp: new Date(),
           resolve: () => {},
           reject: () => {},
+          ...(hardwareClientId !== undefined ? { clientId: hardwareClientId } : {}),
         };
 
         const result = await modbusService.executeDirect(modbusCommand);
@@ -358,6 +376,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
 
         // 1. 폴링 상태 확인 (중지 시에만 허용)
         const serviceContainer = ServiceContainer.getInstance();
+        const hardwareClientId = await resolveHardwareClientId();
         logInfo(`[HardwareReadStatus] ServiceContainer 인스턴스 획득 성공`);
 
         const pollingService = serviceContainer.getUnifiedModbusPollerService();
@@ -433,6 +452,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
           timestamp: new Date(),
           resolve: () => {},
           reject: () => {},
+          ...(hardwareClientId !== undefined ? { clientId: hardwareClientId } : {}),
         };
 
         const result = await modbusService.executeDirect(modbusCommand);
@@ -512,6 +532,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
 
         // 2. 명령어에 따라 적절한 포트와 명령어 조합으로 읽기 실행
         const modbusService = serviceContainer.getUnifiedModbusCommunicationService();
+        const hardwareClientId = await resolveHardwareClientId();
         const results: { [port: string]: { [command: string]: number[] } } = {};
         const commandId = `hardware_read_all_${Date.now()}`;
 
@@ -609,6 +630,7 @@ async function hardwareRoutes(fastify: FastifyInstance) {
                 timestamp: new Date(),
                 resolve: () => {},
                 reject: () => {},
+                ...(hardwareClientId !== undefined ? { clientId: hardwareClientId } : {}),
               };
 
               // 읽기 실행

@@ -2,7 +2,11 @@ import { EventEmitter } from 'events';
 
 import ModbusRTU from 'modbus-serial';
 
-import { buildReverseIndex, ReverseIndexSpec } from '../../meta/protocols/mockValueGenerator';
+import {
+  buildReverseIndex,
+  resolveReverseIndexSpec,
+  ReverseIndexSpec,
+} from '../../meta/protocols/mockValueGenerator';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { getModbusConfig, getModbusAddressMapping } from '../../utils/environment';
 import {
@@ -99,6 +103,7 @@ export class RealModbusService implements IModbusCommunication {
           functionCode: command.functionCode,
           address: command.address,
           length: command.lengthOrValue,
+          clientId: command.clientId,
         });
       } else if (command.type === 'write') {
         return await this.writeRegister({
@@ -106,6 +111,7 @@ export class RealModbusService implements IModbusCommunication {
           functionCode: command.functionCode,
           address: command.address,
           value: command.lengthOrValue,
+          clientId: command.clientId,
         });
       }
       throw new Error(`지원하지 않는 명령 타입: ${command.type}`);
@@ -544,9 +550,7 @@ export class RealModbusService implements IModbusCommunication {
           throw new Error(`지원하지 않는 Function Code: ${request.functionCode}`);
       }
 
-      // Reverse Index에서 필드 정보 조회
-      const key = `${request.functionCode}:${request.address}`;
-      const spec = this.reverseIndex?.get(key);
+      const spec = resolveReverseIndexSpec(this.reverseIndex, request.clientId, request.functionCode, request.address);
       const fieldInfo = spec?.field ? ` (${spec.field})` : '';
 
       // this.logger?.info(
@@ -569,9 +573,7 @@ export class RealModbusService implements IModbusCommunication {
         throw new Error('Modbus 클라이언트가 초기화되지 않음');
       }
 
-      // Reverse Index에서 필드 정보 조회
-      const key = `${request.functionCode}:${request.address}`;
-      const spec = this.reverseIndex?.get(key);
+      const spec = resolveReverseIndexSpec(this.reverseIndex, request.clientId, request.functionCode, request.address);
       const fieldInfo = spec?.field ? ` (${spec.field})` : '';
 
       // ✅ Slave ID 설정 후 지연 추가 (설정 완료 대기)
@@ -582,14 +584,14 @@ export class RealModbusService implements IModbusCommunication {
 
       switch (request.functionCode) {
         case 5: // Write Single Coil
-          const coilValue = this.applyFieldReverseConversion(request.value, spec);
+          const coilValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
 
           const writeResult = await this.modbusClient.writeCoil(request.address, coilValue);
           result = this.convertWriteResultToNumber(writeResult);
           break;
 
         case 6: // Write Single Register
-          const registerValue = this.applyFieldReverseConversion(request.value, spec);
+          const registerValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
 
           const registerResult = await this.modbusClient.writeRegister(request.address, registerValue);
           result = this.convertWriteResultToNumber(registerResult);
@@ -598,12 +600,12 @@ export class RealModbusService implements IModbusCommunication {
         case 15: // Write Multiple Coils
           // 🆕 Multiple Coils는 배열 형태로 처리
           if (Array.isArray(request.value)) {
-            const coilValues = request.value.map((val) => this.applyFieldReverseConversion(val, spec));
+            const coilValues = request.value.map((val) => this.applyFieldReverseConversion(val, spec, request.clientId));
             const coilsResult = await this.modbusClient.writeCoils(request.address, coilValues);
             result = this.convertWriteResultToNumber(coilsResult);
           } else {
             // 단일 값인 경우 배열로 변환
-            const coilValue = this.applyFieldReverseConversion(request.value, spec);
+            const coilValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
             const coilsResult = await this.modbusClient.writeCoils(request.address, [coilValue]);
             result = this.convertWriteResultToNumber(coilsResult);
           }
@@ -612,12 +614,14 @@ export class RealModbusService implements IModbusCommunication {
         case 16: // Write Multiple Registers
           // 🆕 Multiple Registers는 배열 형태로 처리
           if (Array.isArray(request.value)) {
-            const registerValues = request.value.map((val) => this.applyFieldReverseConversion(val, spec));
+            const registerValues = request.value.map((val) =>
+              this.applyFieldReverseConversion(val, spec, request.clientId),
+            );
             const registersResult = await this.modbusClient.writeRegisters(request.address, registerValues);
             result = this.convertWriteResultToNumber(registersResult);
           } else {
             // 단일 값인 경우 배열로 변환
-            const registerValue = this.applyFieldReverseConversion(request.value, spec);
+            const registerValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
             const registersResult = await this.modbusClient.writeRegisters(request.address, [registerValue]);
             result = this.convertWriteResultToNumber(registersResult);
           }
@@ -718,9 +722,7 @@ export class RealModbusService implements IModbusCommunication {
   // ✅ ModbusRTU 결과를 number[]로 변환하는 유틸리티 메서드 (필드별 변환 적용)
   private convertModbusResultToNumberArray(result: any, request: ModbusReadRequest): number[] {
     try {
-      // Reverse Index에서 필드 정보 조회
-      const key = `${request.functionCode}:${request.address}`;
-      const spec = this.reverseIndex?.get(key);
+      const spec = resolveReverseIndexSpec(this.reverseIndex, request.clientId, request.functionCode, request.address);
 
       // 기본 데이터 변환
       let rawData: number[] = [];
@@ -746,7 +748,7 @@ export class RealModbusService implements IModbusCommunication {
       }
 
       // 필드별 적절한 변환 적용
-      const converted = rawData.map((rawValue) => this.applyFieldConversion(rawValue, spec));
+      const converted = rawData.map((rawValue) => this.applyFieldConversion(rawValue, spec, request.clientId));
 
       return converted;
     } catch (error) {
@@ -760,14 +762,14 @@ export class RealModbusService implements IModbusCommunication {
   }
 
   // 필드별 변환 로직
-  private applyFieldConversion(rawValue: number, spec?: ReverseIndexSpec): number {
+  private applyFieldConversion(rawValue: number, spec?: ReverseIndexSpec, requestClientId?: string): number {
     if (!spec) {
       return rawValue; // 기본 변환
     }
 
     const field = spec.field || '';
     const deviceType = (spec.deviceType || '').toString();
-    const clientId = spec.clientId || '';
+    const clientId = (requestClientId ?? spec.clientId ?? '').toString();
 
     // 🎯 c0101, c0102 삼성 냉난방기 전용 변환 (MODE/SPEED) — LG 현장(c0103~)은 매핑 생략
     if ((clientId === 'c0101' || clientId === 'c0102') && deviceType === 'cooler') {
@@ -848,7 +850,7 @@ export class RealModbusService implements IModbusCommunication {
   }
 
   // 필드별 역변환 로직 (사용자 값 → 하드웨어 값)
-  private applyFieldReverseConversion(userValue: any, spec?: ReverseIndexSpec): any {
+  private applyFieldReverseConversion(userValue: any, spec?: ReverseIndexSpec, requestClientId?: string): any {
     if (!spec) {
       return userValue; // 기본 변환
     }
@@ -856,7 +858,7 @@ export class RealModbusService implements IModbusCommunication {
     const field = spec.field || '';
     const type = (spec.type || '').toString();
     const deviceType = (spec.deviceType || '').toString();
-    const clientId = spec.clientId || '';
+    const clientId = (requestClientId ?? spec.clientId ?? '').toString();
 
     // 🎯 c0101, c0102 삼성 냉난방기 전용 변환 (MODE/SPEED) — LG 현장(c0103~)은 매핑 생략
     if ((clientId === 'c0101' || clientId === 'c0102') && deviceType === 'cooler') {

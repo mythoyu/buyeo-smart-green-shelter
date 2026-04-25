@@ -874,9 +874,13 @@ export class DataSyncService {
         throw new Error('Modbus 서비스를 찾을 수 없습니다');
       }
 
+      const deviceModel = new DeviceModel();
+      const deviceDoc = await deviceModel.findById(deviceId);
+      const modbusClientId = deviceDoc?.clientId;
+
       // 각 필드별로 Modbus 쓰기 명령 실행
       for (const [field, value] of Object.entries(data)) {
-        await this.executeModbusWrite(deviceId, unitId, field, value, unifiedModbusService);
+        await this.executeModbusWrite(deviceId, unitId, field, value, unifiedModbusService, modbusClientId);
       }
 
       this.logger?.info(`[DataSyncService] 하드웨어 데이터 적용 완료: ${deviceId}/${unitId}`);
@@ -895,6 +899,7 @@ export class DataSyncService {
     field: string,
     value: any,
     unifiedModbusService: any,
+    clientId?: string,
   ): Promise<void> {
     try {
       // fieldUtils에서 매핑 정보 조회
@@ -905,7 +910,7 @@ export class DataSyncService {
         deviceId,
         unitId,
         type: 'unknown',
-        clientId: '',
+        clientId: clientId || '',
         name: '',
         status: 'active',
         data: {},
@@ -936,6 +941,7 @@ export class DataSyncService {
         functionCode: mapping.commandSpec.functionCode,
         address: mapping.commandSpec.address,
         value,
+        clientId,
         context: 'control',
       });
 

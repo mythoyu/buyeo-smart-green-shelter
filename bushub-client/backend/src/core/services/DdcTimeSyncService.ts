@@ -152,6 +152,7 @@ export class DdcTimeSyncService implements IDdcTimeSyncService {
             functionCode: ddcTimeConfig.port.functionCode,
             address: ddcTimeConfig.port.address,
             value: command.value,
+            clientId,
             context: 'control', // DDC 시간 동기화용 컨텍스트 (ControlService와 동일)
           });
 

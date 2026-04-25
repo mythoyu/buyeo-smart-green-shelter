@@ -16,7 +16,13 @@ export class HardwareControlService {
   /**
    * HARDWARE_PORTS를 활용한 하드웨어 제어
    */
-  async executeAction(port: string, action: string, operation: 'set' | 'get', value?: any): Promise<any> {
+  async executeAction(
+    port: string,
+    action: string,
+    operation: 'set' | 'get',
+    value?: any,
+    clientId?: string,
+  ): Promise<any> {
     try {
       this.logger?.info(
         `[HardwareControlService] 하드웨어 제어 실행: ${port}.${action}.${operation}${
@@ -71,6 +77,7 @@ export class HardwareControlService {
         reject: () => {
           // Placeholder for queue resolution
         },
+        ...(clientId !== undefined ? { clientId } : {}),
       };
 
       this.logger?.info(

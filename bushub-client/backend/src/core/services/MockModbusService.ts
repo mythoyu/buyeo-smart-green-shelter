@@ -1,4 +1,9 @@
-import { buildReverseIndex, generateBySpec, initializeMockGenerator } from '../../meta/protocols/mockValueGenerator';
+import {
+  buildReverseIndex,
+  generateBySpec,
+  initializeMockGenerator,
+  resolveReverseIndexSpec,
+} from '../../meta/protocols/mockValueGenerator';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { nowKstFormatted } from '../../shared/utils/kstDateTime';
 import { ServiceContainer } from '../container/ServiceContainer';
@@ -100,6 +105,7 @@ export class MockModbusService implements IModbusCommunication {
           functionCode: command.functionCode,
           address: command.address,
           length: command.lengthOrValue,
+          clientId: command.clientId,
         });
       } else if (command.type === 'write') {
         return await this.writeRegister({
@@ -107,6 +113,7 @@ export class MockModbusService implements IModbusCommunication {
           functionCode: command.functionCode,
           address: command.address,
           value: command.lengthOrValue,
+          clientId: command.clientId,
         });
       }
       throw new Error(`지원하지 않는 명령 타입: ${command.type}`);
@@ -213,16 +220,15 @@ export class MockModbusService implements IModbusCommunication {
       this.logger?.debug(`[MockModbusService] Reverse index built: size=${this._reverseIndex.size}`);
     }
 
-    const key = `${request.functionCode}:${request.address}`;
-    const spec = this._reverseIndex.get(key);
+    const spec = resolveReverseIndexSpec(this._reverseIndex, request.clientId, request.functionCode, request.address);
     let rawData = await generateBySpec(spec, request.length);
 
     // 🆕 Alarm 에러 테스트 적용
-    if (spec && this.shouldGenerateAlarmError(spec.deviceId || '', spec.commandKey || '')) {
+    if (spec && this.shouldGenerateAlarmError(spec.deviceType || '', spec.field || '')) {
       const alarmErrorValue = this.generateAlarmErrorValue();
       rawData = [alarmErrorValue]; // Alarm 에러 값으로 덮어쓰기
       this.logger?.warn(
-        `[MockModbusService] Alarm 에러 테스트 적용: ${spec.deviceId}/${spec.unitId} - ${spec.commandKey} = ${alarmErrorValue}`,
+        `[MockModbusService] Alarm 에러 테스트 적용: ${spec.deviceType}/${spec.field} = ${alarmErrorValue}`,
       );
     }
 
@@ -339,32 +345,17 @@ export class MockModbusService implements IModbusCommunication {
   }
 
   /**
-   * 🆕 디바이스 ID에서 디바이스 타입 추출
+   * 🆕 Alarm 에러 테스트 여부 확인 (역색인 spec의 deviceType·field 기준)
    */
-  private getDeviceTypeFromDeviceId(deviceId: string): string | null {
-    const deviceTypeMap: { [key: string]: string } = {
-      d021: 'cooler', // 냉난방기
-      d022: 'exchanger', // 전열교환기
-      d061: 'integrated_sensor', // 통합센서
-    };
-
-    return deviceTypeMap[deviceId] || null;
-  }
-
-  /**
-   * 🆕 Alarm 에러 테스트 여부 확인
-   */
-  private shouldGenerateAlarmError(deviceId: string, commandKey: string): boolean {
-    if (!this.alarmErrorTestEnabled || commandKey !== 'GET_ALARM') {
+  private shouldGenerateAlarmError(deviceType: string, field: string): boolean {
+    if (!this.alarmErrorTestEnabled || field !== 'alarm') {
       return false;
     }
 
-    const deviceType = this.getDeviceTypeFromDeviceId(deviceId);
     if (!deviceType) {
       return false;
     }
 
-    // deviceType이 'all'이거나 해당 디바이스 타입과 일치하는 경우
     return this.alarmErrorDeviceType === 'all' || this.alarmErrorDeviceType === deviceType;
   }
 

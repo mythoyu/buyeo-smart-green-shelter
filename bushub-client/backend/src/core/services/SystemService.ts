@@ -477,6 +477,7 @@ export class SystemService implements ISystemService {
           functionCode,
           address,
           value: targetValue,
+          clientId,
           context: 'control',
         });
 
@@ -653,6 +654,7 @@ export class SystemService implements ISystemService {
         functionCode: functionCode || 6,
         address,
         value: fieldValue,
+        clientId,
         context: 'control',
       });
 
@@ -728,6 +730,7 @@ export class SystemService implements ISystemService {
         functionCode,
         address,
         length: actionConfig.length || 1,
+        clientId,
         context: 'control',
       });
 
@@ -918,6 +921,7 @@ export class SystemService implements ISystemService {
           functionCode: actionConfig.port.functionCode,
           address: actionConfig.port.address,
           length: actionConfig.length || 1,
+          clientId,
           context: 'control',
         });
 
