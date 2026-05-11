@@ -902,6 +902,22 @@ export class RealModbusService implements IModbusCommunication {
       }
     }
 
+    // 온열벤치(bench) 전용 역변환 (회귀 방지: deviceType 조건 필수)
+    if (deviceType === 'bench') {
+      // 설정온도: -20~80°C ↔ 1800~2800
+      if (field === 'cont_temp') {
+        return Math.round(Number(userValue) * 10 + 2000);
+      }
+      // 편차값: 0~20°C ↔ 0~200
+      if (field === 'temp_offset') {
+        return Math.round(Number(userValue) * 10);
+      }
+      // 기동 체크시간: 0~600초 ↔ 0~6000
+      if (field === 'temp_check_interval') {
+        return Math.round(Number(userValue) * 10);
+      }
+    }
+
     // 온도 역변환 (사용자 온도 → 하드웨어 레지스터 값)
     if (field === 'temp' || field === 'cur_temp') {
       return Math.round(userValue * 10 + 2000); // 온도 역스케일링

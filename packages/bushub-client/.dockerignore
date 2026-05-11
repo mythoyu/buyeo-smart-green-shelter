@@ -1,0 +1,6 @@
+# Ignore other packages and node_modules
+node_modules/
+**/node_modules
+.git/
+.vscode/ 
+db/data 

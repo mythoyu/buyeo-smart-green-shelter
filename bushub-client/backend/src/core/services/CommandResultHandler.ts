@@ -63,14 +63,59 @@ export class CommandResultHandler {
       // ✅ Data 컬렉션 업데이트 추가 (value 우선, 없으면 result에서 추출)
       let dataValue = value !== undefined ? value : this.extractValueFromResult(result, commandKey);
 
-      // 온도 필드 처리 시 Modbus 값을 실제 온도로 변환
-      if (commandKey === 'GET_SUMMER_CONT_TEMP' || commandKey === 'GET_WINTER_CONT_TEMP' || commandKey === 'GET_HUM') {
-        dataValue = dataValue / 10;
-        this.logger.info(`[CommandResultHandler] 계절 타겟 온도 변환: ${commandKey} ${value} → ${dataValue}°C`);
+      const rawValue = Number(dataValue);
+
+      // 온도/편차/체크시간 변환은 deviceType + commandKey 기반으로 분기한다. (키 충돌 회귀 방지)
+      if (device.type === 'bench') {
+        if (commandKey === 'GET_CUR_TEMP' || commandKey === 'GET_CONT_TEMP') {
+          dataValue = (rawValue - 2000) / 10;
+          this.logger.info(`[CommandResultHandler] 벤치 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
+        } else if (commandKey === 'GET_TEMP_OFFSET') {
+          dataValue = rawValue / 10;
+          this.logger.info(`[CommandResultHandler] 벤치 편차값 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
+        } else if (commandKey === 'GET_TEMP_CHECK_INTERVAL') {
+          dataValue = rawValue / 10;
+          this.logger.info(`[CommandResultHandler] 벤치 기동 체크시간 변환: ${commandKey} ${rawValue} → ${dataValue}초`);
+        } else if (
+          commandKey === 'GET_SUMMER_CONT_TEMP' ||
+          commandKey === 'GET_WINTER_CONT_TEMP' ||
+          commandKey === 'GET_HUM'
+        ) {
+          // bench에서는 사용하지 않지만 공용 키 보호
+          dataValue = rawValue / 10;
+        } else if (commandKey === 'GET_TEMP') {
+          // bench에서 GET_TEMP를 사용하지 않지만, 안전하게 기존 온도 포맷으로 처리
+          dataValue = (rawValue - 2000) / 10;
+        }
+      } else if (device.type === 'cooler') {
+        if (commandKey === 'GET_SUMMER_CONT_TEMP' || commandKey === 'GET_WINTER_CONT_TEMP') {
+          dataValue = rawValue / 10;
+          this.logger.info(`[CommandResultHandler] 계절 타겟 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
+        } else if (commandKey === 'GET_CUR_TEMP') {
+          dataValue = (rawValue - 2000) / 10;
+          this.logger.info(`[CommandResultHandler] 냉난방기 현재온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
+        } else if (commandKey === 'GET_HUM') {
+          dataValue = rawValue / 10;
+        }
+      } else if (device.type === 'integrated_sensor' || device.type === 'sensor') {
+        if (commandKey === 'GET_HUM') {
+          dataValue = rawValue / 10;
+          this.logger.info(`[CommandResultHandler] 습도 변환: ${commandKey} ${rawValue} → ${dataValue}%`);
+        } else if (commandKey === 'GET_TEMP') {
+          dataValue = (rawValue - 2000) / 10;
+          this.logger.info(`[CommandResultHandler] 센서 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
+        }
+      } else if (
+        // 폴백: 기존 동작 보존
+        commandKey === 'GET_SUMMER_CONT_TEMP' ||
+        commandKey === 'GET_WINTER_CONT_TEMP' ||
+        commandKey === 'GET_HUM'
+      ) {
+        dataValue = rawValue / 10;
+        this.logger.info(`[CommandResultHandler] 공용 스케일 변환: ${commandKey} ${rawValue} → ${dataValue}`);
       } else if (commandKey === 'GET_CUR_TEMP' || commandKey === 'GET_TEMP') {
-        // Modbus 읽기 시: Modbus 값을 실제 온도로 변환 (튜닝값은 적용하지 않음)
-        dataValue = (dataValue - 2000) / 10;
-        this.logger.info(`[CommandResultHandler] 온도 변환: ${commandKey} ${value} → ${dataValue}°C`);
+        dataValue = (rawValue - 2000) / 10;
+        this.logger.info(`[CommandResultHandler] 공용 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
       }
       // power, auto 필드는 boolean으로 변환 (alarm은 number로 유지)
       else if (commandKey === 'GET_POWER' || commandKey === 'GET_AUTO') {

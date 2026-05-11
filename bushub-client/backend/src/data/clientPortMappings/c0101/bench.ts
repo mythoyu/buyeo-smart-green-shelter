@@ -28,6 +28,49 @@ export const bench = {
       type: 'boolean',
     },
 
+    GET_CUR_TEMP: {
+      port: HW_PORTS.BENCH.CUR_TEMP.get,
+      collection: 'data',
+      field: 'cur_temp',
+      type: 'number',
+    },
+    GET_CONT_TEMP: {
+      port: HW_PORTS.BENCH.CONT_TEMP.get,
+      collection: 'data',
+      field: 'cont_temp',
+      type: 'number',
+    },
+    SET_CONT_TEMP: {
+      port: HW_PORTS.BENCH.CONT_TEMP.set,
+      collection: 'data',
+      field: 'cont_temp',
+      type: 'number',
+    },
+    GET_TEMP_OFFSET: {
+      port: HW_PORTS.BENCH.TEMP_OFFSET.get,
+      collection: 'data',
+      field: 'temp_offset',
+      type: 'number',
+    },
+    SET_TEMP_OFFSET: {
+      port: HW_PORTS.BENCH.TEMP_OFFSET.set,
+      collection: 'data',
+      field: 'temp_offset',
+      type: 'number',
+    },
+    GET_TEMP_CHECK_INTERVAL: {
+      port: HW_PORTS.BENCH.TEMP_CHECK_INTERVAL.get,
+      collection: 'data',
+      field: 'temp_check_interval',
+      type: 'number',
+    },
+    SET_TEMP_CHECK_INTERVAL: {
+      port: HW_PORTS.BENCH.TEMP_CHECK_INTERVAL.set,
+      collection: 'data',
+      field: 'temp_check_interval',
+      type: 'number',
+    },
+
     // 🎯 통합된 시간 명령어 (외부 API용)
     SET_START_TIME_1: 'TIME_INTEGRATED',
     GET_START_TIME_1: 'TIME_INTEGRATED',

@@ -1706,6 +1706,58 @@ export const HW_PORTS = {
     },
   },
 
+  // 온열벤치(bench)
+  // - 문서 레지스터는 1-based, 실제 Modbus address는 0-based로 사용한다.
+  //   - reg 1  -> addr 0
+  //   - reg 17 -> addr 16
+  //   - reg 18 -> addr 17
+  //   - reg 20 -> addr 19
+  BENCH: {
+    CUR_TEMP: {
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 0,
+        description: '온열벤치 현재 온도',
+      },
+    },
+    CONT_TEMP: {
+      set: {
+        functionCode: MODBUS_FC.WR_SNGL_REG,
+        address: 16,
+        description: '온열벤치 설정 온도 설정',
+      },
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 16,
+        description: '온열벤치 설정 온도',
+      },
+    },
+    TEMP_OFFSET: {
+      set: {
+        functionCode: MODBUS_FC.WR_SNGL_REG,
+        address: 17,
+        description: '온열벤치 편차값 설정',
+      },
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 17,
+        description: '온열벤치 편차값',
+      },
+    },
+    TEMP_CHECK_INTERVAL: {
+      set: {
+        functionCode: MODBUS_FC.WR_SNGL_REG,
+        address: 19,
+        description: '온열벤치 기동 체크시간 설정',
+      },
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 19,
+        description: '온열벤치 기동 체크시간',
+      },
+    },
+  },
+
   INTEGRATED_SENSOR: {
     PM10: {
       get: { functionCode: MODBUS_FC.RD_HLD_REG, address: 133, description: '통합센서 PM1.0' },

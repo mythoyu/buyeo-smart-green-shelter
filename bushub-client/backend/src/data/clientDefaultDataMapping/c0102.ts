@@ -47,6 +47,9 @@ export const c0102Defaults: DeviceDefaultValues = {
       end_time_1_minute: 0,
       power: false,
       auto: true,
+      cont_temp: 25.0,
+      temp_offset: 0.0,
+      temp_check_interval: 30.0,
     },
   },
   door: {

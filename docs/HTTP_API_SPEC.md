@@ -606,6 +606,10 @@ DELETE /internal/api-keys/{key}
 | `auto`         | 모드상태 | `SET_AUTO`, `GET_AUTO`                 |
 | `power`        | 전원상태 | `SET_POWER`, `GET_POWER`               |
 | `connection`   | 통신상태 | `GET_CONNECTION`                       |
+| `cur_temp`     | 현재온도 | `GET_CUR_TEMP`                         |
+| `cont_temp`    | 설정온도 | `SET_CONT_TEMP`, `GET_CONT_TEMP`       |
+| `temp_offset`  | 편차값   | `SET_TEMP_OFFSET`, `GET_TEMP_OFFSET`   |
+| `temp_check_interval` | 기동 체크시간(초) | `SET_TEMP_CHECK_INTERVAL`, `GET_TEMP_CHECK_INTERVAL` |
 | `start_time_1` | 시작시간 | `SET_START_TIME_1`, `GET_START_TIME_1` |
 | `end_time_1`   | 종료시간 | `SET_END_TIME_1`, `GET_END_TIME_1`     |
 

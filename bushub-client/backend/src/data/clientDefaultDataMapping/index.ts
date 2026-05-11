@@ -78,6 +78,9 @@ export interface DeviceDefaultValues {
       end_time_1_minute: number;
       power: boolean;
       auto: boolean;
+      cont_temp: number;
+      temp_offset: number;
+      temp_check_interval: number;
     };
   };
   door?: {
@@ -232,6 +235,9 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_minute: 0,
       power: false,
       auto: true,
+      cont_temp: 25.0,
+      temp_offset: 0.0,
+      temp_check_interval: 30.0,
     },
     door: {
       start_time_1: '07:00',
