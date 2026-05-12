@@ -38,11 +38,12 @@ const COOLER_MODE_OPTIONS = [
   { value: 4, label: '난방' },
 ];
 
-// COOLER 속도 옵션 (냉난방기)
+// COOLER 속도 옵션 (냉난방기) — smartcityDeviceSpecs(d021)과 동일: 1~4, 4=자동
 const COOLER_SPEED_OPTIONS = [
   { value: 1, label: '약' },
   { value: 2, label: '중' },
   { value: 3, label: '강' },
+  { value: 4, label: '자동' },
 ];
 
 // EXCHANGER 모드 옵션 (전열교환기)
@@ -77,12 +78,15 @@ export const HVACControlTab: React.FC<HVACControlTabProps> = ({ disabled = false
   const [hvacStates, setHvacStates] = useState<Map<HVACPort, HVACState>>(() => {
     const initialState = new Map<HVACPort, HVACState>();
     HVAC_PORTS.forEach(port => {
+      const isCooler = port === 'COOLER';
       initialState.set(port, {
         port,
         auto: false,
         power: false,
-        mode: 0,
-        speed: 0,
+        // 냉난방: 명세 기본 모드 자동(3). 전열 모드 옵션은 1~2만 있어 0이면 셀렉트와 불일치
+        mode: isCooler ? 3 : 2,
+        // 셀렉트 옵션에 없는 0 방지 — 명세 기본값과 맞춤(냉난방 풍량 기본 4, 전열 2)
+        speed: isCooler ? 4 : 2,
         summerTemp: 25,
         winterTemp: 20,
         currentTemp: 22,

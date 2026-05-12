@@ -42,6 +42,8 @@ export interface DataUpdatePayload {
   unitId: string;
   data: { [key: string]: any };
   type: string;
+  /** mapPollingResultToDataUpdate에서 CommandResultHandler로 반영된 필드 수 */
+  updatedFields?: number;
 }
 
 // PollingDataSyncService 인터페이스들
@@ -231,7 +233,7 @@ export class DataSyncService {
         availableActions,
       );
 
-      if (mappedData.processedCount === 0) {
+      if ((mappedData.processedCount ?? 0) === 0) {
         this.logger?.warn(`[DataSyncService] ${clientId}/${deviceId}/${deviceType}/${unitId}에서 변환된 데이터가 없음`);
 
         this.logger?.debug(`[DataSyncService] ${clientId}/${deviceId}/${deviceType}/${unitId} 디버깅 정보:`, {
@@ -261,11 +263,14 @@ export class DataSyncService {
       //   mappedData,
       // });
 
+      const updatedFields = mappedData.processedCount ?? 0;
+
       return {
         deviceId,
         unitId,
         data: {}, // CommandResultHandler에서 이미 처리됨
         type: deviceType,
+        updatedFields,
       };
     } catch (error) {
       this.logger?.error(`[DataSyncService] ${deviceId}/${unitId} 데이터 변환 실패: ${error}`);
@@ -316,6 +321,8 @@ export class DataSyncService {
             const success = await this.handlePollingDataWithCommandResultHandler(
               pollingResult.deviceId,
               pollingResult.unitId,
+              clientId,
+              deviceType,
               fieldMapping,
               processedData,
               result.action,
@@ -353,7 +360,7 @@ export class DataSyncService {
       this.logger?.error(
         `[DataSyncService] 데이터 추출 및 변환 중 오류: ${error instanceof Error ? error.message : String(error)}`,
       );
-      return {};
+      return { processedCount: 0 };
     }
   }
 
@@ -363,6 +370,8 @@ export class DataSyncService {
   private async handlePollingDataWithCommandResultHandler(
     deviceId: string,
     unitId: string,
+    clientId: string,
+    deviceType: string,
     fieldMapping: string,
     processedData: any,
     action: string,
@@ -373,22 +382,22 @@ export class DataSyncService {
         return false;
       }
 
-      // 간단한 Device/Unit 객체 생성 (DB 조회 불필요)
+      // CommandResultHandler 스케일 분기에 device.type이 필요하므로 폴링 deviceType을 반영
       const device: IDevice = {
         deviceId,
         name: deviceId,
-        clientId: '', // 빈 문자열로 초기화
-        type: '', // 빈 문자열로 초기화
+        clientId,
+        type: deviceType,
       } as IDevice;
 
       const unit: IUnit = {
         unitId,
         deviceId,
         name: unitId,
-        clientId: '', // 빈 문자열로 초기화
-        type: '', // 빈 문자열로 초기화
-        status: 0, // 기본값
-        data: {}, // 빈 객체로 초기화
+        clientId,
+        type: deviceType,
+        status: 0,
+        data: {},
       } as IUnit;
 
       // CommandResultHandler.handleSuccess() 호출
@@ -640,16 +649,17 @@ export class DataSyncService {
     try {
       const { deviceId, unitId } = dataUpdate;
 
+      const updatedFields = dataUpdate.updatedFields ?? 0;
+
       this.logger?.debug(
-        `[DataSyncService] saveOrUpdateData 호출됨: ${deviceId}/${unitId} (이미 CommandResultHandler에서 처리됨)`,
+        `[DataSyncService] saveOrUpdateData 호출됨: ${deviceId}/${unitId} (CommandResultHandler에서 ${updatedFields}개 필드 반영됨)`,
       );
 
-      // 이미 extractAndTransformData()에서 CommandResultHandler.handleSuccess()로 처리됨
       return {
         success: true,
         deviceId,
         unitId,
-        updatedFields: 0, // 실제로는 CommandResultHandler에서 처리됨
+        updatedFields,
       };
     } catch (error) {
       this.logger?.error(`[DataSyncService] saveOrUpdateData 처리 실패: ${error}`);

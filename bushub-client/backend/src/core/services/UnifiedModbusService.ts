@@ -9,7 +9,6 @@ import {
   UnitQueueStatus,
 } from '../interfaces/IModbusCommunication';
 
-import { IPollingDataPersistenceService } from './interfaces/IPollingDataPersistenceService';
 import { IUnifiedModbusCommunicationService } from './interfaces/IUnifiedModbusCommunicationService';
 import { ModbusCommand, ModbusCommandQueue } from './ModbusCommandQueue';
 
@@ -41,12 +40,10 @@ export class UnifiedModbusService {
   // 🆕 중앙 큐를 직접 사용
   private centralCommandQueue: ModbusCommandQueue;
   private communicationService: IUnifiedModbusCommunicationService;
-  private pollingDataPersistenceService: IPollingDataPersistenceService | undefined;
 
   constructor(
     centralCommandQueue: ModbusCommandQueue,
     communicationService: IUnifiedModbusCommunicationService,
-    pollingDataPersistenceService?: IPollingDataPersistenceService,
     logger?: ILogger,
   ) {
     this.logger = logger;
@@ -55,7 +52,6 @@ export class UnifiedModbusService {
     // 🆕 새로운 서비스들 주입
     this.centralCommandQueue = centralCommandQueue;
     this.communicationService = communicationService;
-    this.pollingDataPersistenceService = pollingDataPersistenceService;
 
     // 🆕 실시간 Mock 상태 확인
     const currentMockStatus = this.config.mockStatus;
@@ -322,11 +318,6 @@ export class UnifiedModbusService {
     try {
       // 1. 큐에 명령 추가 및 처리 대기
       const result = await this.centralCommandQueue.addCommandObject(command);
-
-      // 2. 읽기 명령인 경우 결과를 data 컬렉션에 저장 (구조만 준비)
-      if (command.type === 'read' && result.success && this.pollingDataPersistenceService) {
-        await this.pollingDataPersistenceService.saveModbusReadResult(command.unitId, command.unitId, command, result);
-      }
 
       return result;
     } catch (error) {

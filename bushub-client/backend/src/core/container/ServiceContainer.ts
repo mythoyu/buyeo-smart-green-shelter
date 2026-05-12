@@ -59,7 +59,6 @@ import { PeopleCounterPollerService } from '../services/PeopleCounterPollerServi
 import { PEOPLE_COUNTER_DISABLED_PATH } from '../services/PeopleCounterService';
 import { PeopleCounterQueueService } from '../services/PeopleCounterQueueService';
 import { PeopleCounterResetSchedulerService } from '../services/PeopleCounterResetSchedulerService';
-import { PollingDataPersistenceService } from '../services/PollingDataPersistenceService';
 import { SecurityService } from '../services/SecurityService';
 import { StatusService } from '../services/StatusService';
 import { SystemService } from '../services/SystemService';
@@ -156,7 +155,6 @@ export class ServiceContainer {
     // 🆕 새로운 중앙 큐 시스템 서비스들 생성
     const modbusCommandQueue = new ModbusCommandQueue(logger);
     const unifiedModbusCommunicationService = new UnifiedModbusCommunicationService(logger);
-    const pollingDataPersistenceService = new PollingDataPersistenceService(logger);
 
     // 🆕 ModbusCommandQueue에 통신 서비스 주입
     modbusCommandQueue.setModbusCommunicationService(unifiedModbusCommunicationService);
@@ -168,7 +166,6 @@ export class ServiceContainer {
     const unifiedModbusService: IUnifiedModbusCommunication = new UnifiedModbusService(
       modbusCommandQueue,
       unifiedModbusCommunicationService,
-      pollingDataPersistenceService,
       logger,
     );
 
@@ -207,7 +204,6 @@ export class ServiceContainer {
     // �� 새로운 중앙 큐 시스템 서비스들 등록
     this.services.set('modbusCommandQueue', modbusCommandQueue);
     this.services.set('unifiedModbusCommunicationService', unifiedModbusCommunicationService);
-    this.services.set('pollingDataPersistenceService', pollingDataPersistenceService);
 
     // 🆕 StatusService, ErrorService 생성 (controlService보다 먼저)
     const statusService: IStatusService = new StatusService(statusRepository, logger);
@@ -514,10 +510,6 @@ export class ServiceContainer {
     return this.services.get('dataSyncService');
   }
 
-  public getPollingDataPersistenceService(): PollingDataPersistenceService {
-    return this.services.get('pollingDataPersistenceService');
-  }
-
   public getModbusCommandQueue(): ModbusCommandQueue {
     return this.services.get('modbusCommandQueue');
   }
@@ -537,7 +529,6 @@ export class ServiceContainer {
       unifiedModbusCommunicationService: this.getUnifiedModbusCommunicationService(),
       unifiedModbusService: this.getUnifiedModbusService(),
       unifiedModbusPollerService: this.getUnifiedModbusPollerService(),
-      pollingDataPersistenceService: this.getPollingDataPersistenceService(),
       dataSyncService: this.getDataSyncService(),
     };
   }

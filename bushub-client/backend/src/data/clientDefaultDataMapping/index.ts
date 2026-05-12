@@ -1,7 +1,6 @@
 // 클라이언트별 기본값 import
 import { c0101Defaults } from './c0101';
 import { c0102Defaults } from './c0102';
-import { c0103Defaults } from './c0103';
 
 // 디바이스별 기본 초기값 인터페이스
 export interface DeviceDefaultValues {
@@ -78,6 +77,7 @@ export interface DeviceDefaultValues {
       end_time_1_minute: number;
       power: boolean;
       auto: boolean;
+      cur_temp: number;
       cont_temp: number;
       temp_offset: number;
       temp_check_interval: number;
@@ -133,21 +133,19 @@ export interface ClientDefaultMapping {
 }
 
 // 전체 클라이언트 기본값 매핑
-// LG 표준 현장(c0103~c0111)은 c0103 기본값 공유 (현장별 튜닝 시 분리)
-const lgShelterDefaults = c0103Defaults;
-
+// LG 표준 현장(c0103~c0111)은 c0101과 동일 초기치 사용 (분리 필요 시 매핑만 조정)
 export const CLIENT_DEFAULT_MAPPING: ClientDefaultMapping = {
   c0101: c0101Defaults,
   c0102: c0102Defaults,
-  c0103: lgShelterDefaults,
-  c0104: lgShelterDefaults,
-  c0105: lgShelterDefaults,
-  c0106: lgShelterDefaults,
-  c0107: lgShelterDefaults,
-  c0108: lgShelterDefaults,
-  c0109: lgShelterDefaults,
-  c0110: lgShelterDefaults,
-  c0111: lgShelterDefaults,
+  c0103: c0101Defaults,
+  c0104: c0101Defaults,
+  c0105: c0101Defaults,
+  c0106: c0101Defaults,
+  c0107: c0101Defaults,
+  c0108: c0101Defaults,
+  c0109: c0101Defaults,
+  c0110: c0101Defaults,
+  c0111: c0101Defaults,
 };
 
 // 기본값 조회 함수
@@ -185,7 +183,7 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_2_hour: 22,
       end_time_2_minute: 0,
       power: false,
-      auto: true,
+      auto: false,
     },
     cooler: {
       start_time_1: '07:00',
@@ -195,9 +193,9 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_hour: 22,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
-      mode: 0,
-      speed: 1,
+      auto: false,
+      mode: 3,
+      speed: 4,
       summer_cont_temp: 25,
       winter_cont_temp: 25,
       cur_temp: 22,
@@ -211,7 +209,7 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_hour: 22,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
+      auto: false,
       mode: 0,
       speed: 1,
       alarm: 0,
@@ -224,7 +222,7 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_hour: 22,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
+      auto: false,
     },
     bench: {
       start_time_1: '07:00',
@@ -234,9 +232,10 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_hour: 22,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
-      cont_temp: 25.0,
-      temp_offset: 0.0,
+      auto: false,
+      cur_temp: 24.0,
+      cont_temp: 35.0,
+      temp_offset: 5.0,
       temp_check_interval: 30.0,
     },
     door: {
@@ -247,7 +246,7 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1_hour: 22,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
+      auto: false,
     },
     integrated_sensor: {
       pm100: 25,
@@ -266,7 +265,7 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       end_time_1: '22:00',
       end_time_1_hour: 22,
       end_time_1_minute: 0,
-      auto: true,
+      auto: false,
     },
     people_counter: {
       todayKey: '1970-01-01',

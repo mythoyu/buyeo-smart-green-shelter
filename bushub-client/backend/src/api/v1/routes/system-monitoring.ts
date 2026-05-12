@@ -628,10 +628,6 @@ async function systemMonitoringRoutes(app: FastifyInstance) {
                 available: !!rawDomainStatus.deviceDomain?.unifiedModbusPollerService,
                 status: 'active',
               },
-              pollingDataPersistenceService: {
-                available: !!rawDomainStatus.deviceDomain?.pollingDataPersistenceService,
-                status: 'active',
-              },
               dataSyncService: {
                 available: !!rawDomainStatus.deviceDomain?.dataSyncService,
                 status: 'active',

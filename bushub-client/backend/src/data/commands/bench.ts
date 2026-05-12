@@ -43,7 +43,7 @@ export const benchCommands = [
     min: -20,
     max: 80,
     unit: '°C',
-    defaultValue: 25.0,
+    defaultValue: 35.0,
   },
   {
     key: 'temp_offset',
@@ -55,7 +55,7 @@ export const benchCommands = [
     min: 0,
     max: 20,
     unit: '°C',
-    defaultValue: 0.0,
+    defaultValue: 5.0,
   },
   {
     key: 'temp_check_interval',
