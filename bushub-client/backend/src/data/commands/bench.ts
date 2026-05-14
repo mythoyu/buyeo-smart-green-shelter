@@ -112,7 +112,7 @@ export const benchCommands = [
     action: { get: 'GET_END_TIME_1', set: 'SET_END_TIME_1' },
     min: '00:00',
     max: '23:59',
-    defaultValue: '22:00',
+    defaultValue: '22:30',
   },
   {
     key: 'end_time_1_hour',
@@ -134,6 +134,6 @@ export const benchCommands = [
     action: { get: 'GET_END_TIME_1_MINUTE', set: 'SET_END_TIME_1_MINUTE' },
     min: 0,
     max: 59,
-    defaultValue: 0,
+    defaultValue: 30,
   },
 ];

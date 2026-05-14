@@ -32,10 +32,10 @@ pick_stack_interactive() {
   if [ ! -t 0 ] && [ -r /dev/tty ]; then
     tty_in=/dev/tty
   fi
-  echo ""
-  echo "Docker 스택을 선택하세요 (이 PC에 맞는 쪽):"
-  echo "  1) USB–RS485 어댑터형 (docker-compose.usb485.yml)"
-  echo "  2) 내장 RS-485 포트형 (docker-compose.integrated.yml)"
+  echo "" >&2
+  echo "Docker 스택을 선택하세요 (이 PC에 맞는 쪽):" >&2
+  echo "  1) USB–RS485 어댑터형 (docker-compose.usb485.yml)" >&2
+  echo "  2) 내장 RS-485 포트형 (docker-compose.integrated.yml)" >&2
   while true; do
     read -r -p "선택 (1 또는 2): " sel <"$tty_in"
     case "${sel:-}" in
@@ -48,7 +48,7 @@ pick_stack_interactive() {
         return
         ;;
       *)
-        echo "   1 또는 2 만 입력하세요."
+        echo "   1 또는 2 만 입력하세요." >&2
         ;;
     esac
   done

@@ -81,8 +81,8 @@ export const c0101Defaults: DeviceDefaultValues = {
       auto: false,
       cur_temp: 24.0,
       cont_temp: 35.0,
-      temp_offset: 5.0,
-      temp_check_interval: 30.0,
+      temp_offset: 1.0,
+      temp_check_interval: 10.0,
     },
   },
   door: {

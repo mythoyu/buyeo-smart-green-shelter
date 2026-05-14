@@ -1708,16 +1708,25 @@ export const HW_PORTS = {
 
   // 온열벤치(bench)
   // - 문서 레지스터는 1-based, 실제 Modbus address는 0-based로 사용한다.
-  //   - reg 1  -> addr 0
-  //   - reg 17 -> addr 16
-  //   - reg 18 -> addr 17
-  //   - reg 20 -> addr 19
+  //   - reg 1   -> addr 0   (온열벤치#1 현재 온도)
+  //   - reg 2   -> addr 1   (온열벤치#2 현재 온도)
+  //   - reg 17  -> addr 16  (설정 온도)
+  //   - reg 18  -> addr 17  (편차값)
+  //   - reg 20  -> addr 19  (기동 체크시간)
+  //   - reg 174 -> addr 173 (온열벤치#2 설정 온도)
   BENCH: {
     CUR_TEMP: {
       get: {
         functionCode: MODBUS_FC.RD_HLD_REG,
         address: 0,
-        description: '온열벤치 현재 온도',
+        description: '온열벤치#1 현재 온도',
+      },
+    },
+    CUR_TEMP_2: {
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 1,
+        description: '온열벤치#2 현재 온도',
       },
     },
     CONT_TEMP: {
@@ -1730,6 +1739,18 @@ export const HW_PORTS = {
         functionCode: MODBUS_FC.RD_HLD_REG,
         address: 16,
         description: '온열벤치 설정 온도',
+      },
+    },
+    CONT_TEMP_2: {
+      set: {
+        functionCode: MODBUS_FC.WR_SNGL_REG,
+        address: 173,
+        description: '온열벤치#2 설정 온도 설정',
+      },
+      get: {
+        functionCode: MODBUS_FC.RD_HLD_REG,
+        address: 173,
+        description: '온열벤치#2 설정 온도',
       },
     },
     TEMP_OFFSET: {

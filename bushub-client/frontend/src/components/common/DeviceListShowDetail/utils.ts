@@ -41,7 +41,8 @@ export const getCommandDefaultValue = (command: Command): any => {
       return false;
     case 'int':
     case 'float':
-      return command.min || 0;
+      // min이 0인 필드도 기본값으로 0을 쓰도록 (|| 는 0을 건너뜀)
+      return command.min ?? 0;
     case 'string':
       if (command.key.includes('time')) {
         return command.key.includes('start') ? '08:00' : '22:00';

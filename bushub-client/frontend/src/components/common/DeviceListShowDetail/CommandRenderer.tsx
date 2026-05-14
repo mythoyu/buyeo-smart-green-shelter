@@ -165,8 +165,9 @@ export const CommandRenderer: React.FC<CommandRendererProps> = ({
           value={value}
           onChange={val => onChange(parseFloat(val))}
           disabled={disabled}
-          min={command.min || 16}
-          max={command.max || 30}
+          // min/max가 0일 때도 스펙 값을 유지해야 함 (|| 는 0을 falsy로 처리해 냉난방 기본값으로 덮임)
+          min={command.min ?? 16}
+          max={command.max ?? 30}
           step={0.5}
           unit={command.unit || '°C'}
           className='w-full'

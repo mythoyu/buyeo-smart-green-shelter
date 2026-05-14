@@ -582,7 +582,7 @@ export const deviceSpecs = [
         max: 20,
         unit: '°C',
         options: [],
-        defaultValue: 5.0,
+        defaultValue: 1.0,
       },
       {
         key: 'temp_check_interval',
@@ -598,7 +598,7 @@ export const deviceSpecs = [
         max: 600,
         unit: '초',
         options: [],
-        defaultValue: 30.0,
+        defaultValue: 10.0,
       },
       {
         key: 'start_time_1',
@@ -630,7 +630,7 @@ export const deviceSpecs = [
         max: '23:59',
         unit: null,
         options: [],
-        defaultValue: '22:00',
+        defaultValue: '22:30',
       },
       {
         key: 'auto',
