@@ -2,6 +2,9 @@
 # 2단계: 포트/udev/스택 설정만 수행
 set -euo pipefail
 
+# shellcheck source=../field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/field-guard.sh"
+
 SCRIPT_PATH="$0"
 if [ -L "$SCRIPT_PATH" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$SCRIPT_PATH")")" && pwd)"

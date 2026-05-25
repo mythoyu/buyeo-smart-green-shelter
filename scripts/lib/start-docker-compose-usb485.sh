@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # USB-RS485 — docker-compose.usb485.yml
 set -euo pipefail
+
+# shellcheck source=field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/field-guard.sh"
+
 SCRIPT_PATH="$0"
 if [ -L "$SCRIPT_PATH" ]; then
   _D="$(cd "$(dirname "$(readlink -f "$SCRIPT_PATH")")" && pwd)"

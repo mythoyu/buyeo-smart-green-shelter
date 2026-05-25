@@ -1,0 +1,30 @@
+[Unit]
+Description=Bushub MongoDB Database
+After=network.target
+Wants=network.target
+
+[Service]
+Type=forking
+User=999
+Group=999
+ExecStart=/opt/bushub/mongodb/mongod --dbpath /opt/bushub/data --logpath /opt/bushub/logs/mongodb.log --fork --bind_ip 127.0.0.1 --port 27017
+ExecStop=/opt/bushub/mongodb/mongod --shutdown
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=60
+TimeoutStopSec=60
+
+# 보안 설정
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bushub/data /opt/bushub/logs
+
+# 리소스 제한
+LimitNOFILE=65536
+LimitNPROC=32768
+
+[Install]
+WantedBy=multi-user.target

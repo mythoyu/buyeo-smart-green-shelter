@@ -22,8 +22,8 @@
   "packageManager": "pnpm@10.13.1",
   "private": true,
   "workspaces": [
-    "bushub-client/backend",
-    "bushub-client/frontend",
+    "packages/backend",
+    "packages/frontend",
     "people-counter-tester"
   ],
   "dependencies": {},

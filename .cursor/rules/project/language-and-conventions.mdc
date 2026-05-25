@@ -7,4 +7,4 @@ alwaysApply: true
 
 - AI 응답과 코드 주석은 **한국어**로 작성한다.
 - 이 레포는 buyeo-smart-green-shelter(스마트 그린 쉘터) 프로젝트이다.
-- bushub-client(버스허브 클라이언트) 등 기존 패키지/폴더 구조를 유지한다.
+- 앱 코드는 `packages/`(backend, frontend, nginx) 아래에 둔다. npm 패키지명 `@bushub-client/*` 는 유지한다.

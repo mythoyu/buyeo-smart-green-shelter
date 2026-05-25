@@ -6,6 +6,9 @@
 #       개발용 워크스테이션이 아닌 전용 현장 PC에서 실행하는 것을 권장합니다.
 set -euo pipefail
 
+# shellcheck source=field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/field-guard.sh"
+
 echo "🔧 Bushub 호스트 환경 설정 (Ubuntu 24.04 대상)"
 echo "================================"
 

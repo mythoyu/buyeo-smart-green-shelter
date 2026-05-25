@@ -20,12 +20,21 @@ MongoDB 등은 로컬 설치 또는 별도 컨테이너로 맞춥니다.
 ### 프로덕션(현장) 스택
 
 ```bash
-# 현장 설치(루트): ./scripts/install-field.sh
+# 현장 설치(루트, Ubuntu 전용):
+cp env.example .env
+./scripts/install-field.sh install    # 1회: 호스트 + infra tar
+./scripts/install-field.sh ports      # udev·피플카운터
+export GITHUB_REF_NAME=vX.Y.Z
+./scripts/install-field.sh post-ports # 앱 빌드 + compose up
+
 # 이미 준비된 호스트에서 스택만:
-# 모노레포 루트에서
-./scripts/lib/start-docker-compose-integrated.sh
-# 또는 USB-RS485: ./scripts/lib/start-docker-compose-usb485.sh
+./scripts/lib/rebuild-and-up-integrated.sh
+# 또는 USB-RS485: ./scripts/lib/rebuild-and-up-usb485.sh
 ```
+
+로컬 Mongo: `./packages/start-mongodb-dev.sh` / `./packages/stop-mongodb-dev.sh`
+
+자세한 배포: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ### Docker 관리
 

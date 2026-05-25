@@ -1,0 +1,28 @@
+[Unit]
+Description=Bushub Nginx Web Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/bushub/nginx/nginx -c /opt/bushub/config/nginx-prod.conf
+ExecReload=/opt/bushub/nginx/nginx -s reload
+ExecStop=/opt/bushub/nginx/nginx -s quit
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+# 보안 설정
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bushub/logs
+
+# 리소스 제한
+LimitNOFILE=65536
+LimitNPROC=32768
+
+[Install]
+WantedBy=multi-user.target

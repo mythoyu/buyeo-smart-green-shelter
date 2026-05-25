@@ -2,6 +2,9 @@
 # dist 정리 → 이미지 무캐시 재빌드 → docker-compose.integrated.yml up
 set -euo pipefail
 
+# shellcheck source=field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/field-guard.sh"
+
 SCRIPT_PATH="$0"
 if [ -L "$SCRIPT_PATH" ]; then
   _D="$(cd "$(dirname "$(readlink -f "$SCRIPT_PATH")")" && pwd)"

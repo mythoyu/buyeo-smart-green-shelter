@@ -2,6 +2,9 @@
 # 1단계: 호스트 설치(필수 도구 설치) + (선택) 재부팅
 set -euo pipefail
 
+# shellcheck source=../field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/field-guard.sh"
+
 SCRIPT_PATH="$0"
 if [ -L "$SCRIPT_PATH" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$SCRIPT_PATH")")" && pwd)"
@@ -55,6 +58,19 @@ echo "=========================================="
 echo ""
 
 bash "$SETUP_HOST"
+
+echo ""
+echo "📦 infra Docker 이미지 (mongo, nginx, node) 로드..."
+export REPO_ROOT="$ROOT_DIR"
+if bash "$ROOT_DIR/scripts/lib/load-docker-images.sh" --download-if-missing; then
+  :
+else
+  echo ""
+  echo "⚠️  infra 이미지가 아직 없습니다."
+  echo "   오프라인 현장: USB 의 ../docker-images/infra-docker-images.tar 또는 packages/docker-images/ 를 준비한 뒤"
+  echo "   $ROOT_DIR/scripts/lib/load-docker-images.sh"
+  echo "   (핫스팟) --download-if-missing 로 Release 에서 받을 수 있습니다."
+fi
 
 echo ""
 echo "✅ 1단계 설치가 완료되었습니다."

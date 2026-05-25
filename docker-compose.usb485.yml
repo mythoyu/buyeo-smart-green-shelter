@@ -7,16 +7,37 @@ services:
   # MongoDB 데이터베이스
   db:
     image: mongo:6.0.15
-    container_name: bushub-db
+    container_name: sw-by-bushub-db
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - db_data:/data/db
     environment:
-      - MONGO_INITDB_DATABASE=bushub_client
+      MONGO_INITDB_DATABASE: bushub_client
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
     networks:
       - bushub-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "-u",
+          "${MONGO_ROOT_USER:-admin}",
+          "-p",
+          "${MONGO_ROOT_PASSWORD}",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     deploy:
       resources:
         limits:
@@ -40,32 +61,36 @@ services:
       - "3000:3000"
     volumes:
       - backend_logs:/app/logs
-      # Docker 기본: 소스 없으면 호스트에 빈 디렉터리 생성 → /dev udev 링크가 막힘. create_host_path: false 로 방지
       - type: bind
         source: /dev/bushub-controller
         target: /dev/bushub-controller
         bind:
           create_host_path: false
-      # D-Bus 소켓 마운트 (NetworkManager 통신용)
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
-    privileged: true
-    user: "0:20" # root:dialout 그룹으로 실행
+    user: "0:20"
     environment:
-      - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET:-youjobs-secret-key-2025}
-      - MONGODB_URI=mongodb://db:27017/bushub_client
-      - LOG_LEVEL=info
-      - MODBUS_MOCK_ENABLED=false
-      - MODBUS_PORT=/dev/bushub-controller
-      - MODBUS_BAUD_RATE=9600
-      - MODBUS_RTSCTS=${MODBUS_RTSCTS:-false} # RTS/CTS 흐름 제어 (기본값: false)
-      # PEOPLE_COUNTER_COUNT: 단독 기동 시 0(시리얼 미사용). run-docker-stack 가 1~3 export 시 피플카운터 활성
-      - PEOPLE_COUNTER_COUNT=${PEOPLE_COUNTER_COUNT:-0}
-      - SUPERIOR_SERVER_URL=http://10.20.60.145:9202/api/v1/ping
+      NODE_ENV: production
+      APP_MODE: production
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD}@db:27017/bushub_client?authSource=admin
+      LOG_LEVEL: info
+      MODBUS_MOCK_ENABLED: "false"
+      MODBUS_PORT: /dev/bushub-controller
+      MODBUS_BAUD_RATE: "9600"
+      MODBUS_RTSCTS: ${MODBUS_RTSCTS:-false}
+      PEOPLE_COUNTER_COUNT: ${PEOPLE_COUNTER_COUNT:-0}
+      SUPERIOR_SERVER_URL: http://10.20.60.145:9202/api/v1/ping
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - bushub-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     deploy:
       resources:
         limits:
@@ -89,9 +114,16 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - bushub-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     deploy:
       resources:
         limits:
@@ -114,13 +146,21 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./bushub-client/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./bushub-client/nginx/mime.types:/etc/nginx/mime.types:ro
+      - ./packages/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./packages/nginx/mime.types:/etc/nginx/mime.types:ro
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - bushub-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -135,15 +175,10 @@ services:
         max-size: "10m"
         max-file: "3"
 
-# 네트워크 정의 (172.17~20 등과 겹침 시 Pool overlaps 방지용 대역)
 networks:
   bushub-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
-# 볼륨 정의
 volumes:
   db_data:
     driver: local

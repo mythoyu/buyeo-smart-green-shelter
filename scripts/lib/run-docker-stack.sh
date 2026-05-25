@@ -4,8 +4,11 @@
 # BUSHUB_COMPOSE_MODE 만 사용합니다.
 # 현장 전체 설치는 모노레포 루트의 ./scripts/install-field.sh 를 사용합니다.
 #
-# 위치: 모노레포 scripts/lib — compose 파일은 레포 루트, nginx 설정은 bushub-client/nginx
+# 위치: 모노레포 scripts/lib — compose 파일은 레포 루트, nginx 설정은 packages/nginx
 set -euo pipefail
+
+# shellcheck source=field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/field-guard.sh"
 
 MODE="${BUSHUB_COMPOSE_MODE:-}"
 if [ -z "$MODE" ]; then
@@ -23,8 +26,6 @@ else
 fi
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
-# COMPOSE_PROJECT_NAME 은 레포 루트 .env 또는 셸에서 지정 가능. 미설정 시 디렉터리명 기준(예: project_*).
-# 재기 동일 PC에서 볼륨·네트워크 접두사를 맞추려면 .env 에 COMPOSE_PROJECT_NAME=myname 등으로 고정 권장.
 
 case "$MODE" in
   integrated)
@@ -46,19 +47,17 @@ if [ ! -f "$COMPOSE_FILE" ]; then
   exit 1
 fi
 
-# PeopleCounter(0~3대): usb485 / integrated 공통 compose 조각(docker-compose.common.*)
-# - PEOPLE_COUNTER_COUNT=0 이면 people-counter override를 사용하지 않는다(없는 /dev 마운트로 인한 실패 방지)
-# - PEOPLE_COUNTER_COUNT>=1 이면 override compose를 추가한다.
-# 기본값: integrated=0(미설정 시), usb485=1(기존 현장 호환)
 COMPOSE_FILES=("$COMPOSE_FILE")
-PC_COUNT="${PEOPLE_COUNTER_COUNT:-}"
-if [ -z "$PC_COUNT" ]; then
-  if [ "$MODE" = "integrated" ]; then
-    PC_COUNT=0
-  else
-    PC_COUNT=1
+if [ -z "${PEOPLE_COUNTER_COUNT:-}" ] && [ -f "$REPO_ROOT/.env" ]; then
+  _pc_line="$(grep -E '^[[:space:]]*PEOPLE_COUNTER_COUNT=' "$REPO_ROOT/.env" | tail -n1 || true)"
+  if [ -n "$_pc_line" ]; then
+    PEOPLE_COUNTER_COUNT="${_pc_line#*=}"
+    PEOPLE_COUNTER_COUNT="${PEOPLE_COUNTER_COUNT//[\"\']/}"
+    PEOPLE_COUNTER_COUNT="$(printf '%s' "$PEOPLE_COUNTER_COUNT" | tr -d '\r' | xargs)"
+    export PEOPLE_COUNTER_COUNT
   fi
 fi
+PC_COUNT="${PEOPLE_COUNTER_COUNT:-0}"
 export PEOPLE_COUNTER_COUNT="$PC_COUNT"
 
 if ! [[ "$PC_COUNT" =~ ^[0-3]$ ]]; then
@@ -82,11 +81,16 @@ if [ "$PC_COUNT" -ge 1 ]; then
     COMPOSE_FILES+=("$PC_DEV_FILE")
   done
 
-  # 백엔드 ServiceContainer u001..uN: PEOPLE_COUNTER_PORTS 가 셸에 없을 때만 udev 심볼릭 경로를 개수만큼 자동 생성
-  # (.env 에 PEOPLE_COUNTER_PORTS 가 있으면 compose 가 치환 시 사용 — 셸에서 중복 export 하지 않음)
   if [ -z "${PEOPLE_COUNTER_PORTS:-}" ]; then
     skip_pc_ports_auto=0
-    if [ -f "$REPO_ROOT/.env" ] && grep -Eq '^[[:space:]]*PEOPLE_COUNTER_PORTS=' "$REPO_ROOT/.env" 2>/dev/null; then
+    _env_file=""
+    for _candidate in "$REPO_ROOT/.env" "$REPO_ROOT/.env.development"; do
+      if [ -f "$_candidate" ] && grep -Eq '^[[:space:]]*PEOPLE_COUNTER_PORTS=' "$_candidate" 2>/dev/null; then
+        _env_file="$_candidate"
+        break
+      fi
+    done
+    if [ -n "$_env_file" ]; then
       skip_pc_ports_auto=1
     fi
     if [ "$skip_pc_ports_auto" -eq 0 ]; then
@@ -110,35 +114,19 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
-# 이미지 태그: GITHUB_REF_NAME 또는 docker-images/bushub-backend.*.tar 에서 추론
-# tar 가 여러 개면 수정 시각이 가장 최근인 파일 기준
-if [ -z "${GITHUB_REF_NAME:-}" ]; then
-  if ls docker-images/bushub-backend.*.tar >/dev/null 2>&1; then
-    LATEST_TAR="$(ls -t docker-images/bushub-backend.*.tar 2>/dev/null | head -n1)"
-    TAG_FROM_FILE="$(printf '%s\n' "$LATEST_TAR" | sed -n 's/.*bushub-backend\.\(.*\)\.tar/\1/p')"
-    if [ -n "$TAG_FROM_FILE" ]; then
-      export GITHUB_REF_NAME="$TAG_FROM_FILE"
-      echo "🔖 이미지 태그 자동 설정: $GITHUB_REF_NAME"
-    else
-      export GITHUB_REF_NAME="latest"
-    fi
-  else
-    export GITHUB_REF_NAME="latest"
-  fi
-else
-  echo "🔖 이미지 태그 지정됨: $GITHUB_REF_NAME"
-fi
+# shellcheck source=scripts/lib/resolve-github-ref-name.sh
+source "$SCRIPT_DIR/resolve-github-ref-name.sh"
+resolve_github_ref_name
 
-if [ -d "docker-images" ]; then
-  echo "📦 Docker 이미지 로드 (docker-images/*.tar)..."
-  for image_file in docker-images/*.tar; do
-    if [ -f "$image_file" ]; then
-      echo "   로드: $image_file"
-      docker load -i "$image_file"
-    fi
-  done
-else
-  echo "ℹ️  docker-images/ 없음 — 레지스트리 pull 또는 사전에 이미지가 있어야 합니다."
+export REPO_ROOT
+bash "$SCRIPT_DIR/load-docker-images.sh"
+
+COMPOSE_ENV_FILE_ARGS=()
+if [ -f "$REPO_ROOT/.env" ]; then
+  COMPOSE_ENV_FILE_ARGS=(--env-file "$REPO_ROOT/.env")
+elif [ -f "$REPO_ROOT/.env.development" ]; then
+  echo "ℹ️  .env 없음 — compose 치환에 .env.development 사용 (현장은 .env 권장)"
+  COMPOSE_ENV_FILE_ARGS=(--env-file "$REPO_ROOT/.env.development")
 fi
 
 compose_args=()
@@ -151,9 +139,9 @@ for f in "${COMPOSE_FILES[@]}"; do
   echo "   - $f"
 done
 
-echo "🚀 docker compose ${compose_args[*]} down --remove-orphans → up -d"
-docker compose "${compose_args[@]}" down --remove-orphans || true
-docker compose "${compose_args[@]}" up -d
+echo "🚀 docker compose ${COMPOSE_ENV_FILE_ARGS[*]} ${compose_args[*]} down --remove-orphans → up -d"
+docker compose "${COMPOSE_ENV_FILE_ARGS[@]}" "${compose_args[@]}" down --remove-orphans || true
+docker compose "${COMPOSE_ENV_FILE_ARGS[@]}" "${compose_args[@]}" up -d
 
 echo ""
 echo "🐳 컨테이너:"
@@ -180,4 +168,4 @@ fi
 
 echo ""
 echo "🎉 기동 완료"
-echo "   중지: cd $REPO_ROOT && docker compose ${compose_args[*]} down --remove-orphans"
+echo "   중지: cd $REPO_ROOT && docker compose ${COMPOSE_ENV_FILE_ARGS[*]} ${compose_args[*]} down --remove-orphans"

@@ -18,13 +18,16 @@ usage() {
   echo ""
   echo "  ports 단계까지 끝난 PC에서 코드(git pull 등) 반영 후 실행합니다."
   echo "  인자 없으면 터미널에서 스택(1=usb485, 2=integrated)을 고릅니다."
-  echo "  rebuild-docker-images + docker compose up 까지 수행합니다."
+  echo "  backend/frontend docker build + compose up (infra는 install 시 로드됨)."
 }
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   usage
   exit 0
 fi
+
+# shellcheck source=../field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/field-guard.sh"
 
 pick_stack_interactive() {
   local sel=""

@@ -1,0 +1,2 @@
+export { QuickSettingsPanel } from './QuickSettingsPanel';
+

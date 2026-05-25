@@ -12,8 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
 
-if [[ ! -f "bushub-client/frontend/package.json" ]] || [[ ! -f "bushub-client/backend/package.json" ]]; then
-  echo "❌ bushub-client 패키지를 찾을 수 없습니다. 이 저장소의 모노레포 루트가 맞는지 확인하세요: $ROOT" >&2
+if [[ ! -f "packages/frontend/package.json" ]] || [[ ! -f "packages/backend/package.json" ]]; then
+  echo "❌ packages 패키지를 찾을 수 없습니다. 이 저장소의 모노레포 루트가 맞는지 확인하세요: $ROOT" >&2
   exit 1
 fi
 
@@ -44,7 +44,7 @@ echo "🔨 빌드 테스트 시작..."
 
 # Frontend 빌드 테스트
 echo "📦 Frontend 빌드 테스트..."
-cd bushub-client/frontend
+cd packages/frontend
 if ! pnpm build; then
   echo "❌ Frontend 빌드 실패. 릴리즈를 중단합니다." >&2
   exit 1
@@ -53,7 +53,7 @@ cd - > /dev/null
 
 # Backend 빌드 테스트
 echo "📦 Backend 빌드 테스트..."
-cd bushub-client/backend
+cd packages/backend
 if ! pnpm build:production; then
   echo "❌ Backend 빌드 실패. 릴리즈를 중단합니다." >&2
   exit 1
@@ -67,7 +67,7 @@ echo "📝 루트 package.json 버전 업데이트 -> ${VERSION}"
 node -e "const fs=require('fs');const p='package.json';const j=JSON.parse(fs.readFileSync(p));j.version='${VERSION}';fs.writeFileSync(p, JSON.stringify(j, null, 2)+'\n')"
 
 # 4) 하위 패키지 버전 동기화
-for PKG in bushub-client/frontend/package.json bushub-client/backend/package.json; do
+for PKG in packages/frontend/package.json packages/backend/package.json; do
   if [[ -f "$PKG" ]]; then
     echo "📝 동기화: $PKG -> ${VERSION}"
     node -e "const fs=require('fs');const p='${PKG}';const j=JSON.parse(fs.readFileSync(p));j.version='${VERSION}';fs.writeFileSync(p, JSON.stringify(j, null, 2)+'\n')"
@@ -76,7 +76,7 @@ done
 
 # 5) 커밋 및 푸시 (user.name / user.email 은 로컬·전역 Git 설정 사용)
 echo "💾 커밋 & 푸시"
-git add package.json bushub-client/frontend/package.json bushub-client/backend/package.json || true
+git add package.json packages/frontend/package.json packages/backend/package.json || true
 git commit -m "chore(release): bump version to ${VERSION}"
 git push origin "$(git rev-parse --abbrev-ref HEAD)"
 

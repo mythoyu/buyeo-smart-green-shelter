@@ -3,7 +3,7 @@
 ## 프로젝트 구조
 - **언어**: TypeScript
 - **패키지 매니저**: pnpm
-- **모노레포**: bushub-client
+- **모노레포**: packages (backend, frontend, nginx)
 
 ## 핵심 개발 규칙
 

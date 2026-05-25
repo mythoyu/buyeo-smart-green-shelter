@@ -6,6 +6,9 @@
 #
 set -euo pipefail
 
+# shellcheck source=../field-guard.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/field-guard.sh"
+
 SCRIPT_PATH="$0"
 if [ -L "$SCRIPT_PATH" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$SCRIPT_PATH")")" && pwd)"
@@ -14,6 +17,8 @@ else
 fi
 # udev: scripts/lib/udev , 호스트·rebuild 래퍼: scripts/lib
 SCRIPTS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PERSIST_PC_COUNT="$SCRIPTS_DIR/persist-people-counter-count.sh"
 SETUP_HOST="$SCRIPTS_DIR/setup-host-ubuntu24.sh"
 REBUILD_USB="$SCRIPTS_DIR/rebuild-and-up-usb485.sh"
 REBUILD_INT="$SCRIPTS_DIR/rebuild-and-up-integrated.sh"
@@ -241,6 +246,7 @@ if [ "$stack_sel" = "2" ]; then
   done
 
   export PEOPLE_COUNTER_COUNT="$pc_count"
+  bash "$PERSIST_PC_COUNT" "$REPO_ROOT" "$pc_count"
 
   if [ "$pc_count" -ge 1 ]; then
     for i in $(seq 1 "$pc_count"); do
@@ -351,6 +357,7 @@ else
   done
 
   export PEOPLE_COUNTER_COUNT="$pc_count"
+  bash "$PERSIST_PC_COUNT" "$REPO_ROOT" "$pc_count"
 
   if [ "$pc_count" -ge 1 ]; then
     for i in $(seq 1 "$pc_count"); do

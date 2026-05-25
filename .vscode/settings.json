@@ -1,5 +1,5 @@
 {
-  "typescript.tsdk": "bushub-client/frontend/node_modules/typescript/lib",
+  "typescript.tsdk": "packages/frontend/node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "editor.formatOnSave": true,
   "files.eol": "\n",

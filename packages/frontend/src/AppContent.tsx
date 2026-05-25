@@ -1,0 +1,240 @@
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+
+import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { PageLoading as RoutePageLoading } from './components/common/LoadingPanel';
+import MainLayout from './components/layout/MainLayout';
+import DashboardPage from './components/pages/DashboardPage';
+import { useAuth } from './contexts/AuthContext';
+import { useApi } from './hooks/useApi';
+import { useEnvironmentLogger } from './hooks/useEnvironmentLogger';
+import { nowKstFormatted } from './utils/kstDateTime';
+
+// 동적 임포트로 큰 페이지들을 지연 로딩
+const DeviceRegistrationPage = lazy(() => import('./components/pages/DeviceRegistrationPage'));
+const LogAnalysisPage = lazy(() => import('./components/pages/LogAnalysisPage'));
+const SystemSettingsPage = lazy(() => import('./components/pages/SystemSettingsPage'));
+const SystemMonitoringPage = lazy(() => import('./components/pages/SystemMonitoringPage'));
+const UserManagementPage = lazy(() => import('./components/pages/UserManagementPage'));
+const ChangePasswordPage = lazy(() => import('./components/pages/ChangePasswordPage'));
+const HardwareControlPage = lazy(() => import('./components/pages/HardwareControlPage'));
+const PortAssignmentPage = lazy(() => import('./components/pages/PortAssignmentPage'));
+const ManualPage = lazy(() => import('./components/pages/ManualPage'));
+const UserStatisticsPage = lazy(() => import('./components/pages/UserStatisticsPage'));
+const LoginPage = lazy(() => import('./components/pages/LoginPage'));
+const Logout = lazy(() => import('./components/pages/Logout'));
+
+// 페이지 이동 로그를 위한 컴포넌트
+function PageLogger() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const timestamp = nowKstFormatted();
+    const pageInfo = {
+      timestamp,
+      path: location.pathname,
+      user: user?.name || 'unknown',
+      role: user?.role || 'unknown',
+      userAgent: navigator.userAgent,
+      referrer: document.referrer,
+    };
+
+    if (import.meta.env.DEV) {
+      console.log('📄 페이지 이동:', {
+        시간: timestamp,
+        경로: location.pathname,
+        사용자: pageInfo.user,
+        권한: pageInfo.role,
+      });
+    }
+  }, [location.pathname, user]);
+
+  return null;
+}
+
+function AppContent() {
+  const { isLoggedIn } = useAuth();
+  const [showDeviceRegistration, setShowDeviceRegistration] = useState(false);
+
+  // 환경 로거 훅 사용
+  useEnvironmentLogger({
+    enabled: import.meta.env.DEV,
+    verbose: false,
+    tag: 'AppContent',
+    includeExtraInfo: true,
+  });
+
+  // 클라이언트 정보 조회
+  const { data: clientInfo, isLoading: clientLoading } = useApi().client.info({
+    enabled: isLoggedIn,
+  });
+
+  // 로그인 후 클라이언트 정보 확인
+  useEffect(() => {
+    if (isLoggedIn && !clientLoading) {
+      // 클라이언트 정보가 없거나 devices가 비어있으면 장비등록 페이지 표시
+      if (!clientInfo || !clientInfo.devices || clientInfo.devices.length === 0) {
+        setShowDeviceRegistration(true);
+      } else {
+        setShowDeviceRegistration(false);
+      }
+    }
+  }, [isLoggedIn, clientLoading, clientInfo]);
+
+  // 로그아웃 후 세션/토큰이 없으면 로그인 폼으로
+  useEffect(() => {
+    if (!sessionStorage.getItem('accessToken')) {
+      // AuthContext에서 처리하므로 여기서는 제거
+    }
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) {
+    return (
+      <Suspense fallback={<RoutePageLoading />}>
+        <LoginPage onLoginSuccess={() => {}} />
+      </Suspense>
+    );
+  }
+
+  // 클라이언트 정보 로딩 중
+  if (clientLoading) {
+    return (
+      <RoutePageLoading text='클라이언트 정보를 확인하는 중...' />
+    );
+  }
+
+  // 클라이언트 정보가 없으면 장비등록 페이지를 전체화면으로 표시
+  // Router는 항상 유지하고, 라우트 단에서 등록 필요 여부를 제어
+
+  // 로그인 후: MainLayout + 라우터 구조
+  return (
+    <BrowserRouter>
+      <PageLogger />
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route path='/' element={<Navigate to='/dashboard' />} />
+          <Route
+            path='/dashboard'
+            element={
+              <ProtectedRoute path='/dashboard' requiresClient>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/device-registration'
+            element={
+              <ProtectedRoute path='/device-registration'>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <DeviceRegistrationPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/log-analysis'
+            element={
+              <ProtectedRoute path='/log-analysis'>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <LogAnalysisPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/system-settings'
+            element={
+              <ProtectedRoute path='/system-settings' requiresClient={false}>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <SystemSettingsPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/system-monitoring'
+            element={
+              <ProtectedRoute path='/system-monitoring' requiresClient={false}>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <SystemMonitoringPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/users'
+            element={
+              <ProtectedRoute path='/users'>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <UserManagementPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/hardware-control'
+            element={
+              <ProtectedRoute path='/hardware-control' requiresClient>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <HardwareControlPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/port-assignment'
+            element={
+              <ProtectedRoute path='/port-assignment' requiresClient>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <PortAssignmentPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/manual'
+            element={
+              <ProtectedRoute path='/manual'>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <ManualPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/user-statistics'
+            element={
+              <ProtectedRoute path='/user-statistics' requiresClient>
+                <Suspense fallback={<RoutePageLoading />}>
+                  <UserStatisticsPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path='/change-password'
+            element={
+              <Suspense fallback={<RoutePageLoading />}>
+                <ChangePasswordPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path='/logout'
+            element={
+              <Suspense fallback={<RoutePageLoading />}>
+                <Logout />
+              </Suspense>
+            }
+          />
+          {/* 필요한 페이지 추가 */}
+          <Route path='*' element={<Navigate to='/dashboard' />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default AppContent;

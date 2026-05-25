@@ -9,6 +9,10 @@ pnpm-store/
 dist/
 build/
 
+# 현장 infra Docker tar (Release/USB에서 배포)
+packages/docker-images/*.tar
+packages/docker-images/*.tar.gz
+
 # Logs
 logs/
 *.log
@@ -112,8 +116,8 @@ packages/*/db/
 packages/*/data/
 
 # frontend 샘플 데이터는 예외로 포함
-!bushub-client/frontend/src/data/
-!bushub-client/backend/src/data/ 
+!packages/frontend/src/data/
+!packages/backend/src/data/ 
 
 # Chrome debug profiles
 .vscode/chrome-debug-profile*
@@ -121,5 +125,13 @@ packages/*/data/
 # ts-node-dev temporary files
 ts-node-dev 
 
+# Environment (모노레포 루트 — 예시 파일은 커밋)
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.development.example
+
 # Reference code archive
 docs/reference-code/
+references/
