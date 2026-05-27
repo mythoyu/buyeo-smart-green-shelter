@@ -108,8 +108,9 @@ export async function executeBulkRegisterReads(
   options?: {
     onGroupFailure?: (group: ModbusBulkReadGroup, error: string) => void;
   },
-): Promise<{ results: Map<string, number[]>; transactionCount: number }> {
+): Promise<{ results: Map<string, number[]>; transactionCount: number; failedMemberKeys: string[] }> {
   const results = new Map<string, number[]>();
+  const failedMemberKeys: string[] = [];
   const groups = groupRegisterRefsForBulkRead(refs);
   let transactionCount = 0;
 
@@ -128,19 +129,14 @@ export async function executeBulkRegisterReads(
     const errMsg = readResult.error ?? 'bulk read failed';
     options?.onGroupFailure?.(group, errMsg);
 
+    // 정책: 그룹 read 실패 시 단일 read 폴백을 수행하지 않음.
     for (const member of group.members) {
-      const ref = refs.find((r) => r.key === member.key);
-      if (!ref) {
-        results.set(member.key, []);
-        continue;
-      }
-      const single = await executeRead(ref.functionCode, ref.address, ref.length);
-      transactionCount++;
-      results.set(member.key, single.success && single.data ? single.data : []);
+      failedMemberKeys.push(member.key);
+      results.set(member.key, []);
     }
   }
 
-  return { results, transactionCount };
+  return { results, transactionCount, failedMemberKeys };
 }
 
 export function bulkResultsToPortCommandMap(

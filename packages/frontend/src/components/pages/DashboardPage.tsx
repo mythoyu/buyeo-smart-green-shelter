@@ -15,7 +15,6 @@ import SettingsCard from '../common/SettingsCard';
 import { RightSidebarItem } from '../layout/RightSidebar';
 import { TopLogPanel } from '../common/TopLogPanel';
 import { Alert, AlertDescription, Button } from '../ui';
-import ModeControlCard from '../common/ModeControlCard';
 
 // 🆕 deviceTypeMap을 컴포넌트 외부로 이동하여 재생성 방지
 const DEVICE_TYPE_MAP: Record<string, string> = {
@@ -43,7 +42,6 @@ const DashboardPage: React.FC = () => {
   // 기존 상태 관리 유지
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showFilter, setShowFilter] = useState<boolean>(false);
-  const [showModeControl, setShowModeControl] = useState<boolean>(false);
   const [showCardSettings, setShowCardSettings] = useState<boolean>(false);
   const [cardVariant, setCardVariant] = useState<DeviceCardVariant>(() => {
     if (typeof window === 'undefined') {
@@ -141,13 +139,9 @@ const DashboardPage: React.FC = () => {
     return getDeviceActions(deviceType);
   }, []);
 
-  // 필터/모드 제어 토글 핸들러 (메모이제이션)
+  // 필터/카드 설정 토글 핸들러 (메모이제이션)
   const handleToggleFilter = useCallback(() => {
     setShowFilter(prev => !prev);
-  }, []);
-
-  const handleToggleModeControl = useCallback(() => {
-    setShowModeControl(prev => !prev);
   }, []);
 
   const handleToggleCardSettings = useCallback(() => {
@@ -166,13 +160,6 @@ const DashboardPage: React.FC = () => {
           title='필터'
         />
         <RightSidebarItem
-          icon={LayoutGrid}
-          label='모드\n제어'
-          active={showModeControl}
-          onClick={handleToggleModeControl}
-          title='모드 제어'
-        />
-        <RightSidebarItem
           icon={Settings2}
           label='카드\n설정'
           active={showCardSettings}
@@ -181,16 +168,14 @@ const DashboardPage: React.FC = () => {
         />
       </>
     ),
-    [showFilter, showModeControl, showCardSettings, handleToggleFilter, handleToggleModeControl, handleToggleCardSettings]
+    [showFilter, showCardSettings, handleToggleFilter, handleToggleCardSettings]
   );
 
   // 오른쪽 사이드바 설정
   useRightSidebarContent(sidebarContent, [
     showFilter,
-    showModeControl,
     showCardSettings,
     handleToggleFilter,
-    handleToggleModeControl,
     handleToggleCardSettings,
   ]);
 
@@ -208,8 +193,8 @@ const DashboardPage: React.FC = () => {
     <div className='space-y-4'>
       <TopLogPanel isConnected={isConnected} />
 
-      {/* 필터 / 모드 제어 / 카드 설정 카드 (토글 가능, 1열로 표시) */}
-      {(showFilter || showModeControl || showCardSettings) && (
+      {/* 필터 / 카드 설정 카드 (토글 가능, 1열로 표시) */}
+      {(showFilter || showCardSettings) && (
         <div className='flex flex-col gap-4'>
           {showFilter && (
             <div id='dashboard-filter'>
@@ -218,18 +203,6 @@ const DashboardPage: React.FC = () => {
                 onSelectType={handleSelectType}
                 devices={devices}
                 deviceSpecs={deviceSpecs}
-              />
-            </div>
-          )}
-          {showModeControl && (
-            <div id='dashboard-mode'>
-              <ModeControlCard
-                devices={devices}
-                deviceSpecs={deviceSpecs}
-                deviceStyles={deviceStyles}
-                onFormChange={(key, value, deviceId, unitId) => {
-                  deviceListRef.current?.handleFormChange(key, value, deviceId, unitId);
-                }}
               />
             </div>
           )}

@@ -22,6 +22,8 @@ export interface GlobalBulkPollingActionResult {
 
 export interface GlobalBulkUnitPollingResult {
   success: boolean;
+  /** 글로벌 벌크 그룹 read 실패로 포함된 멤버가 있으면 true (통신 판정 강제 error) */
+  bulkGroupFailed?: boolean;
   deviceId: string;
   unitId: string;
   deviceType: string;
@@ -156,13 +158,20 @@ export async function executeGlobalBulkPollingForClient(
   }
 
   const bulkGroups = groupRegisterRefsForBulkRead(allRefs);
-  const { results: bulkMap, transactionCount } = await executeBulkRegisterReads(allRefs, executeRead);
+  const { results: bulkMap, transactionCount, failedMemberKeys } = await executeBulkRegisterReads(
+    allRefs,
+    executeRead,
+  );
   const groupCount = bulkGroups.length;
+  const failedMemberKeySet = new Set(failedMemberKeys);
 
   for (const device of devices) {
     const key = unitResultKey(device.deviceId, device.unitId);
     const actionNames = expectedByUnit.get(key) ?? [];
     const results: GlobalBulkPollingActionResult[] = [];
+    const bulkGroupFailed = actionNames.some((actionName) =>
+      failedMemberKeySet.has(refStorageKey(device.deviceId, device.unitId, actionName)),
+    );
 
     for (const actionName of actionNames) {
       const storageKey = refStorageKey(device.deviceId, device.unitId, actionName);
@@ -177,7 +186,9 @@ export async function executeGlobalBulkPollingForClient(
         results.push({
           action: actionName,
           success: false,
-          error: 'global bulk read returned no data',
+          error: bulkGroupFailed
+            ? 'global bulk group read failed'
+            : 'global bulk read returned no data',
         });
       }
     }
@@ -186,7 +197,8 @@ export async function executeGlobalBulkPollingForClient(
     const responseTime = Date.now() - cycleStart;
 
     unitResults.set(key, {
-      success: successfulActions > 0,
+      success: !bulkGroupFailed && successfulActions > 0,
+      bulkGroupFailed,
       deviceId: device.deviceId,
       unitId: device.unitId,
       deviceType: device.deviceType,

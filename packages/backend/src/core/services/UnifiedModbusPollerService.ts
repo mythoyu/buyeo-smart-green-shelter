@@ -1588,21 +1588,19 @@ export class UnifiedModbusPollerService {
             } else {
               const key = unitResultKey(device.deviceId, device.unitId);
               pollingResult = globalResults.get(key);
-
-              if (!pollingResult?.success) {
-                this.logger?.warn(
-                  `Global bulk miss for ${key}, falling back to per-device bulk`,
-                );
-                pollingResult = await this.executePollingForDevice(device.deviceId, device.unitId, device.deviceType);
-                totalGlobalModbusTransactions += Number(pollingResult?.modbusTransactionCount ?? 0);
-              }
+              // 정책: 글로벌 벌크만 사용. 유닛별(per-device) 폴백 Modbus 요청은 수행하지 않는다.
+              // 글로벌 벌크 결과가 없거나(success=false 포함) 유효하지 않으면 그대로 통신 실패로 처리된다.
             }
 
             await this.applyUnitCommunicationStatusFromPolling(
               device.deviceId,
               device.unitId,
               device.deviceType,
-              pollingResult as { success?: boolean; results?: Array<{ action: string; success: boolean }> },
+              pollingResult as {
+                success?: boolean;
+                bulkGroupFailed?: boolean;
+                results?: Array<{ action: string; success: boolean }>;
+              },
             );
 
             if (pollingResult?.success) {
@@ -2031,14 +2029,19 @@ export class UnifiedModbusPollerService {
     deviceId: string,
     unitId: string,
     deviceType: string,
-    pollingResult: { success?: boolean; results?: Array<{ action: string; success: boolean }> } | undefined,
+    pollingResult:
+      | { success?: boolean; bulkGroupFailed?: boolean; results?: Array<{ action: string; success: boolean }> }
+      | undefined,
   ): Promise<void> {
     let outcome = pollingResult;
     if (this.mockMode && isMockPollingFailureSimEnabled() && getMockSimulateMode() === 'unit_comm') {
       outcome = clonePollingOutcome(pollingResult);
       applyMockUnitCommProbeFailure(deviceType, outcome);
     }
-    const evaluation = evaluateUnitCommunicationFromPolling(deviceType, outcome);
+    // 정책: 글로벌 벌크 "그룹 실패"로 인해 유닛이 success=false로 내려오면
+    // 결과 action(core probe)이 일부 성공하더라도 통신 실패(2)로 처리한다.
+    const forceErrorByPolicy = outcome?.success === false || outcome?.bulkGroupFailed === true;
+    const evaluation = forceErrorByPolicy ? 'error' : evaluateUnitCommunicationFromPolling(deviceType, outcome);
     if (evaluation === 'ok') {
       // 링크 down 구간에서는 probe 복구 전까지 폴링만으로 0 복귀하지 않음 (깜빡임 방지)
       if (this.linkDownActive) {
