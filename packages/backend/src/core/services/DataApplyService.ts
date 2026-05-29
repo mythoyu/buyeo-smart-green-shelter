@@ -15,6 +15,7 @@ import {
   createUnitFromDevice,
   FieldActionMapping,
 } from '../../meta/protocols/fieldUtils';
+import { toModbusWire } from '../../shared/utils/deviceFieldMapper';
 import { toUnitsArray } from '../../shared/utils/dataUnits';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
@@ -362,6 +363,7 @@ export class DataApplyService {
                 unitData.data[mapping.field],
                 unifiedModbusService,
                 unit.clientId as string,
+                unit.type as string,
               );
 
               if (isVerified) {
@@ -404,6 +406,7 @@ export class DataApplyService {
     expectedValue: any,
     unifiedModbusService: any,
     clientId?: string,
+    deviceType?: string,
   ): Promise<boolean> {
     try {
       this.logger?.info(`[DataApplyService] 필드 검증: ${mapping.actionKey} (예상값: ${expectedValue})`);
@@ -423,13 +426,10 @@ export class DataApplyService {
       }
 
       const actualValue = result.data[0];
-
-      // 🎯 검증 비교 보정: 사람 기준(expectedValue)을 하드웨어 raw로 역변환하여 비교
-      const expectedRaw = this.toExpectedRawForVerify(mapping, expectedValue);
+      const expectedRaw = this.toExpectedRawForVerify(mapping, expectedValue, deviceType, clientId);
       const isMatch = actualValue === expectedRaw;
-
       this.logger?.info(
-        `[DataApplyService] 필드 검증 결과: ${mapping.actionKey} - 예상(DB): ${expectedValue}, 예상(raw): ${expectedRaw}, 실제(raw): ${actualValue}, 일치: ${isMatch}`,
+        `[DataApplyService] 필드 검증 결과: ${mapping.actionKey} - 예상(DB): ${expectedValue}, 예상(wire): ${expectedRaw}, 실제(wire): ${actualValue}, 일치: ${isMatch}`,
       );
 
       return isMatch;
@@ -443,27 +443,19 @@ export class DataApplyService {
    * 🎯 검증용 expected(DB) → expected(raw) 역변환
    * - 회귀 방지: 화이트리스트 필드만 역변환한다.
    */
-  private toExpectedRawForVerify(mapping: FieldActionMapping, expectedValue: any): any {
+  private toExpectedRawForVerify(
+    mapping: FieldActionMapping,
+    expectedValue: unknown,
+    deviceType?: string,
+    clientId?: string,
+  ): number {
     try {
       const field = mapping.field;
-
-      // bench: cont_temp/temp_offset/temp_check_interval
-      if (field === 'cont_temp') {
-        return Math.round(Number(expectedValue) * 10 + 2000);
-      }
-      if (field === 'temp_offset') {
-        return Math.round(Number(expectedValue) * 10);
-      }
-      if (field === 'temp_check_interval') {
-        return Math.round(Number(expectedValue) * 10);
+      if (deviceType) {
+        return toModbusWire(deviceType, field, Number(expectedValue), { clientId });
       }
 
-      // cooler: summer/winter cont temp (선택 적용)
-      if (field === 'summer_cont_temp' || field === 'winter_cont_temp') {
-        return Math.round(Number(expectedValue) * 10);
-      }
-
-      return expectedValue;
+      return Number(expectedValue);
     } catch (error) {
       this.logger?.warn(`[DataApplyService] expected raw 역변환 실패: ${mapping.actionKey} - ${error}`);
       return expectedValue;

@@ -6,7 +6,11 @@ import {
   buildReverseIndex,
   resolveReverseIndexSpec,
   ReverseIndexSpec,
-} from '../../meta/protocols/mockValueGenerator';
+} from '../../meta/protocols/modbusReverseIndex';
+import {
+  convertLogicalToModbusWire,
+  convertModbusWireToLogical,
+} from './realModbusFieldCodec';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { getModbusConfig, getModbusAddressMapping } from '../../utils/environment';
 import {
@@ -574,10 +578,10 @@ export class RealModbusService implements IModbusCommunication {
     requestClientId: string | undefined,
     valueIsRawRegister?: boolean,
   ): number {
-    if (valueIsRawRegister) {
-      return Number(userValue);
-    }
-    return this.applyFieldReverseConversion(userValue, spec, requestClientId);
+    return convertLogicalToModbusWire(userValue, spec, requestClientId, {
+      valueIsRawRegister,
+      logger: this.logger,
+    });
   }
 
   private async executeRealWrite(request: ModbusWriteRequest): Promise<number> {
@@ -762,7 +766,6 @@ export class RealModbusService implements IModbusCommunication {
         rawData = [isNaN(num) ? 0 : num];
       }
 
-      // 필드별 적절한 변환 적용
       const converted = rawData.map((rawValue) => this.applyFieldConversion(rawValue, spec, request.clientId));
 
       return converted;
@@ -776,194 +779,12 @@ export class RealModbusService implements IModbusCommunication {
     }
   }
 
-  // 필드별 변환 로직
   private applyFieldConversion(rawValue: number, spec?: ReverseIndexSpec, requestClientId?: string): number {
-    if (!spec) {
-      return rawValue; // 기본 변환
-    }
-
-    const field = spec.field || '';
-    const deviceType = (spec.deviceType || '').toString();
-    const clientId = (requestClientId ?? spec.clientId ?? '').toString();
-
-    // 🎯 c0101, c0102 삼성 냉난방기 전용 변환 (MODE/SPEED) — LG 현장(c0103~)은 매핑 생략
-    if ((clientId === 'c0101' || clientId === 'c0102') && deviceType === 'cooler') {
-      // MODE 변환: 삼성 Modbus 값 → REST API 값
-      // 삼성 Modbus: 0x0000=자동, 0x0001=냉방, 0x0002=제습, 0x0003=송풍, 0x0004=난방
-      // REST API: 0=냉방, 1=제습, 2=송풍, 3=자동, 4=난방
-      if (field === 'mode') {
-        const modbusValue = Number(rawValue);
-        const modeMap: Record<number, number> = {
-          0: 3, // 자동 → 자동
-          1: 0, // 냉방 → 냉방
-          2: 1, // 제습 → 제습
-          3: 2, // 송풍 → 송풍
-          4: 4, // 난방 → 난방
-        };
-        const restApiValue = modeMap[modbusValue];
-        if (restApiValue === undefined) {
-          this.logger?.warn(`[RealModbusService] 알 수 없는 Modbus MODE 값: ${modbusValue}`);
-          return modbusValue; // 기본값으로 원본 반환
-        }
-        return restApiValue;
-      }
-
-      // SPEED 변환: 삼성 Modbus 값 → REST API 값
-      // 삼성 Modbus: 0x0000=자동, 0x0001=미풍, 0x0002=약풍, 0x0003=강풍
-      // REST API: 1=약, 2=중, 3=강, 4=자동
-      if (field === 'speed') {
-        const modbusValue = Number(rawValue);
-        const speedMap: Record<number, number> = {
-          0: 4, // 자동 → 자동
-          1: 1, // 미풍 → 약
-          2: 2, // 약풍 → 중
-          3: 3, // 강풍 → 강
-        };
-        const restApiValue = speedMap[modbusValue];
-        if (restApiValue === undefined) {
-          this.logger?.warn(`[RealModbusService] 알 수 없는 Modbus SPEED 값: ${modbusValue}`);
-          return 1; // 기본값으로 약 반환
-        }
-        return restApiValue;
-      }
-    }
-
-    // const type = (spec.type || '').toString();
-
-    // // boolean 계열 (0/1 유지)
-    // if (type === 'boolean' || field === 'auto' || field === 'power' || field === 'alarm') {
-    //   return rawValue === 1 ? 1 : 0; // 명확한 boolean 값
-    // }
-
-    // // 시간/분 필드 (범위 제한)
-    // if (field.includes('hour')) {
-    //   return Math.max(0, Math.min(23, rawValue)); // 0-23 범위
-    // }
-
-    // if (field.includes('minute')) {
-    //   return Math.max(0, Math.min(59, rawValue)); // 0-59 범위
-    // }
-
-    // // 통합 센서 값 범위
-    // if (deviceType === 'integrated_sensor' || deviceType === 'sensor') {
-    //   if (field === 'hum') {
-    //     return rawValue / 10; // 습도 스케일링 (0.0~100.0%)
-    //   }
-    //   if (field === 'pm100' || field === 'pm25' || field === 'pm10') {
-    //     return Math.max(0, Math.min(1000, rawValue)); // 0-1000 범위
-    //   }
-    //   if (field === 'co2') {
-    //     return Math.max(400, Math.min(10000, rawValue)); // 400-10000 범위
-    //   }
-    //   if (field === 'voc') {
-    //     return Math.max(0, Math.min(60000, rawValue)); // 0-60000 범위
-    //   }
-    // }
-
-    // 기본 변환
-    return rawValue;
+    return convertModbusWireToLogical(rawValue, spec, requestClientId, this.logger);
   }
 
-  // 필드별 역변환 로직 (사용자 값 → 하드웨어 값)
-  private applyFieldReverseConversion(userValue: any, spec?: ReverseIndexSpec, requestClientId?: string): any {
-    if (!spec) {
-      return userValue; // 기본 변환
-    }
-
-    const field = spec.field || '';
-    const type = (spec.type || '').toString();
-    const deviceType = (spec.deviceType || '').toString();
-    const clientId = (requestClientId ?? spec.clientId ?? '').toString();
-
-    // 🎯 c0101, c0102 삼성 냉난방기 전용 변환 (MODE/SPEED) — LG 현장(c0103~)은 매핑 생략
-    if ((clientId === 'c0101' || clientId === 'c0102') && deviceType === 'cooler') {
-      // MODE 변환: REST API 값 → 삼성 Modbus 값
-      // REST API: 0=냉방, 1=제습, 2=송풍, 3=자동, 4=난방
-      // 삼성 Modbus: 0x0000=자동, 0x0001=냉방, 0x0002=제습, 0x0003=송풍, 0x0004=난방
-      if (field === 'mode') {
-        const modeValue = Number(userValue);
-        const modeMap: Record<number, number> = {
-          0: 1, // 냉방 → 냉방
-          1: 2, // 제습 → 제습
-          2: 3, // 송풍 → 송풍
-          3: 0, // 자동 → 자동
-          4: 4, // 난방 → 난방
-        };
-        const modbusValue = modeMap[modeValue];
-        if (modbusValue === undefined) {
-          this.logger?.warn(`[RealModbusService] 지원하지 않는 MODE 값: ${modeValue}`);
-          return modeValue; // 기본값으로 원본 반환
-        }
-        return modbusValue;
-      }
-
-      // SPEED 변환: REST API 값 → 삼성 Modbus 값
-      // REST API: 1=약, 2=중, 3=강, 4=자동
-      // 삼성 Modbus: 0x0000=자동, 0x0001=미풍, 0x0002=약풍, 0x0003=강풍
-      if (field === 'speed') {
-        const speedValue = Number(userValue);
-        const speedMap: Record<number, number> = {
-          1: 1, // 약 → 미풍
-          2: 2, // 중 → 약풍
-          3: 3, // 강 → 강풍
-          4: 0, // 자동 → 자동
-        };
-        const modbusValue = speedMap[speedValue];
-        if (modbusValue === undefined) {
-          this.logger?.warn(`[RealModbusService] 지원하지 않는 SPEED 값: ${speedValue}`);
-          return 1; // 기본값으로 미풍 반환
-        }
-        return modbusValue;
-      }
-    }
-
-    // 온열벤치(bench) 전용 역변환 (회귀 방지: deviceType 조건 필수)
-    if (deviceType === 'bench') {
-      // 설정온도: -20~80°C ↔ 1800~2800
-      if (field === 'cont_temp') {
-        return Math.round(Number(userValue) * 10 + 2000);
-      }
-      // 편차값: 0~20°C ↔ 0~200
-      if (field === 'temp_offset') {
-        return Math.round(Number(userValue) * 10);
-      }
-      // 기동 체크시간: 0~600초 ↔ 0~6000
-      if (field === 'temp_check_interval') {
-        return Math.round(Number(userValue) * 10);
-      }
-    }
-
-    // 온도 역변환 (사용자 온도 → 하드웨어 레지스터 값)
-    if (field === 'temp' || field === 'cur_temp') {
-      return Math.round(userValue * 10 + 2000); // 온도 역스케일링
-    }
-
-    if (field.includes('summer_cont_temp') || field.includes('winter_cont_temp')) {
-      return Math.round(userValue * 10); // 온도 역스케일링
-    }
-
-    // boolean 계열 (true/false → 1/0)
-    if (type === 'boolean' || field === 'auto' || field === 'power' || field === 'alarm') {
-      return Boolean(userValue) ? 1 : 0; // boolean → 0/1
-    }
-
-    // 시간/분 필드 (범위 제한)
-    if (field.includes('hour')) {
-      return Math.max(0, Math.min(23, Number(userValue))); // 0-23 범위
-    }
-
-    if (field.includes('minute')) {
-      return Math.max(0, Math.min(59, Number(userValue))); // 0-59 범위
-    }
-
-    // 통합 센서는 읽기 전용이므로 쓰기 시도 시 경고
-    if (deviceType === 'integrated_sensor' || deviceType === 'sensor') {
-      this.logger?.warn(`[RealModbusService] 통합 센서는 읽기 전용입니다 - Field: ${field}`);
-      return userValue; // 원본 값 그대로 반환
-    }
-
-    // 기본 변환
-    return Number(userValue);
+  private applyFieldReverseConversion(userValue: unknown, spec?: ReverseIndexSpec, requestClientId?: string): number {
+    return convertLogicalToModbusWire(userValue, spec, requestClientId, { logger: this.logger });
   }
 
   // ✅ ModbusRTU write 메서드의 결과를 number로 변환하는 유틸리티 메서드

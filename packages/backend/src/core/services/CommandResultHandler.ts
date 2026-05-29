@@ -4,6 +4,11 @@ import { IUnit } from '../../models/schemas/UnitSchema';
 import { ILogger } from '../../shared/interfaces/ILogger';
 import { Logger } from '../../shared/services/Logger';
 import { getEffectiveClientMapping } from './PortMappingService';
+import {
+  coerceIntegratedTimeString,
+  isIntegratedTimeCommandKey,
+  toModbusLogicalFromCommand,
+} from '../../shared/utils/deviceFieldMapper';
 import { IControlRepository } from '../repositories/interfaces/IControlRepository';
 
 import { IWebSocketService } from './interfaces/IWebSocketService';
@@ -64,63 +69,22 @@ export class CommandResultHandler {
       // ✅ Data 컬렉션 업데이트 추가 (value 우선, 없으면 result에서 추출)
       let dataValue = value !== undefined ? value : this.extractValueFromResult(result, commandKey);
 
-      const rawValue = Number(dataValue);
-
-      // 온도/편차/체크시간 변환은 deviceType + commandKey 기반으로 분기한다. (키 충돌 회귀 방지)
-      if (device.type === 'bench') {
-        if (commandKey === 'GET_CUR_TEMP' || commandKey === 'GET_CONT_TEMP') {
-          dataValue = (rawValue - 2000) / 10;
-          this.logger.info(`[CommandResultHandler] 벤치 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
-        } else if (commandKey === 'GET_TEMP_OFFSET') {
-          dataValue = rawValue / 10;
-          this.logger.info(`[CommandResultHandler] 벤치 편차값 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
-        } else if (commandKey === 'GET_TEMP_CHECK_INTERVAL') {
-          dataValue = rawValue / 10;
-          this.logger.info(`[CommandResultHandler] 벤치 기동 체크시간 변환: ${commandKey} ${rawValue} → ${dataValue}초`);
-        } else if (
-          commandKey === 'GET_SUMMER_CONT_TEMP' ||
-          commandKey === 'GET_WINTER_CONT_TEMP' ||
-          commandKey === 'GET_HUM'
-        ) {
-          // bench에서는 사용하지 않지만 공용 키 보호
-          dataValue = rawValue / 10;
-        } else if (commandKey === 'GET_TEMP') {
-          // bench에서 GET_TEMP를 사용하지 않지만, 안전하게 기존 온도 포맷으로 처리
-          dataValue = (rawValue - 2000) / 10;
+      if (isIntegratedTimeCommandKey(commandKey)) {
+        const timeStr = coerceIntegratedTimeString(dataValue);
+        if (timeStr !== null) {
+          dataValue = timeStr;
         }
-      } else if (device.type === 'cooler') {
-        if (commandKey === 'GET_SUMMER_CONT_TEMP' || commandKey === 'GET_WINTER_CONT_TEMP') {
-          dataValue = rawValue / 10;
-          this.logger.info(`[CommandResultHandler] 계절 타겟 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
-        } else if (commandKey === 'GET_CUR_TEMP') {
-          dataValue = (rawValue - 2000) / 10;
-          this.logger.info(`[CommandResultHandler] 냉난방기 현재온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
-        } else if (commandKey === 'GET_HUM') {
-          dataValue = rawValue / 10;
+      } else {
+        const rawValue = Number(dataValue);
+        const logical = toModbusLogicalFromCommand(device.type, commandKey, rawValue, {
+          clientId: device.clientId,
+        });
+        if (logical !== rawValue) {
+          this.logger.info(
+            `[CommandResultHandler] wire→논리: ${device.type}/${commandKey} ${rawValue} → ${logical}`,
+          );
         }
-      } else if (device.type === 'integrated_sensor' || device.type === 'sensor') {
-        if (commandKey === 'GET_HUM') {
-          dataValue = rawValue / 10;
-          this.logger.info(`[CommandResultHandler] 습도 변환: ${commandKey} ${rawValue} → ${dataValue}%`);
-        } else if (commandKey === 'GET_TEMP') {
-          dataValue = (rawValue - 2000) / 10;
-          this.logger.info(`[CommandResultHandler] 센서 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
-        }
-      } else if (
-        // 폴백: 기존 동작 보존
-        commandKey === 'GET_SUMMER_CONT_TEMP' ||
-        commandKey === 'GET_WINTER_CONT_TEMP' ||
-        commandKey === 'GET_HUM'
-      ) {
-        dataValue = rawValue / 10;
-        this.logger.info(`[CommandResultHandler] 공용 스케일 변환: ${commandKey} ${rawValue} → ${dataValue}`);
-      } else if (commandKey === 'GET_CUR_TEMP' || commandKey === 'GET_TEMP') {
-        dataValue = (rawValue - 2000) / 10;
-        this.logger.info(`[CommandResultHandler] 공용 온도 변환: ${commandKey} ${rawValue} → ${dataValue}°C`);
-      }
-      // power, auto 필드는 boolean으로 변환 (alarm은 number로 유지)
-      else if (commandKey === 'GET_POWER' || commandKey === 'GET_AUTO') {
-        dataValue = dataValue === 1 ? true : false;
+        dataValue = logical;
       }
       // 🆕 Alarm 필드 처리 제거 (StatusService에서 처리)
       // else if (commandKey === 'GET_ALARM') {

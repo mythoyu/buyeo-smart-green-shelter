@@ -7,7 +7,7 @@ import {
   makeLegacyReverseIndexKey,
   resolveReverseIndexSpec,
   type ReverseIndexSpec,
-} from '../../src/meta/protocols/mockValueGenerator';
+} from '../../src/meta/protocols/modbusReverseIndex';
 
 describe('resolveReverseIndexSpec', () => {
   it('동일 (fc,address)에 대해 clientId별로 서로 다른 스펙을 반환한다', () => {
@@ -66,4 +66,5 @@ describe('buildReverseIndex', () => {
     expect(index.get(makeClientReverseIndexKey('c0101', fc, addr))?.clientId).toBe('c0101');
     expect(index.get(makeClientReverseIndexKey('c0103', fc, addr))?.clientId).toBe('c0103');
   });
+
 });

@@ -198,6 +198,7 @@ export class UnifiedModbusService {
         // Placeholder for queue resolution
       },
       ...(request.clientId !== undefined ? { clientId: request.clientId } : {}),
+      ...(request.valueIsRawRegister !== undefined ? { valueIsRawRegister: request.valueIsRawRegister } : {}),
     };
 
     return await this.executeCommand(command);

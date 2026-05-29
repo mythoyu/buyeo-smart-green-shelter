@@ -1,6 +1,7 @@
 import { HW_PORTS, HardwarePortCommand } from '../../meta/hardware/ports';
 
 import type { IUnifiedModbusCommunication } from '../../core/interfaces/IModbusCommunication';
+import { resolveBenchPortWriteWire } from './fieldWireCodec';
 
 export const HARDWARE_DO_PORTS = [
   'DO1',
@@ -90,17 +91,28 @@ export async function executeHardwarePortWrite(
     return { success: false, error: parsed.error };
   }
 
+  let lengthOrValue = parsed.value;
+  let valueIsRawRegister: boolean | undefined;
+  if (port === 'BENCH') {
+    const benchWire = resolveBenchPortWriteWire(command, parsed.value);
+    if (benchWire) {
+      lengthOrValue = benchWire.wire;
+      valueIsRawRegister = benchWire.valueIsRawRegister;
+    }
+  }
+
   const modbusCommand = {
     id: commandId,
     type: 'write' as const,
     unitId: '1',
     functionCode: hwPort.functionCode,
     address: hwPort.address,
-    lengthOrValue: parsed.value,
+    lengthOrValue,
     priority: 'high' as const,
     timestamp: new Date(),
     resolve: () => {},
     reject: () => {},
+    ...(valueIsRawRegister !== undefined ? { valueIsRawRegister } : {}),
   };
 
   const result = await modbusService.executeCommand(modbusCommand);
@@ -108,5 +120,5 @@ export async function executeHardwarePortWrite(
     return { success: false, error: result?.error ?? 'Unknown error' };
   }
 
-  return { success: true, commandId, numericValue: parsed.value };
+  return { success: true, commandId, numericValue: lengthOrValue };
 }

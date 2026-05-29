@@ -46,12 +46,12 @@
 | d011      | 조명             | lighting    | u002    | 내부조명2         | X      | -       | -        | DO2     | O   | -                    |
 | d021      | 냉난방기         | cooler      | u001    | 냉난방기          | O      | 1       | 9600     | DATA1   | X   | lg_cooler            |
 | d022      | 전열교환기       | exchanger   | u001    | 전열교환기        | O      | 2       | 9600     | DATA2   | X   | es_heat_exchanger    |
-| d023      | 에어커튼         | aircurtain  | u001    | 에어커튼1         | X      | -       | -        | DO3     | O   | -                    |
-| d023      | 에어커튼         | aircurtain  | u002    | 에어커튼2         | X      | -       | -        | DO4     | O   | -                    |
-| d041      | 온열벤치         | bench       | u001    | 내부벤치1         | X      | -       | -        | DO5     | O   | -                    |
-| d041      | 온열벤치         | bench       | u002    | 내부벤치2         | X      | -       | -        | DO6     | O   | -                    |
-| d051      | 자동문           | door        | u001    | 자동문1           | X      | -       | -        | DO7     | O   | -                    |
-| d051      | 자동문           | door        | u002    | 자동문2           | X      | -       | -        | DO8     | O   | -                    |
+| d031      | 에어커튼         | aircurtain  | u001    | 에어커튼1         | X      | -       | -        | DO7     | O   | -                    |
+| d031      | 에어커튼         | aircurtain  | u002    | 에어커튼2         | X      | -       | -        | DO8     | O   | -                    |
+| d041      | 온열벤치         | bench       | u001    | 내부벤치1         | X      | -       | -        | DO9     | O   | -                    |
+| d041      | 온열벤치         | bench       | u002    | 내부벤치2         | X      | -       | -        | DO10    | O   | -                    |
+| d051      | 자동문           | door        | u001    | 자동문1           | X      | -       | -        | DO5     | O   | -                    |
+| d051      | 자동문           | door        | u002    | 자동문2           | X      | -       | -        | DO6     | O   | -                    |
 | d061      | 통합센서         | sensor      | u001    | 통합센서          | O      | 3       | 9600     | DATA2   | X   | ap_integrated_sensor |
 | d081      | 자동문외부스위치 | externalsw  | u001    | 자동문외부스위치1 | X      | -       | -        | DI13    | I   | -                    |
 | d081      | 자동문외부스위치 | externalsw  | u002    | 자동문외부스위치2 | X      | -       | -        | DI14    | I   | -                    |
@@ -71,9 +71,9 @@
 | **lighting**   | d011      | 조명             | ❌          | DO1~DO2    | 내부조명 1~2       |
 | **cooler**     | d021      | 냉난방기         | ✅          | DDC 메모리 | Modbus 설정        |
 | **exchanger**  | d022      | 전열교환기       | ✅          | DDC 메모리 | Modbus 설정        |
-| **aircurtain** | d023      | 에어커튼         | ❌          | DO3~DO4    | 접점제어, 2개 유닛 |
-| **bench**      | d041      | 온열벤치         | ❌          | DO5~DO6    | 접점제어, 2개 유닛 |
-| **door**       | d051      | 자동문           | ❌          | DO7~DO8    | 접점제어, 2개 유닛 |
+| **aircurtain** | d031      | 에어커튼         | ❌          | DO7~DO8    | 접점제어, 2개 유닛 (`SNGIL_DDC_MODBUS_PACKETS.md`) |
+| **bench**      | d041      | 온열벤치         | ❌          | DO9~DO10   | 접점제어, 2개 유닛 (`SNGIL_DDC_MODBUS_PACKETS.md`) |
+| **door**       | d051      | 자동문           | ❌          | DO5~DO6    | 접점제어, 2개 유닛 |
 | **sensor**     | d061      | 통합센서         | ✅          | DDC 메모리 | Modbus 설정        |
 | **externalsw** | d081      | 자동문외부스위치 | ❌          | DI13~DI14  | 자동감지, 2개 유닛 |
 
@@ -82,7 +82,7 @@
 - **d011**: 조명 (lighting)
 - **d021**: 냉난방기 (cooler)
 - **d022**: 전열교환기 (exchanger)
-- **d023**: 에어커튼 (aircurtain)
+- **d031**: 에어커튼 (aircurtain) — 구 문서 d023 표기와 동일 장비, 코드 `commonDevices` 기준
 - **d041**: 온열벤치 (bench)
 - **d051**: 자동문 (door)
 - **d061**: 통합센서 (sensor)
@@ -99,9 +99,9 @@
 ### **접점제어 장비 (사용자 직접 제어)**
 
 - **d011**: 조명 (DO1~DO2)
-- **d023**: 에어커튼 (DO3~DO4)
-- **d041**: 온열벤치 (DO5~DO6)
-- **d051**: 자동문 (DO7~DO8)
+- **d031**: 에어커튼 (DO7~DO8, SNGIL 물리 채널)
+- **d041**: 온열벤치 (DO9~DO10)
+- **d051**: 자동문 (DO5~DO6)
 
 ### **자동감지 장비 (DDC 자동 제어)**
 
@@ -227,20 +227,34 @@
 | `end_time_2_hour`     | GET_END_TIME_2_HOUR     | 종료 시간(시) 취득 2 | int     | 0~23       | 161      | holding | int       | 24시 표시                                                |
 | `end_time_2_minute`   | GET_END_TIME_2_MINUTE   | 종료 시간(분) 취득 2 | int     | 0~59       | 160      | holding | int       | 0~59분                                                   |
 
-### d023(에어커튼), d041(온열벤치), d051(자동문)
+### d031(에어커튼), d041(온열벤치), d051(자동문)
+
+접점 장비 공통 필드. **레지스터는 DO 채널별로 §6 표를 따른다** (에어커튼 u001=DO7, u002=DO8, 자동문 u001=DO5 등).
+
+#### d031 에어커튼 u001 (DO7) 예시
+
+| key     | action    | register (Mode / Op / Status) | 비고        |
+| ------- | --------- | ----------------------------- | ----------- |
+| `auto`  | SET_AUTO  | 358                           | 수동/스케줄 |
+| `power` | SET_POWER | 374                           | coil 운전   |
+| `power` | GET_POWER | 827                           | 상태        |
+
+스케줄1: 시작 시·분 48·64, 종료 80·96 (`SNGIL_DDC_COMMANDS.md` DO7 열).
+
+#### d041·d051
 
 | key                   | action                  | 설명                 | 타입    | value      | register | regType | valueType | 비고                                                     |
 | --------------------- | ----------------------- | -------------------- | ------- | ---------- | -------- | ------- | --------- | -------------------------------------------------------- |
-| `auto`                | SET_AUTO                | 모드설정             | boolean | true/false | 354      | holding | boolean   | true:스케줄, false:수동                                  |
-| `power`               | SET_POWER               | 전원 ON/OFF          | boolean | true/false | 370      | coil    | boolean   | **중요**: GET_AUTO가 false(수동)일 때만 동작<br>접점제어 |
-| `start_time_1`        | SET_START_TIME_1        | 시작 시간 설정 1     | string  | "HH:mm"    | 44       | holding | string    | 24시 표시                                                |
-| `start_time_1_hour`   | SET_START_TIME_1_HOUR   | 시작 시간(시) 설정 1 | int     | 0~23       | 44       | holding | int       | 24시 표시                                                |
-| `start_time_1_minute` | SET_START_TIME_1_MINUTE | 시작 시간(분) 설정 1 | int     | 0~59       | 60       | holding | int       | 0~59분                                                   |
-| `end_time_1`          | SET_END_TIME_1          | 종료 시간 설정 1     | string  | "HH:mm"    | 76       | holding | string    | 24시 표시                                                |
-| `end_time_1_hour`     | SET_END_TIME_1_HOUR     | 종료 시간(시) 설정 1 | int     | 0~23       | 76       | holding | int       | 24시 표시                                                |
-| `end_time_1_minute`   | SET_END_TIME_1_MINUTE   | 종료 시간(분) 설정 1 | int     | 0~59       | 92       | holding | int       | 0~59분                                                   |
-| `auto`                | GET_AUTO                | 모드상태 취득        | boolean | true/false | 354      | holding | boolean   | true:스케줄, false:수동                                  |
-| `power`               | GET_POWER               | 전원 ON/OFF 취득     | boolean | true/false | 822      | input   | boolean   | 상태수집                                                 |
+| `auto`                | SET_AUTO                | 모드설정             | boolean | true/false | (§6 DO)  | holding | boolean   | true:스케줄, false:수동                                  |
+| `power`               | SET_POWER               | 전원 ON/OFF          | boolean | true/false | (§6 DO)  | coil    | boolean   | **중요**: GET_AUTO가 false(수동)일 때만 동작<br>접점제어 |
+| `start_time_1`        | SET_START_TIME_1        | 시작 시간 설정 1     | string  | "HH:mm"    | (§6 DO)  | holding | string    | 24시 표시                                                |
+| `start_time_1_hour`   | SET_START_TIME_1_HOUR   | 시작 시간(시) 설정 1 | int     | 0~23       | (§6 DO)  | holding | int       | 24시 표시                                                |
+| `start_time_1_minute` | SET_START_TIME_1_MINUTE | 시작 시간(분) 설정 1 | int     | 0~59       | (§6 DO)  | holding | int       | 0~59분                                                   |
+| `end_time_1`          | SET_END_TIME_1          | 종료 시간 설정 1     | string  | "HH:mm"    | (§6 DO)  | holding | string    | 24시 표시                                                |
+| `end_time_1_hour`     | SET_END_TIME_1_HOUR     | 종료 시간(시) 설정 1 | int     | 0~23       | (§6 DO)  | holding | int       | 24시 표시                                                |
+| `end_time_1_minute`   | SET_END_TIME_1_MINUTE   | 종료 시간(분) 설정 1 | int     | 0~59       | (§6 DO)  | holding | int       | 0~59분                                                   |
+| `auto`                | GET_AUTO                | 모드상태 취득        | boolean | true/false | (§6 DO)  | holding | boolean   | true:스케줄, false:수동                                  |
+| `power`               | GET_POWER               | 전원 ON/OFF 취득     | boolean | true/false | (§6 DO)  | input   | boolean   | 상태수집                                                 |
 | `start_time_1`        | GET_START_TIME_1        | 시작 시간 취득 1     | string  | "HH:mm"    | 44       | holding | string    | 24시 표시                                                |
 | `start_time_1_hour`   | GET_START_TIME_1_HOUR   | 시작 시간(시) 취득 1 | int     | 0~23       | 44       | holding | int       | 24시 표시                                                |
 | `start_time_1_minute` | GET_START_TIME_1_MINUTE | 시작 시간(분) 취득 1 | int     | 0~59       | 60       | holding | int       | 0~59분                                                   |
@@ -275,22 +289,45 @@
 
 | 장비                   | DO 포트 | Mode 설정 | Operation 제어 | Status 상태 | 스케줄 시작(시) | 스케줄 시작(분) | 스케줄 종료(시) | 스케줄 종료(분) |
 | ---------------------- | ------- | --------- | -------------- | ----------- | --------------- | --------------- | --------------- | --------------- |
-| 조명(d011)             | DO1     | 352       | 368            | 821         | 42              | 58              | 74              | 90              |
-| 조명(d011)             | DO2     | 353       | 369            | 822         | 43              | 59              | 75              | 91              |
-| 에어커튼(d023)         | DO3     | 354       | 370            | 823         | 44              | 60              | 76              | 92              |
-| 에어커튼(d023)         | DO4     | 355       | 371            | 824         | 45              | 61              | 77              | 93              |
-| 온열벤치(d041)         | DO5     | 356       | 372            | 825         | 46              | 62              | 78              | 94              |
-| 온열벤치(d041)         | DO6     | 357       | 373            | 826         | 47              | 63              | 79              | 95              |
-| 자동문(d051)           | DO7     | 358       | 374            | 827         | 48              | 64              | 80              | 96              |
-| 자동문(d051)           | DO8     | 359       | 375            | 828         | 49              | 65              | 81              | 97              |
-| -                      | DO9     | 360       | 376            | 829         | 50              | 66              | 82              | 98              |
-| -                      | DO10    | 361       | 377            | 830         | 51              | 67              | 83              | 99              |
+| 조명(d011) u001        | DO1     | 352       | 368            | 821         | 42              | 58              | 74              | 90              |
+| 조명(d011) u002        | DO2     | 353       | 369            | 822         | 43              | 59              | 75              | 91              |
+| (SNGIL 실외전등)       | DO3     | 354       | 370            | 823         | 44              | 60              | 76              | 92              |
+| (Reserved)             | DO4     | 355       | 371            | 824         | 45              | 61              | 77              | 93              |
+| 자동문(d051) u001      | DO5     | 356       | 372            | 825         | 46              | 62              | 78              | 94              |
+| 자동문(d051) u002      | DO6     | 357       | 373            | 826         | 47              | 63              | 79              | 95              |
+| 에어커튼(d031) u001    | DO7     | 358       | 374            | 827         | 48              | 64              | 80              | 96              |
+| 에어커튼(d031) u002    | DO8     | 359       | 375            | 828         | 49              | 65              | 81              | 97              |
+| 온열벤치(d041) u001    | DO9     | 360       | 376            | 829         | 50              | 66              | 82              | 98              |
+| 온열벤치(d041) u002    | DO10    | 361       | 377            | 830         | 51              | 67              | 83              | 99              |
 | -                      | DO11    | 362       | 378            | 831         | 52              | 68              | 84              | 100             |
 | -                      | DO12    | 363       | 379            | 832         | 53              | 69              | 85              | 101             |
 | 자동문외부스위치(d081) | DO13    | 364       | -              | 833         | 54              | 70              | 86              | 102             |
 | 자동문외부스위치(d081) | DO14    | 385       | -              | 834         | 150             | 155             | 160             | 165             |
 | -                      | DO15    | 386       | -              | 835         | 167             | 168             | 169             | 170             |
 | -                      | DO16    | 367       | 383            | 836         | -               | -               | -               | -               |
+
+> **DO 채널 기준**: `docs/SNGIL_DDC_MODBUS_PACKETS.md` · `docs/SNGIL_DDC_COMMANDS.md` · `packages/backend/src/meta/hardware/ports.ts` (`HW_PORTS.DO*`) — 위 표와 동일.
+>
+> **온열벤치**: 접점 DO9·DO10, 온도·설정은 `HW_PORTS.BENCH.*` 홀딩. API·wire↔°C는 **[BENCH_MODBUS_CONTRACT.md](./BENCH_MODBUS_CONTRACT.md)**. 폴링용 effective 매핑은 DO 할당 시 `mergeBenchUnitMappingWithDo`로 홀딩 GET/SET을 유지한다 (`PortMappingService`).
+>
+> **에어커튼**: 물리 **DO7·DO8** (`clientPortMappings/*/aircurtain.ts` → `HW_PORTS.DO7`/`DO8`). DO3·DO4는 SNGIL에서 실외전등/Reserved이며 에어커튼이 아님.
+>
+> **현장 bench API 검증**: 폴링 중지 후 `POST /api/v1/internal/hardware/system/bench` — `packages/backend/scripts/verify-bench-hardware-api.mjs` 또는 아래 §6-1.
+
+### **6-1. 온열벤치 하드웨어 API 현장 검증**
+
+| 단계 | 요청 | 기대 |
+| ---- | ---- | ---- |
+| 1 | `POST /api/v1/internal/system/polling` `{"pollingEnabled":false}` | 폴링 중지 |
+| 2 | `POST .../hardware/system/bench` `{"action":"set","cont_temp":-20}` | `written[].register` **1800**, `read_after_set.cont_temp` **raw 1800 / value -20** |
+| 3 | (선택) `{"action":"read"}` | `cont_temp` 동일 |
+
+```bash
+node packages/backend/scripts/verify-bench-hardware-api.mjs
+# BASE_URL, API_KEY(내부 라우트 인증 시) 환경변수 지원
+```
+
+실패 시: 409 → 폴링 재중지, wire 20000 → `valueIsRawRegister`·RealModbus 이중 환산 회귀 확인.
 
 ### **Modbus 통신 장비 레지스터 주소**
 

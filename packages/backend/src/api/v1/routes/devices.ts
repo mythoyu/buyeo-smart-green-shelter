@@ -336,7 +336,26 @@ async function deviceRoutes(fastify: FastifyInstance) {
                     cmd.value,
                     request,
                   );
-                } catch (error) {}
+                } catch (error) {
+                  const errorMsg = error instanceof Error ? error.message : String(error);
+                  logError(
+                    `명령 실행 실패: ${deviceId}/${unitId} ${cmd.action} (${commandLog.requestId}): ${errorMsg}`,
+                  );
+                  try {
+                    await controlRepository.updateCommandLog(commandLog.requestId, {
+                      status: 'fail',
+                      finishedAt: new Date(),
+                      error: errorMsg,
+                      value: cmd.value,
+                    });
+                  } catch (updateErr) {
+                    logError(
+                      `명령 로그 fail 갱신 실패: ${commandLog.requestId}, ${
+                        updateErr instanceof Error ? updateErr.message : String(updateErr)
+                      }`,
+                    );
+                  }
+                }
               }
             }
           } catch (error) {

@@ -113,6 +113,7 @@ export class UnifiedModbusCommunicationService implements IUnifiedModbusCommunic
         value: command.lengthOrValue,
         context: 'control' as const,
         ...(command.clientId !== undefined ? { clientId: command.clientId } : {}),
+        ...(command.valueIsRawRegister !== undefined ? { valueIsRawRegister: command.valueIsRawRegister } : {}),
       };
       const result = await this.mockService.writeRegister(mockWriteReq);
       // 🆕 타입 변환하여 호환성 맞춤

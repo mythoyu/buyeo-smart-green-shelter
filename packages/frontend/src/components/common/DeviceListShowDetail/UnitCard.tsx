@@ -377,11 +377,11 @@ export const UnitCard: React.FC<UnitCardProps> = ({
                       onClick={e => e.stopPropagation()}
                       title={`${cmd.label}: ${displayValue}`}
                     >
-                      <div className='flex flex-col items-center w-full min-w-0'>
-                        <span className='text-xs text-gray-500 dark:text-gray-400 font-medium leading-none truncate max-w-full'>
+                      <div className='flex flex-col items-center gap-1.5 w-full min-w-0 py-0.5'>
+                        <span className='text-xs text-gray-500 dark:text-gray-400 font-medium leading-tight truncate max-w-full'>
                           {cmd.label}
                         </span>
-                        <span className='text-xs font-bold leading-none mt-0.5 truncate max-w-full'>{displayValue}</span>
+                        <span className='text-xs font-bold leading-tight truncate max-w-full'>{displayValue}</span>
                       </div>
                     </Badge>
                   );

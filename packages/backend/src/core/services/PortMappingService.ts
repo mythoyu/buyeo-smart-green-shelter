@@ -2,6 +2,7 @@ import { CLIENT_PORT_MAPPINGS } from '../../data/clientPortMappings';
 import {
   buildDiUnitMapping,
   buildDoUnitMapping,
+  mergeBenchUnitMappingWithDo,
   DI_ASSIGNABLE_DEVICE_TYPES,
   DO_ASSIGNABLE_DEVICE_TYPES,
   inferDefaultDiPort,
@@ -175,7 +176,11 @@ export class PortMappingService {
         if (!device?.[unitId]) {
           continue;
         }
-        device[unitId] = buildDoUnitMapping(deviceType, doPort);
+        const baseUnit = device[unitId] as Record<string, unknown>;
+        device[unitId] =
+          deviceType === 'bench'
+            ? mergeBenchUnitMappingWithDo(baseUnit, doPort)
+            : buildDoUnitMapping(deviceType, doPort);
       }
     }
 

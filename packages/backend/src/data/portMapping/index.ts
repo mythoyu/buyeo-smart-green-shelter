@@ -7,6 +7,11 @@ export {
   type DoPortKey,
 } from './doPortTypes';
 export { buildDoUnitMapping } from './buildDoUnitMapping';
+export {
+  BENCH_HOLDING_ACTION_NAMES,
+  extractBenchHoldingFromUnitMapping,
+  mergeBenchUnitMappingWithDo,
+} from './benchHoldingMapping';
 export { buildDiUnitMapping } from './buildDiUnitMapping';
 export { resolveDoPortFromUnitMapping } from './resolveDoPort';
 export {

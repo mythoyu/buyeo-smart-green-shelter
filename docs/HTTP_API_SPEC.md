@@ -601,6 +601,9 @@ DELETE /internal/api-keys/{key}
 
 #### d041 온열벤치 (bench)
 
+> Modbus wire(레지스터) ↔ API 논리값(°C 등) 계약: [BENCH_MODBUS_CONTRACT.md](./BENCH_MODBUS_CONTRACT.md)  
+> 내부 하드웨어 일괄: `POST /api/v1/internal/hardware/system/bench` (`action`: `read` | `set`) — read는 `{ raw, value }`, set body는 **논리값(°C)**.
+
 | data 필드      | 설명     | 관련 액션(action)                      |
 | -------------- | -------- | -------------------------------------- |
 | `auto`         | 모드상태 | `SET_AUTO`, `GET_AUTO`                 |

@@ -13,13 +13,10 @@ import {
   BENCH_READ_GAP_MS,
   buildBenchFieldReading,
   delayMs,
-  encodeBenchContTemp,
-  encodeBenchTempCheckInterval,
-  encodeBenchTempOffset,
   toModbusRegisterWord,
 } from '../../../shared/utils/benchModbus';
+import { toModbusWire } from '../../../shared/utils/deviceFieldMapper';
 import {
-  collectBenchReadRefs,
   collectDdcTimeReadRefs,
   collectSeasonalReadRefs,
   createHardwareModbusReader,
@@ -341,12 +338,12 @@ async function hardwareRoutes(fastify: FastifyInstance) {
       };
 
       if (action === 'read') {
-        const { results, transactionCount } = await executeHardwareModbusBulkRead(modbusReader, collectBenchReadRefs());
-        logDebug(`[HardwareBench] bulk read 완료 (transactions=${transactionCount})`);
-
         const values: Partial<Record<BenchReadCommand, number | null>> = {};
         for (const command of BENCH_READ_COMMANDS) {
-          values[command] = readFirstValue(results, 'BENCH', command);
+          values[command] = await readCmd(command);
+          if (values[command] !== null && BENCH_READ_COMMANDS.indexOf(command) < BENCH_READ_COMMANDS.length - 1) {
+            await delayMs(BENCH_READ_GAP_MS);
+          }
         }
 
         const failed = BENCH_READ_COMMANDS.filter(command => values[command] === null);
@@ -372,18 +369,27 @@ async function hardwareRoutes(fastify: FastifyInstance) {
         const writes: Array<{ command: string; value: number }> = [];
 
         if (body.cont_temp !== undefined && body.cont_temp !== null) {
-          writes.push({ command: 'CONT_TEMP', value: encodeBenchContTemp(Number(body.cont_temp)) });
+          writes.push({
+            command: 'CONT_TEMP',
+            value: toModbusWire('bench', 'cont_temp', Number(body.cont_temp)),
+          });
         }
         if (body.cont_temp_2 !== undefined && body.cont_temp_2 !== null) {
-          writes.push({ command: 'CONT_TEMP_2', value: encodeBenchContTemp(Number(body.cont_temp_2)) });
+          writes.push({
+            command: 'CONT_TEMP_2',
+            value: toModbusWire('bench', 'cont_temp_2', Number(body.cont_temp_2)),
+          });
         }
         if (body.temp_offset !== undefined && body.temp_offset !== null) {
-          writes.push({ command: 'TEMP_OFFSET', value: encodeBenchTempOffset(Number(body.temp_offset)) });
+          writes.push({
+            command: 'TEMP_OFFSET',
+            value: toModbusWire('bench', 'temp_offset', Number(body.temp_offset)),
+          });
         }
         if (body.temp_check_interval !== undefined && body.temp_check_interval !== null) {
           writes.push({
             command: 'TEMP_CHECK_INTERVAL',
-            value: encodeBenchTempCheckInterval(Number(body.temp_check_interval)),
+            value: toModbusWire('bench', 'temp_check_interval', Number(body.temp_check_interval)),
           });
         }
 

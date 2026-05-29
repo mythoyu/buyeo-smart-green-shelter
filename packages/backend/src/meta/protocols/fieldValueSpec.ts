@@ -3,11 +3,9 @@
  */
 
 import {
-  encodeBenchContTemp,
-  encodeBenchTempCheckInterval,
-  encodeBenchTempOffset,
-} from '../../shared/utils/benchModbus';
-import { encodeCoolerBenchIntegratedSensorTemp } from '../../shared/utils/modbusTemperatureScale';
+  type DeviceFieldMapperContext,
+  toModbusWire,
+} from '../../shared/utils/deviceFieldMapper';
 import { getDeviceDefaultValues, getFallbackDeviceValues } from '../../data/clientDefaultDataMapping';
 
 export type WireKind =
@@ -114,48 +112,71 @@ export function randomLogicalInKind(kind: WireKind): number {
   }
 }
 
-/** 폴링 GET 후 CommandResultHandler와 동일한 wire 값 */
-export function encodeLogicalToWire(kind: WireKind, logical: number): number {
-  const n = Number(logical);
+/** WireKind → deviceFieldMapper 필드 (kind만 알 때 encodeLogicalToWire 폴백) */
+export function wireKindToDeviceField(kind: WireKind): {
+  deviceType: string;
+  field: string;
+  fieldType?: string;
+} {
   switch (kind) {
     case 'boolean_01':
-      return n ? 1 : 0;
+      return { deviceType: 'lighting', field: 'power', fieldType: 'boolean' };
     case 'hour_0_23':
-      return Math.max(0, Math.min(23, Math.round(n)));
+      return { deviceType: 'lighting', field: 'start_hour_1' };
     case 'minute_0_59':
-      return Math.max(0, Math.min(59, Math.round(n)));
+      return { deviceType: 'lighting', field: 'start_minute_1' };
     case 'alarm_0_255':
-      return Math.max(0, Math.min(255, Math.round(n)));
+      return { deviceType: 'cooler', field: 'alarm' };
     case 'cooler_mode_0_3':
-      return Math.max(0, Math.min(3, Math.round(n)));
+      return { deviceType: 'cooler', field: 'mode' };
     case 'cooler_speed_1_4':
-      return Math.max(1, Math.min(4, Math.round(n)));
+      return { deviceType: 'cooler', field: 'speed' };
     case 'exchanger_mode_1_2':
-      return Math.max(1, Math.min(2, Math.round(n)));
+      return { deviceType: 'exchanger', field: 'mode' };
     case 'exchanger_speed_1_4':
-      return Math.max(1, Math.min(4, Math.round(n)));
+      return { deviceType: 'exchanger', field: 'speed' };
     case 'summer_winter_tenths':
-      return Math.max(160, Math.min(300, Math.round(n * 10)));
+      return { deviceType: 'cooler', field: 'summer_cont_temp' };
     case 'cur_temp_wire':
+      return { deviceType: 'cooler', field: 'cur_temp' };
     case 'sensor_temp_wire':
-      return encodeCoolerBenchIntegratedSensorTemp(Math.max(-99, Math.min(125, n)));
+      return { deviceType: 'sensor', field: 'temp' };
     case 'bench_cont_temp':
-      return encodeBenchContTemp(Math.max(-20, Math.min(80, n)));
+      return { deviceType: 'bench', field: 'cont_temp' };
     case 'bench_temp_offset':
-      return encodeBenchTempOffset(Math.max(0, Math.min(20, n)));
+      return { deviceType: 'bench', field: 'temp_offset' };
     case 'bench_temp_check_interval':
-      return encodeBenchTempCheckInterval(Math.max(0, Math.min(600, n)));
+      return { deviceType: 'bench', field: 'temp_check_interval' };
     case 'hum_tenths':
-      return Math.max(0, Math.min(1000, Math.round(Math.max(0, Math.min(100, n)) * 10)));
+      return { deviceType: 'sensor', field: 'hum' };
     case 'pm_0_1000':
-      return Math.max(0, Math.min(1000, Math.round(n)));
+      return { deviceType: 'integrated_sensor', field: 'pm25' };
     case 'co2_400_10000':
-      return Math.max(400, Math.min(10000, Math.round(n)));
+      return { deviceType: 'integrated_sensor', field: 'co2' };
     case 'voc_0_60000':
-      return Math.max(0, Math.min(60000, Math.round(n)));
+      return { deviceType: 'integrated_sensor', field: 'voc' };
     default:
-      return Math.max(0, Math.min(65535, Math.round(n)));
+      return { deviceType: 'lighting', field: 'power' };
   }
+}
+
+/**
+ * 논리값 → Modbus wire — deviceFieldMapper(toModbusWire) 단일 경로
+ * deviceType·field가 있으면 우선 사용, 없으면 kind에서 추론
+ */
+export function encodeLogicalToWire(
+  kind: WireKind,
+  logical: number,
+  ctx?: DeviceFieldMapperContext & { deviceType?: string; field?: string },
+): number {
+  const mapped = wireKindToDeviceField(kind);
+  const deviceType = ctx?.deviceType ?? mapped.deviceType;
+  const field = ctx?.field ?? mapped.field;
+  const fieldType = ctx?.fieldType ?? mapped.fieldType;
+  return toModbusWire(deviceType, field, logical, {
+    clientId: ctx?.clientId,
+    fieldType,
+  });
 }
 
 function coerceDefaultLogical(field: string, raw: unknown): number | undefined {

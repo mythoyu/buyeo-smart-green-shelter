@@ -191,8 +191,8 @@ export class ControlService implements IControlService {
         this.logger?.info(`[ControlService] 시간 GET 명령어 감지: ${commandKey} - executeTimeGetCommand 호출`);
         return this.executeTimeGetCommand(unit, device, commandKey, _request);
       }
-      this.logger?.info(`[ControlService] 시간 SET 명령어 감지: ${commandKey} - executeTimeCommandAsModbus 호출`);
-      return this.executeTimeCommandAsModbus(unit, device, commandKey, value, _request);
+      this.logger?.info(`[ControlService] 시간 SET 명령어 감지: ${commandKey} - executeTimeCommand 호출`);
+      return this.executeTimeCommand(unit, device, commandKey, value, _request);
     }
 
     // 🆕 일반 명령어는 executeGeneralModbusCommand로 처리
@@ -450,9 +450,9 @@ export class ControlService implements IControlService {
         return this.executeTimeGetCommand(unit, device, commandKey, request, existingRequestId);
       }
       this.logger?.info(
-        `[ControlService] 시간 SET 명령어 감지: ${commandKey} - executeTimeCommandAsModbus 호출 (existing)`,
+        `[ControlService] 시간 SET 명령어 감지: ${commandKey} - executeTimeCommand 호출 (existing)`,
       );
-      return this.executeTimeCommandAsModbus(unit, device, commandKey, value, request, existingRequestId);
+      return this.executeTimeCommand(unit, device, commandKey, value, request, existingRequestId);
     }
 
     // 기존 CommandLog 상태를 'processing'으로 업데이트
