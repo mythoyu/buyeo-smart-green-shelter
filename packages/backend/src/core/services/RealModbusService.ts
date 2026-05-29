@@ -567,6 +567,19 @@ export class RealModbusService implements IModbusCommunication {
     }
   }
 
+  /** valueIsRawRegister면 이미 wire 스케일(하드웨어 API encode 등) — 역변환 생략 */
+  private resolveWriteWireValue(
+    userValue: number,
+    spec: ReverseIndexSpec | undefined,
+    requestClientId: string | undefined,
+    valueIsRawRegister?: boolean,
+  ): number {
+    if (valueIsRawRegister) {
+      return Number(userValue);
+    }
+    return this.applyFieldReverseConversion(userValue, spec, requestClientId);
+  }
+
   private async executeRealWrite(request: ModbusWriteRequest): Promise<number> {
     try {
       if (!this.modbusClient) {
@@ -574,7 +587,8 @@ export class RealModbusService implements IModbusCommunication {
       }
 
       const spec = resolveReverseIndexSpec(this.reverseIndex, request.clientId, request.functionCode, request.address);
-      const fieldInfo = spec?.field ? ` (${spec.field})` : '';
+      const toWire = (val: number) =>
+        this.resolveWriteWireValue(val, spec, request.clientId, request.valueIsRawRegister);
 
       // ✅ Slave ID 설정 후 지연 추가 (설정 완료 대기)
       this.modbusClient.setID(request.slaveId);
@@ -584,28 +598,31 @@ export class RealModbusService implements IModbusCommunication {
 
       switch (request.functionCode) {
         case 5: // Write Single Coil
-          const coilValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
+          const coilValue = toWire(Array.isArray(request.value) ? request.value[0] : Number(request.value));
 
           const writeResult = await this.modbusClient.writeCoil(request.address, coilValue);
           result = this.convertWriteResultToNumber(writeResult);
           break;
 
         case 6: // Write Single Register
-          const registerValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
+          {
+            const inValue = Array.isArray(request.value) ? request.value[0] : request.value;
+            const registerValue = toWire(Number(inValue));
 
-          const registerResult = await this.modbusClient.writeRegister(request.address, registerValue);
-          result = this.convertWriteResultToNumber(registerResult);
+            const registerResult = await this.modbusClient.writeRegister(request.address, registerValue);
+            result = this.convertWriteResultToNumber(registerResult);
+          }
           break;
 
         case 15: // Write Multiple Coils
           // 🆕 Multiple Coils는 배열 형태로 처리
           if (Array.isArray(request.value)) {
-            const coilValues = request.value.map((val) => this.applyFieldReverseConversion(val, spec, request.clientId));
+            const coilValues = request.value.map((val) => toWire(Number(val)));
             const coilsResult = await this.modbusClient.writeCoils(request.address, coilValues);
             result = this.convertWriteResultToNumber(coilsResult);
           } else {
             // 단일 값인 경우 배열로 변환
-            const coilValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
+            const coilValue = toWire(Number(request.value));
             const coilsResult = await this.modbusClient.writeCoils(request.address, [coilValue]);
             result = this.convertWriteResultToNumber(coilsResult);
           }
@@ -614,14 +631,12 @@ export class RealModbusService implements IModbusCommunication {
         case 16: // Write Multiple Registers
           // 🆕 Multiple Registers는 배열 형태로 처리
           if (Array.isArray(request.value)) {
-            const registerValues = request.value.map((val) =>
-              this.applyFieldReverseConversion(val, spec, request.clientId),
-            );
+            const registerValues = request.value.map((val) => toWire(Number(val)));
             const registersResult = await this.modbusClient.writeRegisters(request.address, registerValues);
             result = this.convertWriteResultToNumber(registersResult);
           } else {
             // 단일 값인 경우 배열로 변환
-            const registerValue = this.applyFieldReverseConversion(request.value, spec, request.clientId);
+            const registerValue = toWire(Number(request.value));
             const registersResult = await this.modbusClient.writeRegisters(request.address, [registerValue]);
             result = this.convertWriteResultToNumber(registersResult);
           }

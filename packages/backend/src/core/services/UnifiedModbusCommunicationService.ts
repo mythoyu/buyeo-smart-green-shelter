@@ -68,7 +68,11 @@ export class UnifiedModbusCommunicationService implements IUnifiedModbusCommunic
           value: command.lengthOrValue,
           context: 'control' as const,
           ...(command.clientId !== undefined ? { clientId: command.clientId } : {}),
+          ...(command.valueIsRawRegister !== undefined ? { valueIsRawRegister: command.valueIsRawRegister } : {}),
         };
+        this.logger?.debug(
+          `[UnifiedModbusCommunicationService] Real write fc=${writeReq.functionCode} addr=${writeReq.address} value=${writeReq.value} valueIsRawRegister=${writeReq.valueIsRawRegister ?? false}`,
+        );
         const result = await this.realService.writeRegister(writeReq);
         // 🆕 타입 변환하여 호환성 맞춤
         this.logger?.debug(`[UnifiedModbusCommunicationService] Real 서비스 쓰기 완료 - Success: ${result.success}`);

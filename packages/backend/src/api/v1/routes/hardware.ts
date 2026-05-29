@@ -326,6 +326,9 @@ async function hardwareRoutes(fastify: FastifyInstance) {
           .BENCH?.[command]?.set;
         if (!hw) return false;
         const wireValue = toModbusRegisterWord(value);
+        logDebug(
+          `[HardwareBench] WRITE intent command=${command} fc=${hw.functionCode} addr=${hw.address} wire=${wireValue} valueIsRawRegister=true`,
+        );
         const result = await modbusReader.executeQueuedCommand({
           type: 'write',
           functionCode: hw.functionCode,
@@ -402,6 +405,10 @@ async function hardwareRoutes(fastify: FastifyInstance) {
         const verifyValues: Partial<Record<BenchReadCommand, number | null>> = {};
         for (const command of BENCH_READ_COMMANDS) {
           verifyValues[command] = await readCmd(command);
+          const writtenReg = writes.find(w => w.command === command)?.value;
+          logDebug(
+            `[HardwareBench] VERIFY read command=${command} raw=${verifyValues[command]} written_register=${writtenReg ?? 'n/a'}`,
+          );
         }
         const verifyFailed = BENCH_READ_COMMANDS.filter(command => verifyValues[command] === null);
 
