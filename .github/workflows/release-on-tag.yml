@@ -9,52 +9,25 @@ permissions:
   contents: write
 
 jobs:
-  build-infra-images:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Pull and save infra images
-        run: |
-          docker pull mongo:6.0.15
-          docker pull nginx:1.28.0
-          docker pull node:18-alpine
-          docker save -o infra-docker-images.tar \
-            mongo:6.0.15 \
-            nginx:1.28.0 \
-            node:18-alpine
-          ls -lh infra-docker-images.tar
-
-      - name: Upload infra tar artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: infra-docker-images
-          path: infra-docker-images.tar
-
   create-release:
-    needs: build-infra-images
     runs-on: ubuntu-22.04
     steps:
-      - name: Download infra docker images tar
-        uses: actions/download-artifact@v4
-        with:
-          name: infra-docker-images
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
-          files: infra-docker-images.tar
           body: |
-            ## 현장 설치 (소스 + infra tar)
+            ## 현장 설치 (앱 소스)
 
             ### USB 번들 (오프라인 권장)
 
             ```text
             bushub-deploy/
-            ├── buyeo-smart-green-shelter/   # 이 Release 태그로 checkout
+            ├── buyeo-smart-green-shelter/   # 이 Release 태그로 checkout 또는 Source zip
             └── docker-images/
-                └── infra-docker-images.tar   # 아래 Release asset
+                └── infra-docker-images.tar   # 별도 1회 — Actions「Build infra docker images (manual)」artifact
             ```
 
             ### 1. 소스
@@ -62,10 +35,11 @@ jobs:
             ```bash
             git fetch origin --tags
             git checkout ${{ github.ref_name }}
-            # Mongo/JWT 는 docker-compose.*.yml 에 고정 (.env.prod 와 동기)
             ```
 
-            ### 2. install (핫스팟 1회 — Docker·apt·infra load)
+            Mongo/JWT 는 `docker-compose.*.yml` 에 고정 (`.env.prod` 와 동기).
+
+            ### 2. install (Docker·apt·infra load)
 
             ```bash
             ./scripts/install-field.sh install
@@ -73,18 +47,17 @@ jobs:
             ./scripts/install-field.sh ports
             ```
 
-            infra tar 가 USB 에 있으면 Release 다운로드 없이 `docker load` 만 수행합니다.
-            USB 에 없으면 `--download-if-missing` 가 이 Release 의 `infra-docker-images.tar` 를 받습니다.
+            **infra tar** (`mongo`, `nginx`, `node`)는 이 Release 에 포함되지 않습니다.
+            USB `../docker-images/` 또는 Actions → **Build infra docker images (manual)** artifact 를 사용하세요.
 
-            ### 3. post-ports (오프라인 — 앱 이미지 빌드 + 기동)
+            ### 3. post-ports (앱 이미지 빌드 + 기동)
 
             ```bash
-            export GITHUB_REF_NAME=${{ github.ref_name }}
             ./scripts/install-field.sh post-ports
             ```
 
             ### 운영 방식
 
-            - **infra** (mongo, nginx, node): Release asset 또는 `../docker-images/`
-            - **앱** (bushub-backend/frontend): 현장 `docker build` (`post-ports`)
+            - **infra**: USB / infra 전용 workflow artifact (앱 태그마다 재업로드 없음)
+            - **앱**: 현장 `docker build` (`post-ports`)
             - 자세한 내용: `docs/DEPLOYMENT.md`, `docs/COMMON_COMMANDS.md`
