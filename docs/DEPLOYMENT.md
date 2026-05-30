@@ -78,6 +78,23 @@ export GITHUB_REF_NAME=vX.Y.Z
 - **post-ports**: backend/frontend 만 빌드
 - 피플카운터: [PEOPLE_COUNTER_FIELD_RUNBOOK.md](PEOPLE_COUNTER_FIELD_RUNBOOK.md)
 
+### Docker 프로젝트·업그레이드
+
+- Compose 프로젝트명은 **`bushub-field`** (폴더명·릴리스 버전과 무관).
+- Mongo·로그 볼륨: **`bushub_db_data`**, **`bushub_backend_logs`** — `down` 해도 유지 (`-v` 미사용).
+- `post-ports` / `run-docker-stack.sh` 기동 전 **`cleanup-legacy-bushub-docker.sh`** 가 예전 `buyeo-smart-green-shelter-1115_*` 네트워크·컨테이너를 정리하고, 필요 시 구 volume → 고정 volume 1회 복사.
+- **배포 경로는 버전 없이 고정** (`~/project/buyeo-smart-green-shelter`). 버전은 `git checkout vX.Y.Z` 만 변경.
+- 한 PC에 **한 버전만** 운영 (컨테이너명 `bushub-backend` 등 고정).
+
+**버전 업그레이드 (예: v1.1.15 → v1.1.16):**
+
+```bash
+cd ~/project/buyeo-smart-green-shelter
+git fetch origin --tags && git checkout v1.1.16
+export GITHUB_REF_NAME=v1.1.16
+./scripts/install-field.sh post-ports
+```
+
 ## 4. GitHub Release (CI)
 
 | 항목 | 내용 |

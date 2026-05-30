@@ -3,6 +3,9 @@
 # PeopleCounter(APC)는 별도 override compose에서 마운트합니다.
 # udev: 저장소 루트 ./scripts/install-field.sh 또는 scripts/lib/udev/…
 # 규칙 설치 후 rebuild-and-up-usb485.sh 등으로 이 compose 를 up 하세요.
+# 프로젝트명·볼륨·네트워크는 폴더/버전과 무관하게 고정 (integrated.yml 과 동일).
+name: bushub-field
+
 services:
   # MongoDB 데이터베이스
   db:
@@ -178,10 +181,13 @@ services:
 
 networks:
   bushub-network:
+    name: bushub_network
     driver: bridge
 
 volumes:
   db_data:
+    name: bushub_db_data
     driver: local
   backend_logs:
+    name: bushub_backend_logs
     driver: local

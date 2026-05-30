@@ -1,5 +1,8 @@
 # PC A: 내장 Modbus /dev/ttyS0. 피플카운터(APC)는 USB + udev(/dev/bushub-people-counter-N) — docker-compose.common.* 로 마운트.
 # USB 변환기만 쓰는 PC B는 docker-compose.usb485.yml 사용.
+# 프로젝트명·볼륨·네트워크는 폴더/버전과 무관하게 고정 (업그레이드 시 post-ports 가 동일 리소스 재사용).
+name: bushub-field
+
 services:
   db:
     image: mongo:6.0.15
@@ -167,13 +170,13 @@ services:
 
 networks:
   bushub-network:
+    name: bushub_network
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
 volumes:
   db_data:
+    name: bushub_db_data
     driver: local
   backend_logs:
+    name: bushub_backend_logs
     driver: local

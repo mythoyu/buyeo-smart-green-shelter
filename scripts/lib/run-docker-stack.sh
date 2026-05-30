@@ -27,6 +27,9 @@ fi
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
+# 폴더명(1.1.15/1.1.16)과 무관 — 현장 PC당 단일 compose 프로젝트
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-bushub-field}"
+
 case "$MODE" in
   integrated)
     COMPOSE_FILE="docker-compose.integrated.yml"
@@ -132,6 +135,9 @@ echo "📎 compose 파일:"
 for f in "${COMPOSE_FILES[@]}"; do
   echo "   - $f"
 done
+echo "📎 compose 프로젝트: $COMPOSE_PROJECT_NAME"
+
+bash "$SCRIPT_DIR/cleanup-legacy-bushub-docker.sh"
 
 echo "🚀 docker compose ${compose_args[*]} down --remove-orphans → up -d"
 docker compose "${compose_args[@]}" down --remove-orphans || true
@@ -162,4 +168,4 @@ fi
 
 echo ""
 echo "🎉 기동 완료"
-echo "   중지: cd $REPO_ROOT && docker compose ${compose_args[*]} down --remove-orphans"
+echo "   중지: cd $REPO_ROOT && docker compose -p $COMPOSE_PROJECT_NAME ${compose_args[*]} down --remove-orphans"
