@@ -15,11 +15,11 @@ jobs:
         run: |
           docker pull mongo:6.0.15
           docker pull nginx:1.28.0
-          docker pull node:18-alpine
+          docker pull node:20-alpine
           docker save -o infra-docker-images.tar \
             mongo:6.0.15 \
             nginx:1.28.0 \
-            node:18-alpine
+            node:20-alpine
           ls -lh infra-docker-images.tar
 
       - name: Upload workflow artifact

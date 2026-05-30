@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for Backend
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 WORKDIR /app
 

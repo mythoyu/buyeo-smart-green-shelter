@@ -171,10 +171,10 @@ fi
 
 if infra_image_present; then
   echo "✅ infra 이미지 준비 완료"
-  if docker image inspect node:18-alpine >/dev/null 2>&1; then
-    echo "   (node:18-alpine — 현장 docker build 용)"
+  if docker image inspect node:20-alpine >/dev/null 2>&1; then
+    echo "   (node:20-alpine — 현장 docker build 용)"
   else
-    echo "ℹ️  node:18-alpine 없음 — post-ports 빌드 시 네트워크 또는 infra tar 에 포함 필요"
+    echo "ℹ️  node:20-alpine 없음 — post-ports 빌드 시 네트워크 또는 infra tar 에 포함 필요"
   fi
   exit 0
 fi

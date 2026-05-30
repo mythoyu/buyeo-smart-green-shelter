@@ -45,7 +45,7 @@ migrate_named_volume() {
 
   echo "📦 볼륨 마이그레이션: $old_vol → $target_name"
   docker volume create "$target_name" >/dev/null
-  local migrate_image="node:18-alpine"
+  local migrate_image="node:20-alpine"
   if ! docker image inspect "$migrate_image" >/dev/null 2>&1; then
     migrate_image="alpine:3.20"
   fi

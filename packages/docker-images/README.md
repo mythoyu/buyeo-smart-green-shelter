@@ -8,7 +8,7 @@
 
 | 파일 | 내용 |
 |------|------|
-| `infra-docker-images.tar` | `mongo:6.0.15`, `nginx:1.28.0`, `node:18-alpine` |
+| `infra-docker-images.tar` | `mongo:6.0.15`, `nginx:1.28.0`, `node:20-alpine` |
 
 GitHub Release 태그에 동일 이름으로 첨부됩니다 (`.github/workflows/release-on-tag.yml`).
 
@@ -34,6 +34,6 @@ REPO_ROOT=/path/to/repo ./scripts/lib/load-docker-images.sh
 ## CI에서 로컬 생성 (수동)
 
 ```bash
-docker pull mongo:6.0.15 nginx:1.28.0 node:18-alpine
-docker save -o packages/docker-images/infra-docker-images.tar mongo:6.0.15 nginx:1.28.0 node:18-alpine
+docker pull mongo:6.0.15 nginx:1.28.0 node:20-alpine
+docker save -o packages/docker-images/infra-docker-images.tar mongo:6.0.15 nginx:1.28.0 node:20-alpine
 ```

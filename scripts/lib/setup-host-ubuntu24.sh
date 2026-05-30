@@ -189,12 +189,24 @@ if ! command -v nmcli >/dev/null 2>&1; then
   sudo systemctl start NetworkManager
 fi
 
-# Node.js 18 (호스트 도구·번들 스크립트 호환용)
-if ! command -v node >/dev/null 2>&1; then
-  echo "📦 Node.js 18 설치 중..."
+# Node.js 20 LTS (호스트: pnpm 글로벌 설치 등 — 앱 런타임은 Docker node 이미지)
+install_node_20() {
+  echo "📦 Node.js 20 LTS 설치 중..."
   sudo apt remove -y nodejs npm 2>/dev/null || true
-  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
   sudo apt install -y nodejs
+}
+
+node_major=""
+if command -v node >/dev/null 2>&1; then
+  node_major="$(node -v | sed -n 's/^v\([0-9]*\).*/\1/p')"
+fi
+
+if [ -z "$node_major" ]; then
+  install_node_20
+elif [ "$node_major" -lt 20 ]; then
+  echo "📦 Node.js ${node_major} → 20 LTS 업그레이드 중..."
+  install_node_20
 fi
 
 # pnpm
