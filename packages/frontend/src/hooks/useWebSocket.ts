@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import useWebSocketLib, { ReadyState } from 'react-use-websocket';
 
-import { devBackendWsUrl } from '@/constants/devPorts';
+import { devBackendWsUrl, fieldNginxWsUrl } from '@/constants/devPorts';
 
 import { UnitValue } from '../types/database';
 
@@ -74,8 +74,16 @@ const getWebSocketUrl = (): string => {
     if (wsUrl.startsWith('ws://') || wsUrl.startsWith('wss://')) {
       return wsUrl;
     }
+    if (wsUrl.startsWith('/')) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${window.location.host}${wsUrl}`;
+    }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${wsUrl}`;
+  }
+
+  if (import.meta.env.PROD) {
+    return fieldNginxWsUrl();
   }
 
   const { hostname } = window.location;

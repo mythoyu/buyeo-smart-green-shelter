@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-import { VITE_DEV_SERVER_PORTS, devBackendApiUrl } from '@/constants/devPorts';
+import { FIELD_NGINX_API_BASE, VITE_DEV_SERVER_PORTS, devBackendApiUrl } from '@/constants/devPorts';
 
 // 환경에 따른 API base URL 설정
 const getApiBaseUrl = () => {
@@ -8,6 +8,11 @@ const getApiBaseUrl = () => {
 
   if (apiUrl) {
     return apiUrl;
+  }
+
+  // 현장 Docker production 빌드 — nginx :80 /api 프록시 (same-origin)
+  if (import.meta.env.PROD) {
+    return FIELD_NGINX_API_BASE;
   }
 
   const { hostname } = window.location;

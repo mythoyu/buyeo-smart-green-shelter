@@ -15,3 +15,11 @@ export const devBackendApiUrl = (hostname: string): string =>
 
 export const devBackendWsUrl = (hostname: string): string =>
   `ws://${hostname}:${DEV_BACKEND_PORT}/ws`;
+
+/** 현장 Docker — nginx :80 same-origin (compose /api → backend) */
+export const FIELD_NGINX_API_BASE = '/api/v1';
+
+export function fieldNginxWsUrl(): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/ws`;
+}

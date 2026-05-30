@@ -1,6 +1,6 @@
 // 환경변수 확인 유틸리티
 
-import { DEV_BACKEND_PORT } from '@/constants/devPorts';
+import { DEV_BACKEND_PORT, FIELD_NGINX_API_BASE, fieldNginxWsUrl } from '@/constants/devPorts';
 
 // 타입 정의
 type AppEnvironment = 'development' | 'staging' | 'production';
@@ -25,8 +25,8 @@ const DEFAULT_URLS = {
     ws: 'wss://port-0-bushub-client-backend-me10tow29d7967b9.sel5.cloudtype.app/ws',
   },
   production: {
-    api: getDynamicUrl('api'),
-    ws: getDynamicUrl('ws'),
+    api: FIELD_NGINX_API_BASE,
+    ws: typeof window !== 'undefined' ? fieldNginxWsUrl() : '/ws',
   },
 } as const;
 

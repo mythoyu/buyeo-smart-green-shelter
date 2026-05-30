@@ -42,9 +42,11 @@ CMD ["pnpm", "run", "dev", "--host", "0.0.0.0"]
 # Production stage
 FROM base AS production
 
-# 🔄 프로덕션 환경변수 설정
+# 현장 Docker: nginx :80 /api·/ws 프록시 (same-origin, Vite build 시 번들에 포함)
 ENV NODE_ENV=production \
-    VITE_IS_LOCAL=false
+    VITE_IS_LOCAL=false \
+    VITE_API_BASE_URL=/api/v1 \
+    VITE_WS_URL=/ws
 
 # Build the application for production
 RUN pnpm run build:production
