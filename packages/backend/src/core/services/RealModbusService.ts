@@ -579,8 +579,8 @@ export class RealModbusService implements IModbusCommunication {
     valueIsRawRegister?: boolean,
   ): number {
     return convertLogicalToModbusWire(userValue, spec, requestClientId, {
-      valueIsRawRegister,
-      logger: this.logger,
+      ...(valueIsRawRegister !== undefined && { valueIsRawRegister }),
+      ...(this.logger !== undefined && { logger: this.logger }),
     });
   }
 
@@ -602,7 +602,8 @@ export class RealModbusService implements IModbusCommunication {
 
       switch (request.functionCode) {
         case 5: // Write Single Coil
-          const coilValue = toWire(Array.isArray(request.value) ? request.value[0] : Number(request.value));
+          const coilWire = toWire(Array.isArray(request.value) ? request.value[0] : Number(request.value));
+          const coilValue = coilWire !== 0;
 
           const writeResult = await this.modbusClient.writeCoil(request.address, coilValue);
           result = this.convertWriteResultToNumber(writeResult);
@@ -621,13 +622,13 @@ export class RealModbusService implements IModbusCommunication {
         case 15: // Write Multiple Coils
           // 🆕 Multiple Coils는 배열 형태로 처리
           if (Array.isArray(request.value)) {
-            const coilValues = request.value.map((val) => toWire(Number(val)));
+            const coilValues = request.value.map((val) => toWire(Number(val)) !== 0);
             const coilsResult = await this.modbusClient.writeCoils(request.address, coilValues);
             result = this.convertWriteResultToNumber(coilsResult);
           } else {
             // 단일 값인 경우 배열로 변환
-            const coilValue = toWire(Number(request.value));
-            const coilsResult = await this.modbusClient.writeCoils(request.address, [coilValue]);
+            const multiCoilValue = toWire(Number(request.value)) !== 0;
+            const coilsResult = await this.modbusClient.writeCoils(request.address, [multiCoilValue]);
             result = this.convertWriteResultToNumber(coilsResult);
           }
           break;
@@ -784,7 +785,9 @@ export class RealModbusService implements IModbusCommunication {
   }
 
   private applyFieldReverseConversion(userValue: unknown, spec?: ReverseIndexSpec, requestClientId?: string): number {
-    return convertLogicalToModbusWire(userValue, spec, requestClientId, { logger: this.logger });
+    return convertLogicalToModbusWire(userValue, spec, requestClientId, {
+      ...(this.logger !== undefined && { logger: this.logger }),
+    });
   }
 
   // ✅ ModbusRTU write 메서드의 결과를 number로 변환하는 유틸리티 메서드

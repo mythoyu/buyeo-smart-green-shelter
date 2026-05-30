@@ -96,7 +96,7 @@ const generateSingle = async (spec?: ReverseIndexSpec): Promise<number> => {
   }
 
   return toModbusWire(deviceType, field, logical, {
-    clientId: spec.clientId,
+    ...(spec.clientId !== undefined && { clientId: spec.clientId }),
     fieldType: type,
   });
 };

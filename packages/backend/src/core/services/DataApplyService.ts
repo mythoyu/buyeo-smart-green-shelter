@@ -452,13 +452,18 @@ export class DataApplyService {
     try {
       const field = mapping.field;
       if (deviceType) {
-        return toModbusWire(deviceType, field, Number(expectedValue), { clientId });
+        return toModbusWire(
+          deviceType,
+          field,
+          Number(expectedValue),
+          clientId !== undefined ? { clientId } : undefined,
+        );
       }
 
       return Number(expectedValue);
     } catch (error) {
       this.logger?.warn(`[DataApplyService] expected raw 역변환 실패: ${mapping.actionKey} - ${error}`);
-      return expectedValue;
+      return Number(expectedValue);
     }
   }
 

@@ -174,8 +174,8 @@ export function encodeLogicalToWire(
   const field = ctx?.field ?? mapped.field;
   const fieldType = ctx?.fieldType ?? mapped.fieldType;
   return toModbusWire(deviceType, field, logical, {
-    clientId: ctx?.clientId,
-    fieldType,
+    ...(ctx?.clientId !== undefined && { clientId: ctx.clientId }),
+    ...(fieldType !== undefined && { fieldType }),
   });
 }
 
