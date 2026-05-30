@@ -41,9 +41,10 @@ pnpm dev:frontend   # :15461
 | `docker-compose.common.people-counter.yml` | 피플카운터 공통 |
 
 ```bash
-cp env.example .env   # JWT, MONGO, GITHUB_REF_NAME 편집
 ./scripts/lib/rebuild-and-up-integrated.sh
 ```
+
+Mongo/JWT 는 `docker-compose.*.yml` 에 고정 (`.env.prod` 와 동기). `PEOPLE_COUNTER_COUNT` 는 ports 마법사 → `.env` → compose export.
 
 compose YAML 에 `build:` 없음. 앱 이미지는 `rebuild-docker-images.sh` 선행 필요.
 
@@ -63,7 +64,6 @@ bushub-deploy/
 모노레포 **루트**에서:
 
 ```bash
-cp env.example .env
 ./scripts/install-field.sh install
 # 재부팅·재로그인 후
 ./scripts/install-field.sh ports
@@ -92,7 +92,6 @@ export GITHUB_REF_NAME=vX.Y.Z
 ## 5. 체크리스트 (현장)
 
 - [ ] `git checkout` 릴리스 태그
-- [ ] `cp env.example .env` (`MONGO_ROOT_PASSWORD`, `JWT_SECRET`)
-- [ ] `install-field` / `post-ports` 성공
+- [ ] `install-field` / `post-ports` 성공 (Mongo/JWT 는 compose YAML — `.env.prod` 참고)
 - [ ] `MODBUS_BAUD_RATE=9600` (usb485·integrated 공통)
 - [ ] `MODBUS_MOCK_ENABLED=false` (실장비)

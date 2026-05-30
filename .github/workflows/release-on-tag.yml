@@ -62,7 +62,7 @@ jobs:
             ```bash
             git fetch origin --tags
             git checkout ${{ github.ref_name }}
-            cp env.example .env   # 값 편집
+            # Mongo/JWT 는 docker-compose.*.yml 에 고정 (.env.prod 와 동기)
             ```
 
             ### 2. install (핫스팟 1회 — Docker·apt·infra load)

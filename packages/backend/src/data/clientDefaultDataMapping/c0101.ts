@@ -84,7 +84,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       temp_offset: 1.0,
       temp_check_interval: 10.0,
     },
-  },
+},
   door: {
     u001: {
       start_time_1: '00:00',

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 레포 루트 .env 에 PEOPLE_COUNTER_COUNT 저장 (post-ports / compose 재기동 시 유지)
+# 레포 루트 .env — PEOPLE_COUNTER_COUNT 등 (Mongo/JWT 는 compose YAML 고정)
 set -euo pipefail
 
 # shellcheck source=field-guard.sh
@@ -14,7 +14,7 @@ if ! [[ "$COUNT" =~ ^[0-3]$ ]]; then
 fi
 
 ENV_FILE="$REPO_ROOT/.env"
-touch "$ENV_FILE"
+bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ensure-field-env.sh"
 if grep -qE '^[[:space:]]*PEOPLE_COUNTER_COUNT=' "$ENV_FILE" 2>/dev/null; then
   sed -i "s/^[[:space:]]*PEOPLE_COUNTER_COUNT=.*/PEOPLE_COUNTER_COUNT=$COUNT/" "$ENV_FILE"
 else

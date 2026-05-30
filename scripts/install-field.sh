@@ -3,7 +3,7 @@
 # 모노레포 루트에서: ./scripts/install-field.sh
 # 배포 태그 사용 시: git fetch origin --tags && git checkout vX.Y.Z 후 위와 동일
 # 내부 플로우:
-#   install: 호스트 설치 + infra docker load
+#   install: 호스트 설치 + infra docker load (Mongo/JWT 는 compose YAML 고정)
 #   ports: 포트/udev/스택 설정
 #   post-ports: 앱 이미지 소스 빌드+compose up (infra는 install 시 docker-images 로드)
 #   all: install 실행 후 ports 실행 안내

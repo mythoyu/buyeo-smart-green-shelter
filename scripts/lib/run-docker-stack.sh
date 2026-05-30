@@ -121,13 +121,7 @@ resolve_github_ref_name
 export REPO_ROOT
 bash "$SCRIPT_DIR/load-docker-images.sh"
 
-COMPOSE_ENV_FILE_ARGS=()
-if [ -f "$REPO_ROOT/.env" ]; then
-  COMPOSE_ENV_FILE_ARGS=(--env-file "$REPO_ROOT/.env")
-elif [ -f "$REPO_ROOT/.env.development" ]; then
-  echo "ℹ️  .env 없음 — compose 치환에 .env.development 사용 (현장은 .env 권장)"
-  COMPOSE_ENV_FILE_ARGS=(--env-file "$REPO_ROOT/.env.development")
-fi
+bash "$SCRIPT_DIR/ensure-field-env.sh" 2>/dev/null || true
 
 compose_args=()
 for f in "${COMPOSE_FILES[@]}"; do
@@ -139,9 +133,9 @@ for f in "${COMPOSE_FILES[@]}"; do
   echo "   - $f"
 done
 
-echo "🚀 docker compose ${COMPOSE_ENV_FILE_ARGS[*]} ${compose_args[*]} down --remove-orphans → up -d"
-docker compose "${COMPOSE_ENV_FILE_ARGS[@]}" "${compose_args[@]}" down --remove-orphans || true
-docker compose "${COMPOSE_ENV_FILE_ARGS[@]}" "${compose_args[@]}" up -d
+echo "🚀 docker compose ${compose_args[*]} down --remove-orphans → up -d"
+docker compose "${compose_args[@]}" down --remove-orphans || true
+docker compose "${compose_args[@]}" up -d
 
 echo ""
 echo "🐳 컨테이너:"
@@ -168,4 +162,4 @@ fi
 
 echo ""
 echo "🎉 기동 완료"
-echo "   중지: cd $REPO_ROOT && docker compose ${COMPOSE_ENV_FILE_ARGS[*]} ${compose_args[*]} down --remove-orphans"
+echo "   중지: cd $REPO_ROOT && docker compose ${compose_args[*]} down --remove-orphans"

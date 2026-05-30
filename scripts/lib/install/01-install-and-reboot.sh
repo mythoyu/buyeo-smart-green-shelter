@@ -60,8 +60,12 @@ echo ""
 bash "$SETUP_HOST"
 
 echo ""
-echo "📦 infra Docker 이미지 (mongo, nginx, node) 로드..."
+echo "📝 현장 .env (PEOPLE_COUNTER, 선택)..."
 export REPO_ROOT="$ROOT_DIR"
+bash "$ROOT_DIR/scripts/lib/ensure-field-env.sh" 2>/dev/null || true
+
+echo ""
+echo "📦 infra Docker 이미지 (mongo, nginx, node) 로드..."
 if bash "$ROOT_DIR/scripts/lib/load-docker-images.sh" --download-if-missing; then
   :
 else

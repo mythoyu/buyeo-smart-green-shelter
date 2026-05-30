@@ -21,7 +21,7 @@ MongoDB 등은 로컬 설치 또는 별도 컨테이너로 맞춥니다.
 
 ```bash
 # 현장 설치(루트, Ubuntu 전용):
-cp env.example .env
+# 현장: install-field (Mongo/JWT 는 compose YAML 고정)
 ./scripts/install-field.sh install    # 1회: 호스트 + infra tar
 ./scripts/install-field.sh ports      # udev·피플카운터
 export GITHUB_REF_NAME=vX.Y.Z

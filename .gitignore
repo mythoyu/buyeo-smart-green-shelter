@@ -125,11 +125,10 @@ packages/*/data/
 # ts-node-dev temporary files
 ts-node-dev 
 
-# Environment (모노레포 루트 — 예시 파일은 커밋)
+# Environment (모노레포 루트 — 현장 템플릿 .env.prod 는 커밋)
 .env
 .env.*
-!.env.example
-!.env.*.example
+!.env.prod
 !.env.development.example
 
 # Reference code archive

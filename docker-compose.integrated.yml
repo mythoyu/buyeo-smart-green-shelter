@@ -11,8 +11,9 @@ services:
       - db_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: bushub_client
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
+      # Mongo root — .env.prod 와 동기 (변경 시 usb485.yml 도 수정)
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: sw-smartcity-db
     networks:
       - bushub-network
     healthcheck:
@@ -22,9 +23,9 @@ services:
           "mongosh",
           "--quiet",
           "-u",
-          "${MONGO_ROOT_USER:-admin}",
+          "admin",
           "-p",
-          "${MONGO_ROOT_PASSWORD}",
+          "sw-smartcity-db",
           "--authenticationDatabase",
           "admin",
           "--eval",
@@ -62,13 +63,13 @@ services:
     environment:
       NODE_ENV: production
       APP_MODE: production
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD}@db:27017/bushub_client?authSource=admin
+      JWT_SECRET: dev-only-jwt-secret-minimum-32-characters-long
+      MONGODB_URI: mongodb://admin:sw-smartcity-db@db:27017/bushub_client?authSource=admin
       LOG_LEVEL: info
       MODBUS_MOCK_ENABLED: "false"
       MODBUS_PORT: /dev/ttyS0
       MODBUS_BAUD_RATE: "9600"
-      MODBUS_RTSCTS: ${MODBUS_RTSCTS:-false}
+      MODBUS_RTSCTS: "false"
       PEOPLE_COUNTER_COUNT: ${PEOPLE_COUNTER_COUNT:-0}
       SUPERIOR_SERVER_URL: http://10.20.60.145:9202/api/v1/ping
     depends_on:
