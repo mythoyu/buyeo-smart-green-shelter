@@ -62,6 +62,7 @@ services:
       - backend_logs:/app/logs
       - /dev/ttyS0:/dev/ttyS0:rw
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+    privileged: true
     user: "0:20"
     environment:
       NODE_ENV: production

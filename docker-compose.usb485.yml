@@ -71,6 +71,7 @@ services:
         bind:
           create_host_path: false
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+    privileged: true
     user: "0:20"
     environment:
       NODE_ENV: production
