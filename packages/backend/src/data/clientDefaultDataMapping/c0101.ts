@@ -16,7 +16,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_2_hour: 22,
       end_time_2_minute: 30,
       power: false,
-      auto: false,
+      auto: true,
     },
     u003: {
       start_time_1: '06:30',
@@ -32,7 +32,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_2_hour: 22,
       end_time_2_minute: 30,
       power: false,   
-      auto: false,
+      auto: true,
     },
     u004: {
       start_time_1: '06:30',
@@ -48,7 +48,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_2_hour: 22,
       end_time_2_minute: 30,
       power: false,
-      auto: false,
+      auto: true,
     },
   },
   cooler: {
@@ -60,7 +60,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_1_hour: 22,
       end_time_1_minute: 30,
       power: false,
-      auto: false,
+      auto: true,
       mode: 3,
       speed: 4,
       summer_cont_temp: 22,
@@ -78,7 +78,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_1_hour: 22,
       end_time_1_minute: 30,
       power: false,
-      auto: false,
+      auto: true,
       cur_temp: 24.0,
       cont_temp: 35.0,
       temp_offset: 1.0,
@@ -94,7 +94,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_1_hour: 0,
       end_time_1_minute: 0,
       power: false,
-      auto: false,
+      auto: true,
     },
   },
   people_counter: {
