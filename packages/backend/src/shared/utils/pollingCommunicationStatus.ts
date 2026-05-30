@@ -4,6 +4,11 @@
 
 export type UnitCommunicationEvaluation = 'ok' | 'error';
 
+/** UnifiedModbusPoller 폴링·링크 감시 대상 (APC 시리얼 people_counter는 PeopleCounterPoller 전용) */
+export function isModbusPolledDeviceType(deviceType: string): boolean {
+  return deviceType !== 'people_counter';
+}
+
 /** 장비 타입별 통신 probe 성공으로 인정하는 핵심 GET action */
 export const COMMUNICATION_CORE_ACTIONS: Record<string, readonly string[]> = {
   lighting: ['GET_POWER'],

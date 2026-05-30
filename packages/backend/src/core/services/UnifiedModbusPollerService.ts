@@ -13,7 +13,10 @@ import {
   PollingActionResult,
 } from '../../shared/utils/modbusReadPlan';
 import { DEFAULT_POLLING_CYCLE_GAP_MS, normalizePollingCycleGap } from '../../shared/constants/polling';
-import { evaluateUnitCommunicationFromPolling } from '../../shared/utils/pollingCommunicationStatus';
+import {
+  evaluateUnitCommunicationFromPolling,
+  isModbusPolledDeviceType,
+} from '../../shared/utils/pollingCommunicationStatus';
 import { getModbusAddressMapping, isModbusMockEnabled } from '../../utils/environment';
 import { ServiceContainer } from '../container/ServiceContainer';
 import { ILogger } from '../interfaces/ILogger';
@@ -269,7 +272,8 @@ export class UnifiedModbusPollerService {
   }
 
   /**
-   * Data 컬렉션에서 등록된 장비 목록을 조회 (캐시 사용)
+   * Data 컬렉션에서 Modbus 폴링 대상 장비 목록 조회 (캐시 사용).
+   * people_counter(d082)는 APC 시리얼 전용 — PeopleCounterPoller가 status/data 담당.
    */
   private async getRegisteredDevicesWithCache(): Promise<
     Array<{ deviceId: string; unitId: string; deviceType: string }>
@@ -294,15 +298,19 @@ export class UnifiedModbusPollerService {
         return [];
       }
 
-      // 🎯 장비 목록 구성
+      // 🎯 Modbus 폴링 대상만 구성 (people_counter 제외)
       const deviceList = [];
       for (const device of devices) {
+        const deviceType = device.type || 'unknown';
+        if (!isModbusPolledDeviceType(deviceType)) {
+          continue;
+        }
         if (device.units && Array.isArray(device.units)) {
           for (const unit of device.units) {
             deviceList.push({
               deviceId: device.deviceId,
               unitId: unit.unitId,
-              deviceType: device.type || 'unknown',
+              deviceType,
             });
           }
         }
