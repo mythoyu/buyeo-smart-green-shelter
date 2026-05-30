@@ -1,6 +1,6 @@
 {
   "name": "smartcity",
-  "version": "1.1.18",
+  "version": "1.1.19",
   "description": "",
   "scripts": {
     "dev": "pnpm -r run dev",
