@@ -62,7 +62,7 @@ export const c0102Defaults: DeviceDefaultValues = {
       end_time_1_hour: 0,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
+      auto: false,
     },
   },
   people_counter: {

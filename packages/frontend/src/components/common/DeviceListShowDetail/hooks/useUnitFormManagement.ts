@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { SelectedUnit, UnitForm } from '../types';
-import { getInitialFormValues } from '../utils';
+import { getInitialFormValues, resolvePowerAutoValues } from '../utils';
 
 export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
   // 선택된 유닛 상태 관리
@@ -50,11 +50,32 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
     });
   }, []);
 
+  // 자동모드 전환 시 열려 있던 설정 팝업 닫기
+  useEffect(() => {
+    if (!selectedUnit) return;
+
+    const unitKey = `${selectedUnit.device.id}_${selectedUnit.unit.id}`;
+    const { autoValue } = resolvePowerAutoValues(selectedUnit.unit.data, unitForms[unitKey]);
+
+    if (Boolean(autoValue)) {
+      setSelectedUnit(null);
+    }
+  }, [selectedUnit, unitForms]);
+
   // 유닛 클릭 핸들러
   const handleUnitClick = useCallback(
     (device: any, unit: any) => {
       const unitKey = `${device.id}_${unit.id}`;
       console.log('🚀 유닛 클릭:', { device: device.id, unit: unit.id, unitKey });
+
+      const { autoValue } = resolvePowerAutoValues(unit.data, unitForms[unitKey]);
+      if (Boolean(autoValue)) {
+        toast.info('자동모드에서는 설정을 변경할 수 없습니다. 수동모드로 전환 후 다시 시도하세요.', {
+          id: `unit-settings-auto-mode-${unitKey}`,
+          duration: 3000,
+        });
+        return;
+      }
 
       setSelectedUnit({ device, unit });
 
@@ -81,7 +102,7 @@ export const useUnitFormManagement = (deviceSpecs?: Record<string, any>) => {
         return prev;
       });
     },
-    [deviceSpecs]
+    [deviceSpecs, unitForms]
   );
 
   // 폼 변경 핸들러 (선택된 유닛 또는 deviceId/unitId를 받아서 폼 변경)

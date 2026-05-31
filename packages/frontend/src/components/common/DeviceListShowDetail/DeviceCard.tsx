@@ -127,8 +127,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                   }
                 })();
 
-                // 설정 표시 가능 여부: 선택되면 항상 표시 (auto 값과 무관)
-                const canShowSettings = isSelected;
+                const { autoValue: rawAutoValue } = resolvePowerAutoValues(unit.data, currentUnitForm);
+                const isAutoMode = Boolean(rawAutoValue);
+                const canShowSettings = isSelected && !isAutoMode;
 
                 return (
                   <div key={unit.id || unitIndex}>
@@ -209,6 +210,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   const handleToggleAuto = async () => {
     if (!primaryUnit || isPanelProcessing) return;
     const next = !autoValue;
+    if (next) {
+      onCancel();
+    }
     onFormChange('auto', next, device.id, primaryUnit.id);
     onAutoModeChange?.(device, primaryUnit, next);
 
@@ -372,8 +376,12 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                   type='button'
                   variant='outline'
                   size='sm'
+                  disabled={autoValue}
                   onClick={() => onUnitClick(device, primaryUnit)}
-                  className='h-8 px-2 text-[10px] flex items-center gap-1 border-slate-200 dark:border-slate-700'
+                  className={`h-8 px-2 text-[10px] flex items-center gap-1 border-slate-200 dark:border-slate-700 ${
+                    autoValue ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  title={autoValue ? '자동모드에서는 설정을 변경할 수 없습니다' : '설정'}
                 >
                   <Settings className='w-3 h-3' />
                 </Button>
@@ -437,7 +445,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           device={device}
           deviceSpec={deviceSpec}
           isSelected={isPrimarySelected}
-          canShowSettings={isPrimarySelected}
+          canShowSettings={isPrimarySelected && !autoValue}
           onUnitClick={onUnitClick}
           getStatusConfig={getStatusConfig}
           formatUnitLabel={formatUnitLabel}

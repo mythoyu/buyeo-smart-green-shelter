@@ -31,7 +31,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_2: '22:30',
       end_time_2_hour: 22,
       end_time_2_minute: 30,
-      power: false,   
+      power: false,
       auto: true,
     },
     u004: {
@@ -40,9 +40,9 @@ export const c0101Defaults: DeviceDefaultValues = {
       start_time_1_minute: 30,
       end_time_1: '08:00',
       end_time_1_hour: 8,
-      end_time_1_minute: 30,  
+      end_time_1_minute: 30,
       start_time_2: '17:30',
-      start_time_2_hour: 17,  
+      start_time_2_hour: 17,
       start_time_2_minute: 30,
       end_time_2: '22:30',
       end_time_2_hour: 22,
@@ -84,7 +84,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       temp_offset: 1.0,
       temp_check_interval: 10.0,
     },
-},
+  },
   door: {
     u001: {
       start_time_1: '00:00',
@@ -94,7 +94,7 @@ export const c0101Defaults: DeviceDefaultValues = {
       end_time_1_hour: 0,
       end_time_1_minute: 0,
       power: false,
-      auto: true,
+      auto: false,
     },
   },
   people_counter: {

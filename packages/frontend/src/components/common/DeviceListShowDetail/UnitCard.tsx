@@ -118,6 +118,10 @@ export const UnitCard: React.FC<UnitCardProps> = ({
       // deviceSpec에서 auto 명령어 찾기
       const autoCommand = deviceSpec?.commands?.find((cmd: any) => cmd.key === 'auto' && cmd.set === true);
 
+      if (checked) {
+        onCancel();
+      }
+
       if (autoCommand && autoCommand.action?.set) {
         console.log('🚀 Auto 명령어 발견, CommandManager로 실행...');
 
@@ -355,11 +359,11 @@ export const UnitCard: React.FC<UnitCardProps> = ({
             onClick={() => {
               if (isSelected) {
                 onCancel();
-              } else {
+              } else if (!autoValue) {
                 onUnitClick(device, unit);
               }
             }}
-            className='px-4 cursor-pointer'
+            className={`px-4 ${autoValue ? 'cursor-default' : 'cursor-pointer'}`}
           >
             {getCommands.length > 0 && (
               <div className='grid grid-cols-3 md:grid-cols-4 gap-2'>
