@@ -8,7 +8,12 @@ import { CommandProcessingDialog } from './CommandProcessingDialog';
 import { DeviceHeader } from './components/DeviceHeader';
 import { DeviceCardProps } from './types';
 import { UnitCard } from './UnitCard';
-import { getDeviceCardStyles, resolvePowerAutoValues, resolveUnitFieldValue } from './utils';
+import {
+  getDeviceCardStyles,
+  getUnitConnectionBadge,
+  resolvePowerAutoValues,
+  resolveUnitFieldValue,
+} from './utils';
 
 /**
  * DeviceCard 컴포넌트
@@ -226,12 +231,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     }
   };
 
-  const statusSource = primaryUnit?.status ?? device.status;
-  const isConnected = statusSource === 0;
-  const statusBadgeText = isConnected ? '연결됨' : '연결 안 됨';
-  const statusBadgeClass = isConnected
-    ? 'bg-emerald-600 text-white dark:bg-emerald-500'
-    : 'bg-red-600 text-white dark:bg-red-500';
+  const { text: statusBadgeText, className: statusBadgeClass } = getUnitConnectionBadge(primaryUnit?.status);
 
   // 스케줄 행 구성 (start_time_X / end_time_X 쌍)
   const scheduleRows: Array<{

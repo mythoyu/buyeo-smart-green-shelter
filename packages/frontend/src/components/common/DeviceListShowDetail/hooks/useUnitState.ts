@@ -64,15 +64,12 @@ export const useUnitState = (
     ? bulkCommandsMutation.isPending || bulkCommandsMutation.isLoading
     : commandManager.commandStatus === 'loading';
 
-  // 상태 배지 props (정의된 경우에만 전달)
-  const statusProps =
-    unit.status !== undefined
-      ? {
-          statusVariant: unitStatusConfig.variant,
-          statusClassName: unitStatusConfig.className,
-          statusIcon: unitStatusConfig.icon,
-        }
-      : {};
+  // 상태 배지 props (status 미수집 시 getStatusConfig → 미설정)
+  const statusProps = {
+    statusVariant: unitStatusConfig.variant,
+    statusClassName: unitStatusConfig.className,
+    statusIcon: unitStatusConfig.icon,
+  };
 
   return {
     commandManager,

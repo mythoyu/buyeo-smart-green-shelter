@@ -215,3 +215,26 @@ export const getStatusDisplay = (status: string) => {
       };
   }
 };
+
+/** 패널 카드 연결 배지 — 유닛 status만 사용 (device.status fallback 없음) */
+export function getUnitConnectionBadge(unitStatus: number | undefined): {
+  text: string;
+  className: string;
+} {
+  if (unitStatus === 0) {
+    return {
+      text: '연결됨',
+      className: 'bg-emerald-600 text-white dark:bg-emerald-500',
+    };
+  }
+  if (unitStatus === 2) {
+    return {
+      text: '연결 안 됨',
+      className: 'bg-red-600 text-white dark:bg-red-500',
+    };
+  }
+  return {
+    text: '미설정',
+    className: 'bg-slate-500 text-white dark:bg-slate-600',
+  };
+}

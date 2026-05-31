@@ -50,6 +50,16 @@ const DeviceListShowDetail = React.forwardRef<DeviceListShowDetailHandle, Device
         };
       }
 
+      if (status === undefined) {
+        return {
+          variant: 'outline' as const,
+          className:
+            'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600',
+          icon: <HelpCircle className='w-4 h-4 text-slate-600 dark:text-slate-400' />,
+          text: '미설정',
+        };
+      }
+
       switch (status) {
         case 0: // 정상
           return {
