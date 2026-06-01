@@ -141,6 +141,14 @@ bash "$SCRIPT_DIR/cleanup-legacy-bushub-docker.sh"
 
 echo "🚀 docker compose ${compose_args[*]} down --remove-orphans → up -d"
 docker compose "${compose_args[@]}" down --remove-orphans || true
+
+ensure_mongo_args=()
+for f in "${COMPOSE_FILES[@]}"; do
+  ensure_mongo_args+=("--compose-file" "$f")
+done
+export BUSHUB_COMPOSE_MODE="$MODE"
+bash "$SCRIPT_DIR/ensure-mongo-admin-user.sh" "${ensure_mongo_args[@]}"
+
 docker compose "${compose_args[@]}" up -d
 
 echo ""
