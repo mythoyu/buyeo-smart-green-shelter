@@ -48,7 +48,7 @@ export const c0103Defaults: DeviceDefaultValues = {
       power: false,
       auto: true,
       cur_temp: 24.0,
-      cont_temp: 36.0,
+      cont_temp: 32.0,
       temp_offset: 5.0,
       temp_check_interval: 10.0,
     },

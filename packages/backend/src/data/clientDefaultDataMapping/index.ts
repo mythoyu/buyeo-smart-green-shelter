@@ -234,8 +234,8 @@ export function getFallbackDeviceValues(deviceType: keyof DeviceDefaultValues): 
       power: false,
       auto: true,
       cur_temp: 24.0,
-      cont_temp: 35.0,
-      temp_offset: 1.0,
+      cont_temp: 32.0,
+      temp_offset: 5.0,
       temp_check_interval: 10.0,
     },
     door: {
