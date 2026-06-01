@@ -14,26 +14,10 @@ services:
       - db_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: bushub_client
-      # Mongo root — .env.prod 와 동기 (변경 시 usb485.yml 도 수정)
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: sw-smartcity-db
     networks:
       - bushub-network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mongosh",
-          "--quiet",
-          "-u",
-          "admin",
-          "-p",
-          "sw-smartcity-db",
-          "--authenticationDatabase",
-          "admin",
-          "--eval",
-          "db.adminCommand('ping')",
-        ]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,7 +52,7 @@ services:
       NODE_ENV: production
       APP_MODE: production
       JWT_SECRET: dev-only-jwt-secret-minimum-32-characters-long
-      MONGODB_URI: mongodb://admin:sw-smartcity-db@db:27017/bushub_client?authSource=admin
+      MONGODB_URI: mongodb://db:27017/bushub_client
       LOG_LEVEL: info
       MODBUS_MOCK_ENABLED: "false"
       MODBUS_PORT: /dev/ttyS0
