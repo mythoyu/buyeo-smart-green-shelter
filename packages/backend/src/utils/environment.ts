@@ -215,7 +215,7 @@ export const getModbusConfig = () => {
     dataBits: Number(process.env.MODBUS_DATA_BITS) || 8,
     stopBits: Number(process.env.MODBUS_STOP_BITS) || 1,
     parity: process.env.MODBUS_PARITY || 'none',
-    timeout: Number(process.env.MODBUS_TIMEOUT) || 1000,
+    timeout: Number(process.env.MODBUS_TIMEOUT) || 2000,
     retries: Number(process.env.MODBUS_RETRIES) || 1,
     rtscts: process.env.MODBUS_RTSCTS === 'true' || false, // RTS/CTS 흐름 제어
     // 🆕 Mock 상태 정보 추가

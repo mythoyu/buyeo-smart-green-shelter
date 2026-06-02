@@ -66,6 +66,7 @@ services:
       MODBUS_MOCK_ENABLED: "false"
       MODBUS_PORT: /dev/bushub-controller
       MODBUS_BAUD_RATE: "9600"
+      MODBUS_TIMEOUT: "2000"
       MODBUS_RTSCTS: "false"
       PEOPLE_COUNTER_COUNT: ${PEOPLE_COUNTER_COUNT:-0}
       SUPERIOR_SERVER_URL: http://10.20.60.145:9202/api/v1/ping

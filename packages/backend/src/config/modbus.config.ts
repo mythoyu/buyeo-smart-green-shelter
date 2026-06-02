@@ -16,7 +16,7 @@ export const MODBUS_CONFIG: ModbusConfig = {
   port: '/dev/ttyS0', // Linux 기본 RS485 포트
   baudRate: 9600, // 기본 보드레이트
   slaveId: 1, // 기본 슬레이브 ID
-  timeout: 1000, // 기본 타임아웃 (300ms) - 개발/테스트용으로 단축
+  timeout: 2000,
 };
 
 /**
@@ -25,7 +25,7 @@ export const MODBUS_CONFIG: ModbusConfig = {
  */
 export const getModbusConfig = (): ModbusConfig => {
   // 🆕 Mock 모드에 따른 타임아웃 조정 (개발 환경에서는 기본적으로 Mock 모드 사용)
-  const defaultTimeout = 1000; // Mock 모드나 개발 환경에서는 매우 짧은 타임아웃
+  const defaultTimeout = 2000;
 
   return {
     port: process.env.MODBUS_PORT || MODBUS_CONFIG.port,
